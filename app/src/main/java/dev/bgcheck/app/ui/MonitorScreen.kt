@@ -126,7 +126,7 @@ internal fun MonitorScreen(
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Eyebrow("WHAT’S USING YOUR DEVICE")
+                Eyebrow("resources / live telemetry")
                 Text("Resource monitor", style = MaterialTheme.typography.headlineLarge)
                 Text("Inspect live activity and Android’s battery estimates.", style = MaterialTheme.typography.bodyMedium, color = Muted)
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -136,7 +136,7 @@ internal fun MonitorScreen(
         }
         if (!ready) {
             item {
-                InfoCard("Connect for resource readings", "Shizuku access is needed to read process, memory and per-app battery statistics. Any previous samples are no longer live.", Icons.Rounded.Info, accent = Lime)
+                InfoCard("Connect for resource readings", "Shizuku access is needed to read process, memory and per-app battery statistics. Any previous samples are no longer live.", Icons.Rounded.Info, accent = Green)
                 TextButton(onClick = onAccess) { Text("Set up access") }
             }
         }
@@ -151,10 +151,10 @@ internal fun MonitorScreen(
                         else -> "Waiting for sample"
                     }, ready && !state.monitorPaused)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, enabled = ready, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, enabled = ready, modifier = Modifier.weight(1f), shape = RoundedCornerShape(6.dp)) {
                             Text(if (state.monitorPaused) "Resume" else "Pause")
                         }
-                        OutlinedButton(onClick = onRefreshResources, enabled = ready && !state.resourceLoading, modifier = Modifier.weight(1f)) { Text("Refresh now") }
+                        OutlinedButton(onClick = onRefreshResources, enabled = ready && !state.resourceLoading, modifier = Modifier.weight(1f), shape = RoundedCornerShape(6.dp)) { Text("Refresh now") }
                     }
                     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(3_000L, 5_000L, 10_000L).forEach { interval ->
@@ -180,7 +180,7 @@ internal fun MonitorScreen(
             }
             item { ResourceTrends(state.resourceHistory, state.resources?.memory?.totalKb) }
             if (state.resources?.warnings?.isNotEmpty() == true) {
-                item { InfoCard("Some live readings are unavailable", state.resources.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Amber) }
+                item { InfoCard("Some live readings are unavailable", state.resources.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange) }
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -215,7 +215,7 @@ internal fun MonitorScreen(
             item { BatteryFlowCard(state.battery) }
             item {
                 ResourceCard("Android battery estimates") {
-                    OutlinedButton(onClick = onRefreshEnergy, enabled = ready && !state.energyLoading, modifier = Modifier.fillMaxWidth()) { Text("Refresh battery estimates") }
+                    OutlinedButton(onClick = onRefreshEnergy, enabled = ready && !state.energyLoading, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(6.dp)) { Text("Refresh battery estimates") }
                     if (state.energyLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
                     ResourceValue("Estimated total", mahLabel(state.energy?.estimatedTotalMah), accent = true)
                     ResourceValue("Time on battery", durationLabel(state.energy?.batteryRealtimeMs))
@@ -225,7 +225,7 @@ internal fun MonitorScreen(
                 }
             }
             if (state.energy?.warnings?.isNotEmpty() == true) {
-                item { InfoCard("Some battery readings are unavailable", state.energy.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Amber) }
+                item { InfoCard("Some battery readings are unavailable", state.energy.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange) }
             }
             if (state.energy?.components?.isNotEmpty() == true) {
                 item {
@@ -258,10 +258,10 @@ internal fun MonitorScreen(
             }
             items(energy, key = { it.uid }) { item ->
                 val packages = appsByUid[item.uid].orEmpty()
-                Surface(onClick = { selectedEnergy = item; selectedEnergyAt = state.energy?.capturedAt }, color = Panel, shape = RoundedCornerShape(20.dp)) {
+                Surface(onClick = { selectedEnergy = item; selectedEnergyAt = state.energy?.capturedAt }, color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text(uidTitle(item.uid, packages), style = MaterialTheme.typography.titleMedium)
-                        Text(mahLabel(item.estimatedMah), style = MaterialTheme.typography.headlineMedium, color = Lime)
+                        Text(mahLabel(item.estimatedMah), style = MaterialTheme.typography.headlineMedium, color = Cyan)
                         SourceNote("UID ${item.uid}${if (packages.size > 1) " · Shared by ${packages.size} apps" else ""}")
                         SourceNote("CPU ${durationLabel(item.cpuTimeMs)} · Wakelock ${durationLabel(item.wakelockMs)}")
                         when (energySort) {
@@ -286,7 +286,7 @@ internal fun MonitorScreen(
 
 @Composable
 private fun ProcessRow(process: ProcessResource, apps: List<AppEntry>, sort: ProcessSort, onClick: () -> Unit) {
-    Surface(onClick = onClick, color = Panel, shape = RoundedCornerShape(20.dp)) {
+    Surface(onClick = onClick, color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(process.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             SourceNote("PID ${process.pid} · UID ${process.uid} · ${process.state}")

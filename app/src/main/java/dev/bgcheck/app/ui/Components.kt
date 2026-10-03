@@ -69,28 +69,29 @@ internal fun AppIcon(packageName: String, size: Dp = 46.dp) {
 }
 
 @Composable
-internal fun Eyebrow(text: String, color: Color = Muted, modifier: Modifier = Modifier) {
-    Text(text.uppercase(), modifier, style = MaterialTheme.typography.labelSmall, color = color)
+internal fun Eyebrow(text: String, color: Color = Cyan, modifier: Modifier = Modifier) {
+    Text("// ${text.lowercase()}", modifier, style = MaterialTheme.typography.labelSmall, color = color)
 }
 
 @Composable
 internal fun StatusPill(text: String, active: Boolean = false, modifier: Modifier = Modifier) {
     Row(
-        modifier.clip(RoundedCornerShape(50)).background(if (active) Lime.copy(alpha = 0.12f) else PanelRaised)
+        modifier.clip(RoundedCornerShape(4.dp)).background(Panel)
+            .border(1.dp, if (active) Green.copy(alpha = 0.4f) else Outline, RoundedCornerShape(4.dp))
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(5.dp).clip(RoundedCornerShape(50)).background(if (active) Lime else Muted))
+        Box(Modifier.size(5.dp).clip(RoundedCornerShape(50)).background(if (active) Green else Muted))
         Spacer(Modifier.width(6.dp))
-        Text(text, style = MaterialTheme.typography.labelMedium, color = if (active) Lime else Muted)
+        Text(text, style = MaterialTheme.typography.labelMedium, color = if (active) Green else Muted)
     }
 }
 
 @Composable
 internal fun InfoCard(title: String, message: String, icon: ImageVector, modifier: Modifier = Modifier, accent: Color = Muted) {
     Row(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Panel)
-            .border(1.dp, Outline, RoundedCornerShape(20.dp)).padding(16.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Panel)
+            .border(1.dp, Outline, RoundedCornerShape(8.dp)).padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(icon, null, tint = accent, modifier = Modifier.size(22.dp))
@@ -103,7 +104,7 @@ internal fun InfoCard(title: String, message: String, icon: ImageVector, modifie
 
 @Composable
 internal fun AppRow(app: AppEntry, sort: AppSort = AppSort.NAME, onClick: () -> Unit) {
-    Surface(onClick = onClick, color = Panel, shape = RoundedCornerShape(20.dp)) {
+    Surface(onClick = onClick, color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AppIcon(app.packageName)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -115,7 +116,7 @@ internal fun AppRow(app: AppEntry, sort: AppSort = AppSort.NAME, onClick: () -> 
                         if (!app.enabled) append(" · Disabled")
                     },
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (app.processState == ProcessState.FOREGROUND || app.processState == ProcessState.SERVICE) Lime else Muted,
+                    color = if (app.processState == ProcessState.FOREGROUND || app.processState == ProcessState.SERVICE) Green else Muted,
                 )
                 val sortValue = when (sort) {
                     AppSort.PACKAGE -> app.packageName

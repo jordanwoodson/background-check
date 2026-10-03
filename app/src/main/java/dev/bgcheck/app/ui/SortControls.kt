@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowDropDown
@@ -45,6 +46,7 @@ internal fun <T : SortKey> SortControls(
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box {
             OutlinedButton(
+                shape = RoundedCornerShape(6.dp),
                 onClick = { expanded = true },
                 modifier = Modifier.heightIn(min = 48.dp).testTag("$id-sort")
                     .semantics { stateDescription = "${selected.label}, ${direction.label}" },
@@ -70,6 +72,7 @@ internal fun <T : SortKey> SortControls(
             }
         }
         OutlinedButton(
+            shape = RoundedCornerShape(6.dp),
             onClick = { onDirection(direction.reversed()) },
             modifier = Modifier.heightIn(min = 48.dp).testTag("$id-direction")
                 .semantics { stateDescription = "${direction.label}; activate to reverse order" },

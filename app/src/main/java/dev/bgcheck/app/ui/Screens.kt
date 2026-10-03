@@ -1,6 +1,7 @@
 package dev.bgcheck.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -153,7 +154,7 @@ fun BackgroundCheckApp(
                         onClick = { page = item },
                         icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(23.dp)) },
                         label = { Text(item.label) },
-                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Lime, selectedTextColor = Lime, indicatorColor = PanelRaised, unselectedIconColor = Muted, unselectedTextColor = Muted),
+                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Purple, selectedTextColor = Purple, indicatorColor = Panel, unselectedIconColor = Muted, unselectedTextColor = Muted),
                     )
                 }
             }
@@ -181,11 +182,15 @@ fun BackgroundCheckApp(
 @Composable
 private fun AppHeader(state: UiState, onRefresh: () -> Unit, onAccess: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 10.dp, top = 8.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(Lime), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Tune, null, tint = Ink, modifier = Modifier.size(20.dp))
+        Box(Modifier.size(34.dp).clip(RoundedCornerShape(4.dp)).background(Panel)
+            .border(1.dp, Purple, RoundedCornerShape(4.dp)), contentAlignment = Alignment.Center) {
+            Text(">_", style = MaterialTheme.typography.titleMedium, color = Green)
         }
         Spacer(Modifier.width(9.dp))
-        Text("BACKGROUND CHECK", style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp), modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f)) {
+            Text("background check", style = MaterialTheme.typography.labelLarge, color = Foreground)
+            Text("android / local session", style = MaterialTheme.typography.labelSmall, color = Muted)
+        }
         if (state.loading || state.refreshing) {
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -218,13 +223,13 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Eyebrow("YOUR DEVICE, IN VIEW")
+                    Eyebrow("device overview")
                     Surface(onClick = onAccess, color = Color.Transparent) {
                         StatusPill(if (state.access == AccessState.READY) "Connected" else "Set up access", state.access == AccessState.READY)
                     }
                 }
-                Text("A little more\npeace of mind.", style = MaterialTheme.typography.headlineLarge)
-                Text("See what’s running. Choose what stays active.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                Text("System overview", style = MaterialTheme.typography.headlineLarge)
+                Text("Processes. Power. Background activity.", style = MaterialTheme.typography.bodyMedium, color = Muted)
             }
         }
         item { BatteryCard(state.battery) }
@@ -233,14 +238,14 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionHeading("Behind the scenes", if (known) "As of ${timeLabel(state.capturedAt)}" else if (state.access == AccessState.READY) "Reading unavailable" else "Access needed")
+                SectionHeading("Process snapshot", if (known) "As of ${timeLabel(state.capturedAt)}" else if (state.access == AccessState.READY) "Reading unavailable" else "Access needed")
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ProcessMetric("Foreground", if (known) foreground else null, "Visible or supporting UI", Modifier.weight(1f), Lime)
-                    ProcessMetric("Services", if (known) services else null, "Service process present", Modifier.weight(1f), Color(0xFFB9D9CF))
+                    ProcessMetric("Foreground", if (known) foreground else null, "Visible or supporting UI", Modifier.weight(1f), Green)
+                    ProcessMetric("Services", if (known) services else null, "Service process present", Modifier.weight(1f), Cyan)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ProcessMetric("Background", if (known) background else null, "Observed in memory", Modifier.weight(1f), Amber)
-                    ProcessMetric("Cached", if (known) cached else null, "Kept for quick reopening", Modifier.weight(1f), Color(0xFFBFC7E0))
+                    ProcessMetric("Background", if (known) background else null, "Observed in memory", Modifier.weight(1f), Orange)
+                    ProcessMetric("Cached", if (known) cached else null, "Kept for quick reopening", Modifier.weight(1f), Purple)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Rounded.Info, null, tint = Muted, modifier = Modifier.size(16.dp).padding(top = 1.dp))
@@ -249,12 +254,12 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
             }
         }
         if (state.warnings.isNotEmpty()) {
-            item { InfoCard("Some readings are unavailable", state.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Amber) }
+            item { InfoCard("Some readings are unavailable", state.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange) }
         }
         if (known && activeApps.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("In the picture", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    Text("Active apps", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     TextButton(onClick = onApps) { Text("All apps"); Spacer(Modifier.width(4.dp)); Icon(Icons.Rounded.ArrowForward, null, Modifier.size(16.dp)) }
                 }
             }
@@ -266,7 +271,7 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
         }
         item { SectionHeading("Your changes", "${state.changes.size} recorded") }
         if (changes.isEmpty()) {
-            item { InfoCard("A clean slate", "Changes you make here will appear here, with a way to restore the previous setting.", Icons.Rounded.History) }
+            item { InfoCard("No changes recorded", "Changes you make here will appear here, with a way to restore the previous setting.", Icons.Rounded.History) }
         } else {
             item {
                 SortControls("history", HistorySort.entries, historySort, historyDirection,
@@ -283,34 +288,34 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
                 }
             }
         }
-        item { Text("On your device. Under your control.", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) }
+        item { Text("// local only · no background monitoring", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) }
     }
 }
 
 @Composable
 private fun BatteryCard(battery: BatteryInfo) {
-    Card(shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = Lime, contentColor = Ink)) {
+    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel, contentColor = Foreground), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Eyebrow("BATTERY RIGHT NOW", Ink.copy(alpha = 0.72f))
-                Icon(if (battery.powerState == BatteryPowerState.CHARGING) Icons.Rounded.BatteryChargingFull else Icons.Rounded.BatteryFull, null, tint = Ink)
+                Eyebrow("battery / current reading")
+                Icon(if (battery.powerState == BatteryPowerState.CHARGING) Icons.Rounded.BatteryChargingFull else Icons.Rounded.BatteryFull, null, tint = Green)
             }
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(battery.percent?.toString() ?: "—", style = MaterialTheme.typography.displayLarge.copy(fontSize = 78.sp, lineHeight = 80.sp), color = Ink)
-                if (battery.percent != null) Text("%", style = MaterialTheme.typography.headlineMedium, color = Ink, modifier = Modifier.padding(bottom = 8.dp))
-                Text(battery.powerState.label, style = MaterialTheme.typography.labelLarge, color = Ink.copy(alpha = 0.76f), textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f).padding(start = 12.dp, bottom = 10.dp))
+                Text(battery.percent?.toString() ?: "—", style = MaterialTheme.typography.displayLarge, color = Green)
+                if (battery.percent != null) Text("%", style = MaterialTheme.typography.headlineMedium, color = Green, modifier = Modifier.padding(bottom = 8.dp))
             }
             battery.percent?.let {
-                LinearProgressIndicator(progress = { (it / 100f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(7.dp), color = Ink, trackColor = Ink.copy(alpha = 0.13f))
+                LinearProgressIndicator(progress = { (it / 100f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(5.dp), color = Green, trackColor = Outline)
             }
+            Text(battery.powerState.label, style = MaterialTheme.typography.labelLarge, color = Cyan)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("Temperature", style = MaterialTheme.typography.bodySmall, color = Ink.copy(alpha = 0.7f))
-                    Text(battery.temperatureC?.let { String.format(Locale.getDefault(), "%.1f °C", it) } ?: "Unavailable", style = MaterialTheme.typography.titleMedium, color = Ink)
+                    Text("Temperature", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    Text(battery.temperatureC?.let { String.format(Locale.getDefault(), "%.1f °C", it) } ?: "Unavailable", style = MaterialTheme.typography.titleMedium, color = Foreground)
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp), horizontalAlignment = Alignment.End) {
-                    Text("Battery saver", style = MaterialTheme.typography.bodySmall, color = Ink.copy(alpha = 0.7f))
-                    Text(if (battery.percent == null) "Unavailable" else if (battery.saver) "On" else "Off", style = MaterialTheme.typography.titleMedium, color = Ink)
+                    Text("Battery saver", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    Text(if (battery.percent == null) "Unavailable" else if (battery.saver) "On" else "Off", style = MaterialTheme.typography.titleMedium, color = Foreground)
                 }
             }
         }
@@ -327,13 +332,13 @@ private fun SectionHeading(title: String, trailing: String? = null) {
 
 @Composable
 private fun ProcessMetric(title: String, count: Int?, description: String, modifier: Modifier, accent: Color) {
-    Card(modifier = modifier, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Panel)) {
+    Card(modifier = modifier, shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(17.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 Box(Modifier.size(6.dp).clip(CircleShape).background(accent))
                 Text(title, style = MaterialTheme.typography.labelMedium, color = Muted)
             }
-            Text(count?.toString() ?: "—", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 37.sp), color = Cream)
+            Text(count?.toString() ?: "—", style = MaterialTheme.typography.headlineLarge.copy(fontSize = 37.sp), color = accent)
             Text(description, style = MaterialTheme.typography.bodySmall, color = Muted, minLines = 2)
         }
     }
@@ -341,16 +346,16 @@ private fun ProcessMetric(title: String, count: Int?, description: String, modif
 
 @Composable
 private fun AccessPrompt(onAccess: () -> Unit) {
-    Surface(onClick = onAccess, color = Panel, shape = RoundedCornerShape(22.dp)) {
+    Surface(onClick = onAccess, color = Panel, shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.fillMaxWidth().padding(19.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Icon(Icons.Rounded.Key, null, tint = Lime, modifier = Modifier.size(22.dp))
-                Text("Meet the background", style = MaterialTheme.typography.titleMedium)
+                Icon(Icons.Rounded.Key, null, tint = Green, modifier = Modifier.size(22.dp))
+                Text("Connect to Shizuku", style = MaterialTheme.typography.titleMedium)
             }
             Text("Connect Shizuku to see running apps and manage background settings. You can browse installed apps anytime.", style = MaterialTheme.typography.bodyMedium, color = Muted)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text("Set up access", style = MaterialTheme.typography.labelLarge, color = Lime)
-                Icon(Icons.Rounded.ArrowForward, null, tint = Lime, modifier = Modifier.size(17.dp))
+                Text("Set up access", style = MaterialTheme.typography.labelLarge, color = Green)
+                Icon(Icons.Rounded.ArrowForward, null, tint = Green, modifier = Modifier.size(17.dp))
             }
         }
     }
@@ -358,7 +363,7 @@ private fun AccessPrompt(onAccess: () -> Unit) {
 
 @Composable
 private fun HistoryCard(record: ChangeRecord, canUndo: Boolean, onUndo: (ChangeRecord) -> Unit) {
-    Card(modifier = Modifier.testTag("history-record-${record.id}"), colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(20.dp)) {
+    Card(modifier = Modifier.testTag("history-record-${record.id}"), colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 AppIcon(record.packageName, 34.dp)
@@ -375,7 +380,7 @@ private fun HistoryCard(record: ChangeRecord, canUndo: Boolean, onUndo: (ChangeR
             Text(record.description, style = MaterialTheme.typography.bodyMedium, color = Muted)
             if (record.recovery && !record.undone) Text(
                 "This change was interrupted or could not be verified. Reconnect and restore the previous policy. Any conflicting changes will be left untouched.",
-                style = MaterialTheme.typography.bodySmall, color = Amber,
+                style = MaterialTheme.typography.bodySmall, color = Orange,
             )
         }
     }
@@ -407,9 +412,9 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
     LazyColumn(modifier = Modifier.testTag("apps-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.padding(bottom = 10.dp)) {
-                Eyebrow("A CLOSER LOOK")
+                Eyebrow("package inventory")
                 Text("Your apps", style = MaterialTheme.typography.headlineLarge)
-                Text("A place for everything running behind the screen.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                Text("Inspect packages, processes and background policies.", style = MaterialTheme.typography.bodyMedium, color = Muted)
             }
         }
         item {
@@ -420,8 +425,8 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 placeholder = { Text("Search apps or packages") },
                 leadingIcon = { Icon(Icons.Rounded.Search, null) },
                 trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = { query = "" }) { Icon(Icons.Rounded.Close, "Clear search") } }) else null,
-                shape = RoundedCornerShape(18.dp),
-                colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Panel, focusedContainerColor = Panel, unfocusedBorderColor = Outline, focusedBorderColor = Lime),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Panel, focusedContainerColor = Panel, unfocusedBorderColor = Comment, focusedBorderColor = Purple),
             )
         }
         item {
@@ -437,10 +442,10 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             }
         } else {
             item {
-                Surface(onClick = onAccess, color = PanelRaised, shape = RoundedCornerShape(16.dp)) {
+                Surface(onClick = onAccess, color = PanelRaised, shape = RoundedCornerShape(8.dp)) {
                     Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Icon(Icons.Rounded.Key, null, tint = Lime, modifier = Modifier.size(19.dp))
-                        Text("Connect to see process and battery settings", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), color = Cream)
+                        Icon(Icons.Rounded.Key, null, tint = Green, modifier = Modifier.size(19.dp))
+                        Text("Connect to see process and battery settings", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), color = Foreground)
                         Icon(Icons.Rounded.ArrowForward, null, tint = Muted, modifier = Modifier.size(18.dp))
                     }
                 }
@@ -464,7 +469,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
 }
 
 @Composable
-private fun appFilterColors() = FilterChipDefaults.filterChipColors(selectedContainerColor = Lime, selectedLabelColor = Ink, containerColor = Ink, labelColor = Muted)
+private fun appFilterColors() = FilterChipDefaults.filterChipColors(selectedContainerColor = Purple, selectedLabelColor = Ink, containerColor = Ink, labelColor = Muted)
 
 @Composable
 private fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: () -> Unit, onOpenWirelessSettings: () -> Unit) {
@@ -473,17 +478,17 @@ private fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: (
     LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Eyebrow("THE KEY TO THE DETAILS")
-                Text("A closer connection.", style = MaterialTheme.typography.headlineLarge)
+                Eyebrow("access / shizuku")
+                Text("Connection status", style = MaterialTheme.typography.headlineLarge)
                 Text("Shizuku lets Background Check read and change Android’s app settings with your permission.", style = MaterialTheme.typography.bodyLarge, color = Muted)
             }
         }
         item {
-            Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = if (ready) Lime else Panel)) {
+            Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = androidx.compose.foundation.BorderStroke(1.dp, if (ready) Green.copy(alpha = 0.4f) else Outline)) {
                 Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    val foreground = if (ready) Ink else Cream
+                    val foreground = Foreground
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(if (ready) Icons.Rounded.CheckCircle else Icons.Rounded.Key, null, tint = if (ready) Ink else Lime, modifier = Modifier.size(29.dp))
+                        Icon(if (ready) Icons.Rounded.CheckCircle else Icons.Rounded.Key, null, tint = if (ready) Green else Purple, modifier = Modifier.size(29.dp))
                         Text(when (state.access) {
                             AccessState.READY -> "You’re connected"
                             AccessState.CHECKING -> "Checking access"
@@ -502,7 +507,7 @@ private fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: (
                     }, style = MaterialTheme.typography.bodyMedium, color = foreground.copy(alpha = 0.77f))
                     if (connecting) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     if (!ready) {
-                        Button(onClick = onConnect, enabled = !connecting, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp)) {
+                        Button(onClick = onConnect, enabled = !connecting, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(8.dp)) {
                             Text(if (state.access == AccessState.NEEDS_PERMISSION) "Grant access" else "Check connection")
                             Spacer(Modifier.width(9.dp))
                             Icon(Icons.Rounded.ArrowForward, null, Modifier.size(18.dp))
@@ -513,7 +518,7 @@ private fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: (
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(if (ready) "Keep this connection handy" else "Your first connection", style = MaterialTheme.typography.titleLarge)
+                Text(if (ready) "Connection setup" else "Connect for the first time", style = MaterialTheme.typography.titleLarge)
                 Text("Use Shizuku’s wireless debugging setup on Android 11 or later. Your phone and its Wi-Fi connection stay in your hands.", style = MaterialTheme.typography.bodyMedium, color = Muted)
                 SetupStep("01", "Open Shizuku", "Install Shizuku if needed, then choose Start via wireless debugging. Shizuku shows the pairing steps.", "Open Shizuku", onOpenShizuku)
                 SetupStep("02", "Pair with wireless debugging", "In Developer options, enable Wireless debugging. Open Pair device with pairing code, and enter that code in Shizuku’s pairing notification.", "Wireless debugging settings", onOpenWirelessSettings)
@@ -521,20 +526,20 @@ private fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: (
             }
         }
         item { InfoCard("After a restart", "Shizuku usually needs to be started again after your phone restarts. If access drops, open Shizuku and reconnect. Your installed app list is still available.", Icons.Rounded.Refresh) }
-        item { InfoCard("Local by design", "Background Check reads settings on this device. It has no internet permission, analytics, or always-running monitoring service.", Icons.Rounded.Shield, accent = Lime) }
+        item { InfoCard("Local by design", "Background Check reads settings on this device. It has no internet permission, analytics, or always-running monitoring service.", Icons.Rounded.Shield, accent = Green) }
     }
 }
 
 @Composable
 private fun SetupStep(number: String, title: String, body: String, action: String, onClick: () -> Unit, enabled: Boolean = true) {
-    Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(20.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                Text(number, style = MaterialTheme.typography.labelLarge, color = Lime)
+                Text(number, style = MaterialTheme.typography.labelLarge, color = Green)
                 Text(title, style = MaterialTheme.typography.titleMedium)
             }
             Text(body, style = MaterialTheme.typography.bodyMedium, color = Muted)
-            OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(14.dp)) {
+            OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(8.dp)) {
                 Text(action, modifier = Modifier.weight(1f))
                 Icon(Icons.Rounded.OpenInNew, null, modifier = Modifier.size(16.dp))
             }

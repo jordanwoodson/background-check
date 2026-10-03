@@ -29,9 +29,9 @@ import java.util.Locale
 
 @Composable
 internal fun ResourceCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Panel)) {
+    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(title, style = MaterialTheme.typography.titleLarge, color = Purple)
             content()
         }
     }
@@ -42,7 +42,7 @@ internal fun ResourceValue(label: String, value: String, accent: Boolean = false
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = Muted)
         Text(value, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge,
-            color = if (accent) Lime else Cream, textAlign = TextAlign.End)
+            color = if (accent) Cyan else Foreground, textAlign = TextAlign.End)
     }
 }
 
@@ -73,10 +73,10 @@ internal fun ResourceTrends(history: List<ResourceHistoryPoint>, totalMemoryKb: 
         if (points.isEmpty()) {
             SourceNote("Live samples appear here while the Monitor is open. No background monitoring.")
         } else {
-            Sparkline("Device CPU", points.map { it.cpuPercent }, Lime, { percent(it) })
+            Sparkline("Device CPU", points.map { it.cpuPercent }, Cyan, { percent(it) })
             Sparkline("RAM used", points.map { point ->
                 if (totalMemoryKb != null && totalMemoryKb > 0) point.usedMemoryKb?.let { it * 100.0 / totalMemoryKb } else null
-            }, Amber, { percent(it) })
+            }, Pink, { percent(it) })
             SourceNote("${points.size} samples · ${timeLabel(points.first().capturedAt)}–${timeLabel(points.last().capturedAt)}. CPU is normalized across all cores. Gaps mean unavailable data. History stays in this foreground session.")
         }
     }

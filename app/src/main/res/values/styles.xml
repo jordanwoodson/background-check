@@ -1,9 +1,10 @@
 <resources>
-    <style name="Theme.BackgroundCheck" parent="android:style/Theme.Material.NoActionBar">
-        <item name="android:fontFamily">sans</item>
+    <style name="Theme.BackgroundCheck.Base" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">monospace</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
-        <item name="android:windowBackground">#101513</item>
-        <item name="android:colorAccent">#C7F4A5</item>
+        <item name="android:windowBackground">#282A36</item>
+        <item name="android:colorAccent">#BD93F9</item>
     </style>
+    <style name="Theme.BackgroundCheck" parent="Theme.BackgroundCheck.Base" />
 </resources>

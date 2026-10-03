@@ -1,6 +1,6 @@
 # Background Check
 
-A native Android app for inspecting running processes, CPU, memory and battery use, and managing background app activity. Version 1.1.1 adds independent sorting choices and both directions throughout the app, alongside the resource monitor, app diagnostics, confirmed force stop, background-access and Doze controls. Designed for the Motorola Edge, with a charcoal and lime Compose interface.
+A native Android app for inspecting running processes, CPU, memory and battery use, and managing background app activity. A Dracula terminal interface brings monospace typography, purple controls, cyan readings, green live status and dark bordered panels to every screen. Includes independent list sorting, resource monitoring, app diagnostics, confirmed force stop, background-access and Doze controls. Designed for the Motorola Edge, with automatic signed updates through Obtainium.
 
 ## Use
 
@@ -12,6 +12,8 @@ A native Android app for inspecting running processes, CPU, memory and battery u
 6. Browse **Apps** or open a related app from Monitor for its processes, UID battery estimate, package memory and running services. Background-policy changes require confirmation and Android readback. Undo is available in **Overview → Your changes**.
 
 Shizuku may need to be started again after a reboot. Background Check does not run a background monitor, upload data, or require an internet permission. Tailscale is used only to deliver and test the APK from the development machine; normal use is local on the phone. Direct in-app ADB pairing is not implemented; Shizuku is the supported privilege backend.
+
+See the [Dracula terminal identity and screenshots](docs/dracula-theme.md), [Dracula verification](docs/dracula-verification.md), and [verified private GitHub / Obtainium setup](docs/release-setup-verification.md).
 
 ## Sorting lists
 
@@ -113,6 +115,6 @@ Do not run the fixture mutation test against any other package.
 
 This project is independent of the Cana app in the neighboring repository and uses the same automatic signed GitHub-release and Obtainium update flow. App changes pushed to `main` publish `1.1.1-bgcheck.N` releases; the existing [1.1.1 APK](artifacts/background-check-1.1.1.apk) is the historical local baseline.
 
-[List sorting verification](docs/list-sorting-verification.md) · [1.1.0 resource monitor verification](docs/resource-monitor-verification.md) · [1.0.0 verification](docs/verification.md) · [Live monitor](artifacts/screenshots/monitor-live.png) · [Process details](artifacts/screenshots/monitor-process-detail.png) · [Battery monitor](artifacts/screenshots/monitor-battery.png)
+[Dracula screens](docs/dracula-theme.md) · [Current overview](artifacts/screenshots/dracula-overview.png) · [Current monitor](artifacts/screenshots/dracula-monitor.png) · [Current battery view](artifacts/screenshots/dracula-battery.png) · [Historical list sorting verification](docs/list-sorting-verification.md) · [1.1.0 resource monitor verification](docs/resource-monitor-verification.md) · [1.0.0 verification](docs/verification.md)
 
 Platform references: [Shizuku API](https://github.com/RikkaApps/Shizuku-API), [Android battery policy](https://android.googlesource.com/platform/packages/apps/Settings/+/refs/heads/android15-release/src/com/android/settings/fuelgauge/BatteryOptimizeUtils.java), [Doze implementation](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android15-release/apex/jobscheduler/service/java/com/android/server/DeviceIdleController.java).
