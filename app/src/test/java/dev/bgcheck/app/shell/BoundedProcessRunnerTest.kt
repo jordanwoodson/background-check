@@ -8,6 +8,21 @@ import org.junit.Test
 class BoundedProcessRunnerTest {
     private fun python(code: String): Process = ProcessBuilder("python3", "-c", code).start()
 
+    @Test fun batteryReductionKeepsAttributionButBoundsVerboseHistory() {
+        val source = """9,0,i,vers,36,1,build,build
+9,0,l,bt,0,120000,100000,150000,120000,1700000000000
+9,0,l,pws,5000,90.5,80,100
+9,10123,l,pwi,uid,1.25,0,0,0
+9,10123,l,cpu,200,300
+9,10123,l,awl,4500,2000
+9,10123,l,nt,100,200,300,400
+9,10123,l,wl,unneeded private tag,other
+"""
+        val process = python("import sys; sys.stdout.write('9,h,verbose history\\n'*10000 + " + pythonString(source) + ")")
+        val result = BoundedProcessRunner(maxOutputBytes = 1024).collect(process, reduceBatteryDump = true)
+        assertEquals(source.substringBefore("9,10123,l,wl,"), result.stdout)
+    }
+
     @Test fun drainsBothPipesAndPreservesFailureExitStatus() {
         val result = BoundedProcessRunner().collect(python("import sys; print('result'); print('denied', file=sys.stderr); sys.exit(7)"))
         assertEquals(7, result.exitCode)

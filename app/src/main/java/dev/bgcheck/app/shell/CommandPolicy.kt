@@ -8,10 +8,19 @@ internal object CommandPolicy {
     private val modes = setOf("allow", "ignore", "deny", "default")
 
     fun validate(args: List<String>): List<String> {
-        require(args.size in 1..8 && args.all { it.length in 1..256 }) { "Unsupported command." }
+        require(args.size in 1..10 && args.all { it.length in 1..256 }) { "Unsupported command." }
         val allowed = when (args.first()) {
-            "dumpsys" -> args == listOf("dumpsys", "activity", "processes")
+            "top" -> args == listOf("top", "-b", "-n", "2", "-d", "1", "-s", "4", "-o", "PID,PPID,UID,%CPU,RSS,VSZ,S,USER,CMDLINE")
+            "cat" -> args == listOf("cat", "/proc/meminfo")
+            "pm" -> args.size in 6..7 && args.take(5) == listOf("pm", "list", "packages", "-U", "--user") && validNumber(args[5]) &&
+                (args.size == 6 || validPackage(args[6]))
+            "dumpsys" -> args == listOf("dumpsys", "activity", "processes") ||
+                args == listOf("dumpsys", "batterystats", "-c", "dev.bgcheck.app") ||
+                (args.size == 5 && args.take(4) == listOf("dumpsys", "meminfo", "--local", "--package") && validPackage(args[4])) ||
+                (args.size == 5 && args.take(3) == listOf("dumpsys", "activity", "-p") && validPackage(args[3]) && args[4] == "services") ||
+                (args.size == 3 && args[1] == "package" && validPackage(args[2]))
             "am" -> when (args.getOrNull(1)) {
+                "force-stop" -> args.size == 5 && args[2] == "--user" && validNumber(args[3]) && validPackage(args[4])
                 "get-standby-bucket" -> args.size in 4..5 && args[2] == "--user" &&
                     validNumber(args[3]) && (args.size == 4 || validPackage(args[4]))
                 "get-uid-state" -> args.size == 3 && validNumber(args[2])

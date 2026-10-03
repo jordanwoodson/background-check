@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.OpenInNew
@@ -66,11 +67,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,6 +81,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,16 +89,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bgcheck.app.data.AccessState
 import dev.bgcheck.app.data.AppEntry
+import dev.bgcheck.app.data.AppSort
 import dev.bgcheck.app.data.BatteryInfo
+import dev.bgcheck.app.data.BatteryPowerState
 import dev.bgcheck.app.data.ChangeRecord
 import dev.bgcheck.app.data.ControlAction
+import dev.bgcheck.app.data.HistorySort
+import dev.bgcheck.app.data.ListSorting
 import dev.bgcheck.app.data.ProcessState
+import dev.bgcheck.app.data.SortDirection
 import dev.bgcheck.app.data.UiState
 import java.util.Locale
 
 private enum class Page(val label: String, val icon: ImageVector) {
     OVERVIEW("Overview", Icons.Rounded.Insights),
     APPS("Apps", Icons.Rounded.Apps),
+    MONITOR("Monitor", Icons.Rounded.Memory),
     ACCESS("Access", Icons.Rounded.Key),
 }
 
@@ -111,9 +121,21 @@ fun BackgroundCheckApp(
     onOpenShizuku: () -> Unit,
     onOpenWirelessSettings: () -> Unit,
     onClearMessage: () -> Unit,
+    onRefreshResources: () -> Unit,
+    onRefreshEnergy: () -> Unit,
+    onSetMonitorPaused: (Boolean) -> Unit,
+    onSetMonitorInterval: (Long) -> Unit,
+    onMonitorVisible: (Boolean) -> Unit,
+    onForceStop: () -> Unit,
 ) {
     var page by rememberSaveable { mutableStateOf(Page.OVERVIEW) }
+    val pageState = rememberSaveableStateHolder()
+    val detailState = rememberSaveableStateHolder()
     val snackbar = remember { SnackbarHostState() }
+    DisposableEffect(page == Page.MONITOR) {
+        onMonitorVisible(page == Page.MONITOR)
+        onDispose { onMonitorVisible(false) }
+    }
     LaunchedEffect(state.message) {
         state.message?.let {
             snackbar.showSnackbar(it, withDismissAction = true)
@@ -139,15 +161,20 @@ fun BackgroundCheckApp(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             AppHeader(state, onRefresh, onAccess = { page = Page.ACCESS })
-            when (page) {
-                Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo)
-                Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS })
-                Page.ACCESS -> AccessScreen(state, onConnect, onOpenShizuku, onOpenWirelessSettings)
+            pageState.SaveableStateProvider(page.name) {
+                when (page) {
+                    Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo)
+                    Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS })
+                    Page.MONITOR -> MonitorScreen(state, onRefreshResources, onRefreshEnergy, onSetMonitorPaused, onSetMonitorInterval, onSelect, onAccess = { page = Page.ACCESS })
+                    Page.ACCESS -> AccessScreen(state, onConnect, onOpenShizuku, onOpenWirelessSettings)
+                }
             }
         }
     }
     state.selected?.let { app ->
-        AppDetailSheet(state, app, onDismissDetail, onAction, onOpenAppSettings, onConnect)
+        detailState.SaveableStateProvider(app.packageName) {
+            AppDetailSheet(state, app, onDismissDetail, onAction, onOpenAppSettings, onConnect, onForceStop)
+        }
     }
 }
 
@@ -172,13 +199,22 @@ private fun AppHeader(state: UiState, onRefresh: () -> Unit, onAccess: () -> Uni
 @Composable
 private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> Unit, onSelect: (AppEntry) -> Unit, onUndo: (ChangeRecord) -> Unit) {
     var showAllChanges by rememberSaveable { mutableStateOf(false) }
+    var activeSort by rememberSaveable { mutableStateOf(AppSort.NAME) }
+    var activeDirection by rememberSaveable { mutableStateOf(SortDirection.ASCENDING) }
+    var historySort by rememberSaveable { mutableStateOf(HistorySort.TIME) }
+    var historyDirection by rememberSaveable { mutableStateOf(SortDirection.DESCENDING) }
     val known = state.access == AccessState.READY && state.apps.any { it.processState != ProcessState.UNKNOWN }
     val foreground = state.apps.count { it.processState == ProcessState.FOREGROUND }
     val services = state.apps.count { it.processState == ProcessState.SERVICE }
     val background = state.apps.count { it.processState == ProcessState.BACKGROUND }
     val cached = state.apps.count { it.processState == ProcessState.CACHED }
-    val activeApps = state.apps.filter { it.processState in setOf(ProcessState.FOREGROUND, ProcessState.SERVICE, ProcessState.BACKGROUND) }.take(4)
-    LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    val activeApps = remember(state.apps, activeSort, activeDirection) {
+        ListSorting.apps(state.apps.filter { it.processState in setOf(ProcessState.FOREGROUND, ProcessState.SERVICE, ProcessState.BACKGROUND) }, activeSort, activeDirection).take(4)
+    }
+    val changes = remember(state.changes, historySort, historyDirection) {
+        ListSorting.history(state.changes, historySort, historyDirection)
+    }
+    LazyColumn(modifier = Modifier.testTag("overview-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -222,21 +258,27 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
                     TextButton(onClick = onApps) { Text("All apps"); Spacer(Modifier.width(4.dp)); Icon(Icons.Rounded.ArrowForward, null, Modifier.size(16.dp)) }
                 }
             }
-            items(activeApps, key = { "active-${it.packageName}" }) { AppRow(it, onClick = { onSelect(it) }) }
+            item {
+                SortControls("active-apps", AppSort.entries, activeSort, activeDirection,
+                    onSort = { activeSort = it }, onDirection = { activeDirection = it })
+            }
+            items(activeApps, key = { "active-${it.packageName}" }) { AppRow(it, sort = activeSort, onClick = { onSelect(it) }) }
         }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionHeading("Your changes", "${state.changes.size} recorded")
-                if (state.changes.isEmpty()) {
-                    InfoCard("A clean slate", "Changes you make here will appear here, with a way to restore the previous setting.", Icons.Rounded.History)
-                } else {
-                    (if (showAllChanges) state.changes else state.changes.take(5)).forEach { record ->
-                        HistoryCard(record, state.access == AccessState.READY && !state.busy, onUndo)
-                    }
-                    if (state.changes.size > 5) {
-                        TextButton(onClick = { showAllChanges = !showAllChanges }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                            Text(if (showAllChanges) "Show recent changes" else "Show all ${state.changes.size} changes")
-                        }
+        item { SectionHeading("Your changes", "${state.changes.size} recorded") }
+        if (changes.isEmpty()) {
+            item { InfoCard("A clean slate", "Changes you make here will appear here, with a way to restore the previous setting.", Icons.Rounded.History) }
+        } else {
+            item {
+                SortControls("history", HistorySort.entries, historySort, historyDirection,
+                    onSort = { historySort = it }, onDirection = { historyDirection = it })
+            }
+            items(if (showAllChanges) changes else changes.take(5), key = { "history-${it.id}" }) { record ->
+                HistoryCard(record, state.access == AccessState.READY && !state.busy, onUndo)
+            }
+            if (changes.size > 5) {
+                item {
+                    TextButton(onClick = { showAllChanges = !showAllChanges }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Text(if (showAllChanges) "Show fewer changes" else "Show all ${changes.size} changes")
                     }
                 }
             }
@@ -251,12 +293,12 @@ private fun BatteryCard(battery: BatteryInfo) {
         Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Eyebrow("BATTERY RIGHT NOW", Ink.copy(alpha = 0.72f))
-                Icon(if (battery.charging) Icons.Rounded.BatteryChargingFull else Icons.Rounded.BatteryFull, null, tint = Ink)
+                Icon(if (battery.powerState == BatteryPowerState.CHARGING) Icons.Rounded.BatteryChargingFull else Icons.Rounded.BatteryFull, null, tint = Ink)
             }
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(battery.percent?.toString() ?: "—", style = MaterialTheme.typography.displayLarge.copy(fontSize = 78.sp, lineHeight = 80.sp), color = Ink)
                 if (battery.percent != null) Text("%", style = MaterialTheme.typography.headlineMedium, color = Ink, modifier = Modifier.padding(bottom = 8.dp))
-                Text(if (battery.percent == null) "Reading battery" else if (battery.charging) "Charging" else "On battery", style = MaterialTheme.typography.labelLarge, color = Ink.copy(alpha = 0.76f), textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f).padding(start = 12.dp, bottom = 10.dp))
+                Text(battery.powerState.label, style = MaterialTheme.typography.labelLarge, color = Ink.copy(alpha = 0.76f), textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f).padding(start = 12.dp, bottom = 10.dp))
             }
             battery.percent?.let {
                 LinearProgressIndicator(progress = { (it / 100f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(7.dp), color = Ink, trackColor = Ink.copy(alpha = 0.13f))
@@ -316,7 +358,7 @@ private fun AccessPrompt(onAccess: () -> Unit) {
 
 @Composable
 private fun HistoryCard(record: ChangeRecord, canUndo: Boolean, onUndo: (ChangeRecord) -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(20.dp)) {
+    Card(modifier = Modifier.testTag("history-record-${record.id}"), colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(20.dp)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 AppIcon(record.packageName, 34.dp)
@@ -348,8 +390,10 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
     var query by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf(AppType.USER) }
     var process by rememberSaveable { mutableStateOf(ProcessFilter.ALL) }
-    val apps = remember(state.apps, query, type, process) {
-        state.apps.filter { app ->
+    var sort by rememberSaveable { mutableStateOf(AppSort.NAME) }
+    var direction by rememberSaveable { mutableStateOf(SortDirection.ASCENDING) }
+    val apps = remember(state.apps, query, type, process, sort, direction) {
+        ListSorting.apps(state.apps.filter { app ->
             (query.isBlank() || app.label.contains(query, true) || app.packageName.contains(query, true)) &&
                 (type == AppType.ALL || app.system == (type == AppType.SYSTEM)) &&
                 when (process) {
@@ -358,9 +402,9 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                     ProcessFilter.CACHED -> app.processState == ProcessState.CACHED
                     ProcessFilter.NOT_OBSERVED -> app.processState == ProcessState.NOT_RUNNING
                 }
-        }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
+        }, sort, direction)
     }
-    LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyColumn(modifier = Modifier.testTag("apps-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.padding(bottom = 10.dp)) {
                 Eyebrow("A CLOSER LOOK")
@@ -403,6 +447,9 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             }
         }
         item {
+            SortControls("apps", AppSort.entries, sort, direction, onSort = { sort = it }, onDirection = { direction = it })
+        }
+        item {
             Text("${apps.size} ${if (apps.size == 1) "app" else "apps"}" + if (state.capturedAt != null && state.access == AccessState.READY) " · Snapshot ${timeLabel(state.capturedAt)}" else " · Installed on this device", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(vertical = 6.dp))
         }
         if (state.loading && state.apps.isEmpty()) {
@@ -410,7 +457,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
         } else if (apps.isEmpty()) {
             item { InfoCard("Nothing here yet", if (query.isNotBlank()) "Try another app name or package, or change the filters." else "No apps match these filters. Try All apps or Any state.", Icons.Rounded.Search) }
         } else {
-            items(apps, key = { it.packageName }) { app -> AppRow(app, onClick = { focusManager.clearFocus(); onSelect(app) }) }
+            items(apps, key = { it.packageName }) { app -> AppRow(app, sort = sort, onClick = { focusManager.clearFocus(); onSelect(app) }) }
         }
     }
     LaunchedEffect(state.access) { if (state.access != AccessState.READY) process = ProcessFilter.ALL }

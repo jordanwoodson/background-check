@@ -46,17 +46,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.bgcheck.app.data.AccessState
 import dev.bgcheck.app.data.AppEntry
 import dev.bgcheck.app.data.ControlAction
+import dev.bgcheck.app.data.ListSorting
 import dev.bgcheck.app.data.PolicyState
+import dev.bgcheck.app.data.ProcessSort
+import dev.bgcheck.app.data.ServiceSort
+import dev.bgcheck.app.data.SortDirection
 import dev.bgcheck.app.data.UiState
 import dev.bgcheck.app.data.bucketLabel
 
@@ -69,10 +75,27 @@ internal fun AppDetailSheet(
     onAction: (ControlAction) -> Unit,
     onOpenAppSettings: (String) -> Unit,
     onConnect: () -> Unit,
+    onForceStop: () -> Unit,
 ) {
     val policy = state.policy?.takeIf { it.packageName == app.packageName }
     var confirmation by remember(app.packageName) { mutableStateOf<ControlAction?>(null) }
+    var confirmForceStop by remember(app.packageName) { mutableStateOf(false) }
+    // Keep these in the caller's saveable registry, above the sheet's dialog composition.
+    var processSort by rememberSaveable(app.packageName) { mutableStateOf(ProcessSort.PID) }
+    var processDirection by rememberSaveable(app.packageName) { mutableStateOf(SortDirection.ASCENDING) }
+    var serviceSort by rememberSaveable(app.packageName) { mutableStateOf(ServiceSort.NAME) }
+    var serviceDirection by rememberSaveable(app.packageName) { mutableStateOf(SortDirection.ASCENDING) }
+    val sharedApps = state.apps.filter { it.uid == app.uid }
+    val forceStopRestriction = when {
+        app.protectedReason != null -> app.protectedReason
+        app.system -> "System apps cannot be force-stopped here."
+        app.uid % 100_000 < 10_000 -> "Core Android UIDs cannot be force-stopped here."
+        sharedApps.size > 1 -> "This UID is shared by several apps. Force stop is unavailable because it may affect other packages."
+        sharedApps.none { it.packageName == app.packageName } -> "App identity is unavailable. Refresh the installed app list."
+        else -> null
+    }
     val ready = state.access == AccessState.READY
+    val canForceStop = ready && !state.busy && !state.detailLoading && forceStopRestriction == null
     val writableModes = setOf("allow", "ignore", "deny", "default")
     val canChange = ready && !state.busy && !state.detailLoading && policy != null && policy.error == null && app.protectedReason == null &&
         policy.uidOverride == false && policy.backgroundMode in writableModes && policy.userExempt != null &&
@@ -117,6 +140,11 @@ internal fun AppDetailSheet(
                     Text(if (ready && state.capturedAt != null) "Process snapshot at ${timeLabel(state.capturedAt)}. Being in memory does not measure battery use." else "Connect Shizuku for a process snapshot. Installed apps can still be browsed.", style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
             }
+            AppResourceDiagnostics(
+                state, app, processSort, processDirection, serviceSort, serviceDirection,
+                onProcessSort = { processSort = it }, onProcessDirection = { processDirection = it },
+                onServiceSort = { serviceSort = it }, onServiceDirection = { serviceDirection = it },
+            )
             if (!ready) {
                 InfoCard("Access is needed for controls", "Start Shizuku and allow Background Check to read these settings before making a change.", Icons.Rounded.Lock, accent = Lime)
                 Button(onClick = onConnect, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), enabled = state.access !in setOf(AccessState.CHECKING, AccessState.CONNECTING)) { Text("Connect Shizuku") }
@@ -155,6 +183,13 @@ internal fun AppDetailSheet(
                 PolicyChoice("Keep optimized", "Let Android pause activity while your phone is idle.", selected = policy?.dozeExempt == false, enabled = canChangeDoze && policy?.systemExempt == false, onClick = { confirmation = ControlAction.OPTIMIZE_DOZE })
                 PolicyChoice("Allow during Doze", "Let this app do more while the phone is idle.", selected = policy?.dozeExempt == true, enabled = canChangeDoze && policy?.systemExempt == false, onClick = { confirmation = ControlAction.EXEMPT_DOZE })
             }
+            HorizontalDivider(color = Outline)
+            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                Text("Stop this app", style = MaterialTheme.typography.titleLarge)
+                Text("End the app’s current processes and background activity. Unsaved work may be lost. Notifications and scheduled work can stop until you open the app again. There is no Undo for force stop.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                forceStopRestriction?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Amber) }
+                OutlinedButton(onClick = { confirmForceStop = true }, enabled = canForceStop, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Force stop app") }
+            }
             policy?.takeIf { ready }?.let {
                 Text("Settings checked ${dateTimeLabel(it.capturedAt)}. Changes are read back before being reported as applied.", style = MaterialTheme.typography.bodySmall, color = Muted)
             }
@@ -166,6 +201,22 @@ internal fun AppDetailSheet(
                 Icon(Icons.Rounded.OpenInNew, null, modifier = Modifier.size(17.dp))
             }
         }
+    }
+    if (confirmForceStop) {
+        AlertDialog(
+            onDismissRequest = { confirmForceStop = false },
+            title = { Text("Force stop ${app.label}?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("This ends the app’s activity now. Unsaved work may be lost, and notifications, syncing and scheduled work may stop until you open the app again.")
+                    Text("Force stop has no Undo. Your background and battery optimization settings remain in place.")
+                    if (!canForceStop) Text("App identity or access changed. Close this dialog and refresh before continuing.", color = Amber)
+                }
+            },
+            confirmButton = { TextButton(onClick = { confirmForceStop = false; onForceStop() }, enabled = canForceStop) { Text("Force stop now") } },
+            dismissButton = { TextButton(onClick = { confirmForceStop = false }) { Text("Cancel") } },
+            containerColor = Panel,
+        )
     }
     confirmation?.let { action ->
         val allowed = when (action) {
@@ -191,6 +242,93 @@ internal fun AppDetailSheet(
             dismissButton = { TextButton(onClick = { confirmation = null }) { Text("Cancel") } },
             containerColor = Panel,
         )
+    }
+}
+
+@Composable
+private fun AppResourceDiagnostics(
+    state: UiState,
+    app: AppEntry,
+    processSort: ProcessSort,
+    processDirection: SortDirection,
+    serviceSort: ServiceSort,
+    serviceDirection: SortDirection,
+    onProcessSort: (ProcessSort) -> Unit,
+    onProcessDirection: (SortDirection) -> Unit,
+    onServiceSort: (ServiceSort) -> Unit,
+    onServiceDirection: (SortDirection) -> Unit,
+) {
+    val resources = state.resources
+    val uidApps = state.apps.filter { it.uid == app.uid }
+    val processes = ListSorting.processes(resources?.processes.orEmpty().filter { it.uid == app.uid }, processSort, processDirection)
+    val energy = state.energy?.uids?.firstOrNull { it.uid == app.uid }
+    val diagnostics = state.diagnostics?.takeIf { it.packageName == app.packageName }
+    val services = ListSorting.services(diagnostics?.services.orEmpty(), serviceSort, serviceDirection)
+    ResourceCard("Resource diagnostics") {
+        ResourceValue("Android UID", app.uid.toString())
+        if (uidApps.size > 1) {
+            Text("Shared UID · ${uidApps.size} apps", style = MaterialTheme.typography.titleMedium, color = Amber)
+            SourceNote("${uidApps.joinToString { it.label }} share this UID. All process and battery figures below belong to the shared UID, not solely to ${app.label}.")
+        } else {
+            SourceNote("Processes match this app’s UID. Isolated processes using a different UID are not included.")
+        }
+        if (state.access != AccessState.READY) SourceNote("Connect Shizuku for diagnostics. Any earlier readings are snapshots and are no longer live.")
+        Text("Processes with this UID", style = MaterialTheme.typography.titleMedium)
+        when {
+            state.resourceLoading && resources == null -> SourceNote("Sampling processes…")
+            resources?.processesKnown != true -> SourceNote("Process readings unavailable. Open Monitor and refresh after connecting.")
+            processes.isEmpty() -> SourceNote("No processes with this UID were observed in the sample.")
+            else -> {
+                SortControls(id = "app-process",
+                    options = listOf(ProcessSort.CPU, ProcessSort.MEMORY, ProcessSort.VIRTUAL, ProcessSort.NAME, ProcessSort.PID, ProcessSort.STATE),
+                    selected = processSort, direction = processDirection,
+                    onSort = onProcessSort, onDirection = onProcessDirection)
+                processes.forEach { process ->
+                    Column(Modifier.testTag("app-process-row-${process.pid}"), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(process.name, style = MaterialTheme.typography.bodyMedium)
+                        SourceNote("PID ${process.pid} · parent ${process.parentPid} · ${process.state}")
+                        ResourceValue("CPU · one core = 100%", percent(process.cpuPercent), accent = true)
+                        ResourceValue("Resident (RSS)", memoryLabel(process.rssKb))
+                        ResourceValue("Virtual memory", memoryLabel(process.virtualKb))
+                    }
+                }
+            }
+        }
+        resources?.let { SourceNote("Process sample ${resourceTimeLabel(it.capturedAt)}. RSS includes shared memory and must not be added as private usage. Virtual memory is address space, not physical RAM use.") }
+        HorizontalDivider(color = Outline)
+        ResourceValue("UID battery estimate", mahLabel(energy?.estimatedMah), accent = true)
+        ResourceValue("UID CPU time", durationLabel(energy?.cpuTimeMs))
+        ResourceValue("UID partial wakelocks", durationLabel(energy?.wakelockMs))
+        state.energy?.let { SourceNote("Android battery history · ${durationLabel(it.batteryRealtimeMs)} on battery · sampled ${resourceTimeLabel(it.capturedAt)}. This is cumulative estimated use, not live watts.") }
+            ?: SourceNote("Battery estimates unavailable. Open Monitor → Battery use to read Android’s history.")
+        HorizontalDivider(color = Outline)
+        Text("Package memory and services", style = MaterialTheme.typography.titleMedium)
+        if (state.diagnosticsLoading) {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+            SourceNote("Reading detailed memory and running services…")
+        }
+        ResourceValue("PSS", memoryLabel(diagnostics?.pssKb))
+        ResourceValue("Private dirty", memoryLabel(diagnostics?.privateDirtyKb))
+        ResourceValue("Swap PSS", memoryLabel(diagnostics?.swapPssKb))
+        SourceNote("Android’s package memory report. PSS apportions shared pages; private dirty is modified memory private to a process. Swap PSS apportions swapped pages. Package memory may include shared processes.")
+        when {
+            diagnostics?.servicesKnown != true -> SourceNote("Running services unavailable.")
+            services.isEmpty() -> SourceNote("No running services returned for this package.")
+            else -> {
+                SortControls(id = "services", options = ServiceSort.entries, selected = serviceSort,
+                    direction = serviceDirection, onSort = onServiceSort, onDirection = onServiceDirection)
+                services.forEach { service ->
+                    Column(Modifier.testTag("service-row-${service.component}:${service.process.orEmpty()}"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(service.component, style = MaterialTheme.typography.bodyMedium)
+                        SourceNote("${if (service.foreground) "Foreground service" else "Service"} · ${service.process ?: "Process unavailable"}")
+                    }
+                }
+            }
+        }
+        diagnostics?.let {
+            SourceNote("Package diagnostics ${resourceTimeLabel(it.capturedAt)}")
+            if (it.warnings.isNotEmpty()) Text(it.warnings.joinToString("\n"), style = MaterialTheme.typography.bodySmall, color = Amber)
+        }
     }
 }
 

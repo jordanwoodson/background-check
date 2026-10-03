@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - "gradlew*"
+      - "scripts/write-signing-properties.py"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  CERT_SHA256: 3d770ebfa7c2eacd7735adc9fadca193b62e59424659aed58afe2243c1879951
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source and release history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: gradle
+
+      - name: Assign the next version
+        run: |
+          git fetch origin --tags
+          last_tag=$(git tag --list '*-bgcheck.*' --sort=-version:refname | head -1)
+          n=$(git tag --list '*-bgcheck.*' | sed -n 's/.*-bgcheck\.\([0-9][0-9]*\)$/\1/p' | sort -n | tail -1)
+          n=$((${n:-0} + 1))
+          version="1.1.1-bgcheck.$n"
+          code=$((3 + n)) # The installed 1.1.1 release has version code 3.
+          echo "LAST_TAG=$last_tag" >> "$GITHUB_ENV"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$code" >> "$GITHUB_ENV"
+          echo "Releasing $version (version code $code)"
+
+      - name: Set up existing release signing key
+        env:
+          KEYSTORE_FILE_BASE64: ${{ secrets.KEYSTORE_FILE_BASE64 }}
+          KEYSTORE_FILE: ${{ runner.temp }}/background-check-release.jks
+          KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+          KEYSTORE_PROPERTIES_PATH: ${{ runner.temp }}/background-check-signing.properties
+        run: |
+          umask 077
+          test -n "$KEYSTORE_FILE_BASE64"
+          printf '%s' "$KEYSTORE_FILE_BASE64" | base64 -d > "$KEYSTORE_FILE"
+          python3 scripts/write-signing-properties.py
+          echo "BGCHECK_SIGNING_PROPERTIES=$KEYSTORE_PROPERTIES_PATH" >> "$GITHUB_ENV"
+
+      - name: Test, lint and build signed APK
+        run: >-
+          ./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
+          -PreleaseVersionName="$VERSION" -PreleaseVersionCode="$VERSION_CODE"
+
+      - name: Verify signing certificate and APK version
+        run: |
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          apk=app/build/outputs/apk/release/app-release.apk
+          "$build_tools/apksigner" verify --print-certs "$apk" > "$RUNNER_TEMP/signature.txt"
+          grep -qi "SHA-256 digest: $CERT_SHA256" "$RUNNER_TEMP/signature.txt"
+          "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/badging.txt"
+          grep -F "package: name='dev.bgcheck.app' versionCode='$VERSION_CODE' versionName='$VERSION'" "$RUNNER_TEMP/badging.txt"
+          cp "$apk" "app/build/outputs/apk/release/background-check-$VERSION.apk"
+          cd app/build/outputs/apk/release
+          sha256sum "background-check-$VERSION.apk" > SHA256SUMS.txt
+
+      - name: Publish private GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$LAST_TAG" ]; then
+            git log --no-merges --format='- %s' "$LAST_TAG"..HEAD > "$RUNNER_TEMP/notes.md"
+          else
+            git log --no-merges --format='- %s' > "$RUNNER_TEMP/notes.md"
+          fi
+          printf '\nBuilt from %s. Android version code: %s.\n' "$GITHUB_SHA" "$VERSION_CODE" >> "$RUNNER_TEMP/notes.md"
+          gh release create "$VERSION" \
+            "app/build/outputs/apk/release/background-check-$VERSION.apk" \
+            app/build/outputs/apk/release/SHA256SUMS.txt \
+            --target "$GITHUB_SHA" --latest \
+            --title "Background Check $VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md"
+
+      - name: Remove temporary signing files
+        if: always()
+        run: rm -f "$RUNNER_TEMP/background-check-signing.properties" "$RUNNER_TEMP/background-check-release.jks"

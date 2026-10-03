@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.shell.CommandPolicyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-03T22:14:46.322Z" hostname="ubuntu-server" time="0.001">
+  <properties/>
+  <testcase name="refusesUnboundedMonitoringResetAndUnscopedStop" classname="dev.bgcheck.app.shell.CommandPolicyTest" time="0.001"/>
+  <testcase name="rejectsInjectionExtraArgumentsAndUnrelatedOperations" classname="dev.bgcheck.app.shell.CommandPolicyTest" time="0.0"/>
+  <testcase name="acceptsBoundedResourceQueriesAndUserScopedStop" classname="dev.bgcheck.app.shell.CommandPolicyTest" time="0.0"/>
+  <testcase name="acceptsOnlyTheSupportedQueriesAndChanges" classname="dev.bgcheck.app.shell.CommandPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

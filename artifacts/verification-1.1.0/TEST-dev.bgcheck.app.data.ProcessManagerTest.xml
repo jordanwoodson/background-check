@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.data.ProcessManagerTest" tests="20" skipped="0" failures="0" errors="0" timestamp="2026-10-03T21:52:59.221Z" hostname="ubuntu-server" time="0.026">
+  <properties/>
+  <testcase name="removedPackageIsRejectedBeforeMutation" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.011"/>
+  <testcase name="stillObservedProcessDoesNotCountAsStopped" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.002"/>
+  <testcase name="stopIsVerifiedWithPackageFlagAndProcessAbsence" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="absentProcessWithoutStoppedFlagIsNotVerified" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="samePackageInOtherProfileDoesNotInvalidateRequestedUserStop" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="cancellationIsPropagatedWithoutRetry" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.0"/>
+  <testcase name="identityChangeAfterCommandPreventsSuccessClaim" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="malformedAndConflictingPackageListsCannotAuthorizeStop" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="profileUsesExplicitUserForEveryPackageAndStopCommand" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.0"/>
+  <testcase name="laterUnrelatedUserHeaderCannotProvideStoppedFlag" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="filteredLookupRechecksIdentityImmediatelyBeforeStop" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.0"/>
+  <testcase name="commandFailureIsReportedWithoutRetry" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.0"/>
+  <testcase name="incompleteActivitySnapshotCannotConfirmStop" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="unsafeLocalIdentityIsRejectedWithoutCallingTransport" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="stoppedFlagMustBelongToExactPackageAndRequestedUser" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.002"/>
+  <testcase name="staleUidIsRejectedBeforeMutation" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.0"/>
+  <testcase name="transportFailureBeforeStopDoesNotMutate" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="sharedUidIsRejectedBeforeMutation" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.0"/>
+  <testcase name="errorTextFromSuccessfulTransportIsNotSuccess" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.001"/>
+  <testcase name="substringPackageMatchCannotAuthorizeStop" classname="dev.bgcheck.app.data.ProcessManagerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

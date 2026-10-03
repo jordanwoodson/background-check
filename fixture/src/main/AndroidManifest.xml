@@ -1,3 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:label="Background Check test app" android:allowBackup="false" />
+    <application android:label="Background Check test app" android:allowBackup="false">
+        <activity android:name=".ProbeActivity" android:exported="true" />
+        <service android:name=".ProbeService" android:exported="false" android:process=":worker" />
+    </application>
 </manifest>

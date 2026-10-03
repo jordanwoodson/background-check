@@ -15,6 +15,7 @@ class CommandService : ICommandService.Stub() {
             val result = BoundedProcessRunner().collect(
                 ProcessBuilder(executable).start(),
                 reduceProcessDump = command == listOf("dumpsys", "activity", "processes"),
+                reduceBatteryDump = command == listOf("dumpsys", "batterystats", "-c", "dev.bgcheck.app"),
             )
             Bundle().apply {
                 putInt("exitCode", result.exitCode)

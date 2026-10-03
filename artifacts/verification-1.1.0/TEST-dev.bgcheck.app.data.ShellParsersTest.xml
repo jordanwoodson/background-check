@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.data.ShellParsersTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-03T21:52:59.264Z" hostname="ubuntu-server" time="0.002">
+  <properties/>
+  <testcase name="noOperationUsesReportedDefault" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.0"/>
+  <testcase name="exceptIdleEntryIsNotDozeExempt" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.0"/>
+  <testcase name="malformedListDoesNotBecomeEmptySuccessfulList" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.001"/>
+  <testcase name="homeAndLastActivityAreNotReportedAsCached" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.0"/>
+  <testcase name="emptyShellReadsAreUnknownRatherThanEmptyPolicy" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.0"/>
+  <testcase name="incompleteProcessDumpDoesNotReportAppsStopped" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.0"/>
+  <testcase name="processPackagesAreReadFromPackageListAndOtherUsersExcluded" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.001"/>
+  <testcase name="uidOverrideWinsOverPackageMode" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.0"/>
+  <testcase name="standbyBucketsPreserveRestrictedAndUnknownFutureValues" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.0"/>
+  <testcase name="malformedOperationIsNeverAssumedAllowed" classname="dev.bgcheck.app.data.ShellParsersTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

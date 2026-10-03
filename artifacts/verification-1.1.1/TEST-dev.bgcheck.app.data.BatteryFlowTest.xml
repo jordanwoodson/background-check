@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.data.BatteryFlowTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-03T22:14:45.958Z" hostname="ubuntu-server" time="0.003">
+  <properties/>
+  <testcase name="convertsMicroampsAndMillivoltsWithoutLosingDirection" classname="dev.bgcheck.app.data.BatteryFlowTest" time="0.0"/>
+  <testcase name="unsupportedCurrentAndInvalidVoltageStayUnavailable" classname="dev.bgcheck.app.data.BatteryFlowTest" time="0.0"/>
+  <testcase name="usesExplicitChargeStatusAndKeepsMissingReadingsUnknown" classname="dev.bgcheck.app.data.BatteryFlowTest" time="0.0"/>
+  <testcase name="externalPowerWithoutChargingIsNotReportedAsDischarging" classname="dev.bgcheck.app.data.BatteryFlowTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

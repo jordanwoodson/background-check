@@ -1,0 +1,12 @@
+Removed only fixture history records: 2
+dev.bgcheck.app.test Success
+dev.bgcheck.fixture Success
+Performing Streamed Install
+Success
+artifacts/background-check-1.1.1.apk: 1 file pushed, 0 skipped. 183.9 MB/s (2682752 bytes in 0.014s)
+
+versionCode=3 minSdk=30 targetSdk=36
+versionName=1.1.1
+pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ]
+Installed APK SHA256 matches artifact: 9d5bc032b52e4a908ed85b3c239c85eacfc6beaf6777163f0b46f0f1c132c86e
+Starting: Intent { cmp=dev.bgcheck.app/.MainActivity }

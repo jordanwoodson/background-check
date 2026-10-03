@@ -18,17 +18,17 @@ internal class BoundedProcessRunner(
     private val maxOutputBytes: Int = 256 * 1024,
     private val maxRawBytes: Int = 8 * 1024 * 1024,
 ) {
-    fun collect(process: Process, reduceProcessDump: Boolean = false): CommandResult {
+    fun collect(process: Process, reduceProcessDump: Boolean = false, reduceBatteryDump: Boolean = false): CommandResult {
         val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis)
         val budget = OutputBudget(maxOutputBytes, maxRawBytes)
         val readers = Executors.newFixedThreadPool(2) { runnable ->
             Thread(runnable, "bgcheck-command-output").apply { isDaemon = true }
         }
-        fun read(stream: InputStream, reduce: Boolean) = readers.submit(Callable {
-            try { drain(stream, budget, reduce) }
+        fun read(stream: InputStream, reduce: Boolean, battery: Boolean = false) = readers.submit(Callable {
+            try { drain(stream, budget, reduce, battery) }
             catch (failure: Exception) { process.destroyForcibly(); throw failure }
         })
-        val stdout = read(process.inputStream, reduceProcessDump)
+        val stdout = read(process.inputStream, reduceProcessDump, reduceBatteryDump)
         val stderr = read(process.errorStream, false)
         try {
             process.outputStream.close()
@@ -58,17 +58,21 @@ internal class BoundedProcessRunner(
         throw (failure.cause as? Exception ?: IOException("Could not read command output.", failure))
     }
 
-    private fun drain(stream: InputStream, budget: OutputBudget, reduce: Boolean): String {
+    private fun drain(stream: InputStream, budget: OutputBudget, reduce: Boolean, battery: Boolean): String {
         val retained = ByteArrayOutputStream()
         val line = ByteArrayOutputStream()
         val buffer = ByteArray(4096)
         fun keepLine() {
             val bytes = line.toByteArray()
             val value = bytes.toString(Charsets.UTF_8).trim()
-            if (value.startsWith("ACTIVITY MANAGER RUNNING PROCESSES") ||
+            val batteryFields = if (battery) value.split(',', limit = 5) else emptyList()
+            val keepBattery = batteryFields.size >= 4 && batteryFields[0] == "9" &&
+                ((batteryFields[2] == "i" && batteryFields[3] == "vers") ||
+                    (batteryFields[2] == "l" && batteryFields[3] in setOf("bt", "pws", "pwi", "cpu", "awl", "nt")))
+            if (keepBattery || (reduce && (value.startsWith("ACTIVITY MANAGER RUNNING PROCESSES") ||
                 value.startsWith("*APP* UID ") || value.startsWith("*PERS* UID ") ||
                 value.startsWith("packageList={") || value.startsWith("curProcState=") ||
-                value.startsWith("user #")) {
+                value.startsWith("user #")))) {
                 budget.retain(bytes.size)
                 retained.write(bytes)
             }
@@ -79,18 +83,18 @@ internal class BoundedProcessRunner(
                 val count = it.read(buffer)
                 if (count < 0) break
                 budget.consume(count)
-                if (!reduce) {
+                if (!reduce && !battery) {
                     budget.retain(count)
                     retained.write(buffer, 0, count)
                 } else {
                     for (index in 0 until count) {
                         line.write(buffer[index].toInt())
-                        if (line.size() > 64 * 1024) throw IOException("Process dump contains an oversized line.")
+                        if (line.size() > 64 * 1024) throw IOException("Command output contains an oversized line.")
                         if (buffer[index] == '\n'.code.toByte()) keepLine()
                     }
                 }
             }
-            if (reduce && line.size() > 0) keepLine()
+            if ((reduce || battery) && line.size() > 0) keepLine()
         }
         return retained.toString(Charsets.UTF_8.name())
     }

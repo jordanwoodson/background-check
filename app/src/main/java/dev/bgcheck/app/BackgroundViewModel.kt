@@ -2,6 +2,7 @@ package dev.bgcheck.app
 
 import android.app.Application
 import android.os.Process
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.bgcheck.app.data.*
@@ -9,6 +10,8 @@ import dev.bgcheck.app.shell.ShizukuBridge
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -23,9 +26,17 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
     private val bridge = ShizukuBridge(application)
     private val inventory = AppInventory(application)
     private val engine = PolicyEngine(bridge::execute, Process.myUid() / 100000)
+    private val monitor = ResourceMonitor(bridge::execute)
+    private val processManager = ProcessManager(bridge::execute, Process.myUid() / 100000)
     private val preferences = application.getSharedPreferences("policy_history", 0)
     private val gate = Mutex()
     private var detailJob: Job? = null
+    private var diagnosticsJob: Job? = null
+    private var resourceJob: Job? = null
+    private var energyJob: Job? = null
+    private var pollingJob: Job? = null
+    private var foreground = false
+    private var monitorVisible = false
     private var detailRevision = 0
     private var refreshAgain = false
     private val mutableState = MutableStateFlow(UiState(changes = ChangeHistory.decode(preferences.getString("changes", null))))
@@ -38,18 +49,98 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                     if (access == AccessState.READY) old.copy(access = access)
                     else old.copy(access = access, policy = null,
                         apps = old.apps.map { it.copy(processState = ProcessState.UNKNOWN, dozeExempt = null, standbyBucket = null) },
-                        capturedAt = null)
+                        capturedAt = null, resources = null, energy = null, diagnostics = null, resourceHistory = emptyList())
                 }
                 if (access == AccessState.READY) refresh()
+                else {
+                    resourceJob?.cancel(); energyJob?.cancel(); diagnosticsJob?.cancel()
+                }
+                restartPolling()
             }
         }
         viewModelScope.launch { bridge.message.collectLatest { message -> mutableState.update { it.copy(accessMessage = message) } } }
         refresh()
     }
 
-    fun onResume() { bridge.check(); refresh() }
+    fun onResume() { foreground = true; bridge.check(); refresh(); restartPolling() }
+    fun onPause() {
+        foreground = false
+        detailRevision++
+        pollingJob?.cancel(); resourceJob?.cancel(); energyJob?.cancel(); detailJob?.cancel(); diagnosticsJob?.cancel()
+        mutableState.update { it.copy(monitoring = false, detailLoading = false, diagnosticsLoading = false) }
+    }
     fun connect() { bridge.requestPermission() }
     fun clearMessage() { mutableState.update { it.copy(message = null) } }
+
+    fun setMonitorVisible(visible: Boolean) {
+        if (monitorVisible == visible) return
+        monitorVisible = visible
+        restartPolling()
+    }
+
+    fun setMonitorPaused(paused: Boolean) {
+        mutableState.update { it.copy(monitorPaused = paused) }
+        restartPolling()
+    }
+
+    fun setMonitorInterval(intervalMs: Long) {
+        if (intervalMs !in setOf(3_000L, 5_000L, 10_000L)) return
+        mutableState.update { it.copy(monitorIntervalMs = intervalMs) }
+        restartPolling()
+    }
+
+    private fun restartPolling() {
+        pollingJob?.cancel()
+        val active = foreground && monitorVisible && !state.value.monitorPaused && bridge.access.value == AccessState.READY
+        mutableState.update { it.copy(monitoring = active) }
+        if (!active) return
+        pollingJob = viewModelScope.launch {
+            while (isActive) {
+                val started = SystemClock.elapsedRealtime()
+                refreshResources()
+                resourceJob?.join()
+                if (state.value.energy?.let { System.currentTimeMillis() - it.capturedAt >= 60_000 } != false) refreshEnergy()
+                delay((state.value.monitorIntervalMs - (SystemClock.elapsedRealtime() - started)).coerceAtLeast(100))
+            }
+        }
+    }
+
+    fun refreshResources() {
+        if (bridge.access.value != AccessState.READY || state.value.busy || resourceJob?.isActive == true) return
+        mutableState.update { it.copy(resourceLoading = true) }
+        resourceJob = viewModelScope.launch {
+            try {
+                val snapshot = gate.withLock { monitor.sample() }
+                val battery = inventory.battery()
+                if (bridge.access.value == AccessState.READY) mutableState.update {
+                    val point = ResourceHistoryPoint(snapshot.capturedAt, snapshot.cpuPercent,
+                        snapshot.memory?.let { memory -> memory.totalKb - memory.availableKb })
+                    it.copy(resources = snapshot, battery = battery, resourceHistory = (it.resourceHistory + point).takeLast(60))
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                if (bridge.access.value == AccessState.READY) mutableState.update {
+                    it.copy(resources = ResourceSnapshot(warnings = listOf(e.message ?: "Resource readings unavailable.")))
+                }
+            } finally { mutableState.update { it.copy(resourceLoading = false) } }
+        }
+    }
+
+    fun refreshEnergy() {
+        if (bridge.access.value != AccessState.READY || state.value.busy || energyJob?.isActive == true) return
+        mutableState.update { it.copy(energyLoading = true) }
+        energyJob = viewModelScope.launch {
+            try {
+                val energy = gate.withLock { monitor.energy() }
+                if (bridge.access.value == AccessState.READY) mutableState.update { it.copy(energy = energy) }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                if (bridge.access.value == AccessState.READY) mutableState.update {
+                    it.copy(energy = EnergySnapshot(warnings = listOf(e.message ?: "Battery attribution unavailable.")))
+                }
+            } finally { mutableState.update { it.copy(energyLoading = false) } }
+        }
+    }
 
     fun refresh() {
         if (state.value.busy) return
@@ -74,7 +165,10 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                         capturedAt = snapshot?.capturedAt.takeIf { connected }, warnings = snapshot?.warnings.orEmpty(),
                         selected = old.selected?.let { selected -> merged.firstOrNull { it.packageName == selected.packageName } }) }
                 }
-                state.value.selected?.let { loadDetail(it) }
+                if (foreground) {
+                    state.value.selected?.let { loadDetail(it) }
+                    refreshResources(); refreshEnergy()
+                }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 mutableState.update { it.copy(loading = false, message = e.message ?: "Couldn't refresh. Try again.") }
@@ -87,15 +181,17 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
 
     fun select(app: AppEntry) {
         detailJob?.cancel()
-        mutableState.update { it.copy(selected = app, policy = null) }
+        diagnosticsJob?.cancel()
+        mutableState.update { it.copy(selected = app, policy = null, diagnostics = null) }
         loadDetail(app)
     }
 
     private fun loadDetail(app: AppEntry) {
         val revision = ++detailRevision
         detailJob?.cancel()
-        if (bridge.access.value != AccessState.READY) {
-            mutableState.update { it.copy(detailLoading = false) }
+        diagnosticsJob?.cancel()
+        if (!foreground || bridge.access.value != AccessState.READY) {
+            mutableState.update { it.copy(detailLoading = false, diagnosticsLoading = false) }
             return
         }
         mutableState.update { it.copy(detailLoading = true) }
@@ -112,12 +208,48 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                 mutableState.update { if (detailRevision == revision && it.selected?.packageName == app.packageName) it.copy(detailLoading = false) else it }
             }
         }
+        mutableState.update { it.copy(diagnosticsLoading = true) }
+        diagnosticsJob = viewModelScope.launch {
+            try {
+                val diagnostics = gate.withLock { monitor.diagnostics(app) }
+                if (bridge.access.value == AccessState.READY) mutableState.update {
+                    if (detailRevision == revision && it.selected?.packageName == app.packageName) it.copy(diagnostics = diagnostics) else it
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                mutableState.update {
+                    if (detailRevision == revision && it.selected?.packageName == app.packageName)
+                        it.copy(diagnostics = AppDiagnostics(app.packageName, warnings = listOf(e.message ?: "App diagnostics unavailable."))) else it
+                }
+            } finally {
+                mutableState.update { if (detailRevision == revision) it.copy(diagnosticsLoading = false) else it }
+            }
+        }
     }
 
     fun dismissDetail() {
         detailRevision++
         detailJob?.cancel()
-        mutableState.update { it.copy(selected = null, policy = null, detailLoading = false) }
+        diagnosticsJob?.cancel()
+        mutableState.update { it.copy(selected = null, policy = null, detailLoading = false, diagnostics = null, diagnosticsLoading = false) }
+    }
+
+    fun forceStop() {
+        val app = state.value.selected ?: return
+        if (state.value.busy || bridge.access.value != AccessState.READY) return
+        mutableState.update { it.copy(busy = true) }
+        viewModelScope.launch {
+            try {
+                val result = gate.withLock { processManager.forceStop(app) }
+                mutableState.update { it.copy(message = result.message) }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                mutableState.update { it.copy(message = e.message ?: "Force stop could not be verified.") }
+            } finally {
+                mutableState.update { it.copy(busy = false) }
+                refresh()
+            }
+        }
     }
 
     fun apply(action: ControlAction) {

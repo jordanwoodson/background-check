@@ -5,4 +5,8 @@ local.properties
 *.jks
 *.keystore
 key.properties
+signing.properties
+.env
+.env.*
+__pycache__/
 .idea/

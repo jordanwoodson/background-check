@@ -33,11 +33,18 @@ class MainActivity : ComponentActivity() {
                         ?: Intent(Intent.ACTION_VIEW, Uri.parse("https://shizuku.rikka.app/download/"))) },
                     onOpenWirelessSettings = { open(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)) },
                     onClearMessage = model::clearMessage,
+                    onRefreshResources = model::refreshResources,
+                    onRefreshEnergy = model::refreshEnergy,
+                    onSetMonitorPaused = model::setMonitorPaused,
+                    onSetMonitorInterval = model::setMonitorInterval,
+                    onMonitorVisible = model::setMonitorVisible,
+                    onForceStop = model::forceStop,
                 )
             }
         }
     }
     override fun onResume() { super.onResume(); model.onResume() }
+    override fun onPause() { model.onPause(); super.onPause() }
     private fun open(intent: Intent) {
         runCatching { startActivity(intent) }.onFailure {
             Toast.makeText(this, "Couldn't open this screen. You can open it from Android Settings.", Toast.LENGTH_LONG).show()

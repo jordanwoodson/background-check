@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.data.ListSortingTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-03T22:14:45.980Z" hostname="ubuntu-server" time="0.02">
+  <properties/>
+  <testcase name="emptyListsRemainEmptyForEveryKeyAndDirection" classname="dev.bgcheck.app.data.ListSortingTest" time="0.016"/>
+  <testcase name="appKeysHandleNamesNumericIdentityAndUnavailableState" classname="dev.bgcheck.app.data.ListSortingTest" time="0.001"/>
+  <testcase name="processTiesDoNotJumpWhenInputOrDirectionChanges" classname="dev.bgcheck.app.data.ListSortingTest" time="0.0"/>
+  <testcase name="serviceKeysIncludeUnknownProcessLastAndForegroundGrouping" classname="dev.bgcheck.app.data.ListSortingTest" time="0.0"/>
+  <testcase name="appNameTiesIgnoreCaseAndKeepPackageOrder" classname="dev.bgcheck.app.data.ListSortingTest" time="0.0"/>
+  <testcase name="historyTiesUseNewestFirstThenStableRecordId" classname="dev.bgcheck.app.data.ListSortingTest" time="0.0"/>
+  <testcase name="componentsUseDisplayedNamesAndBothDirections" classname="dev.bgcheck.app.data.ListSortingTest" time="0.001"/>
+  <testcase name="batteryByteSortUsesLongValuesWithoutOverflowOrRounding" classname="dev.bgcheck.app.data.ListSortingTest" time="0.0"/>
+  <testcase name="batteryTiesUseUidAndSharedNamesDoNotDependOnInventoryOrder" classname="dev.bgcheck.app.data.ListSortingTest" time="0.0"/>
+  <testcase name="historyKeysSortBeforePreviewAndKeepEachRecordAction" classname="dev.bgcheck.app.data.ListSortingTest" time="0.001"/>
+  <testcase name="batteryKeysRetainZeroAndPutUnavailableLastInBothDirections" classname="dev.bgcheck.app.data.ListSortingTest" time="0.0"/>
+  <testcase name="processKeysOrderActualMetricsInBothDirections" classname="dev.bgcheck.app.data.ListSortingTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

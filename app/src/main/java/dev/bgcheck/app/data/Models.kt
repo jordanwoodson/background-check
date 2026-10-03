@@ -15,12 +15,20 @@ data class AppEntry(
     val dozeExempt: Boolean? = null,
     val protectedReason: String? = null,
 )
+enum class BatteryPowerState(val label: String) {
+    CHARGING("Charging"), FULL("Full"), PLUGGED_IDLE("Plugged in · not charging"),
+    DISCHARGING("Discharging"), UNKNOWN("Unavailable")
+}
 data class BatteryInfo(
     val percent: Int? = null,
     val charging: Boolean = false,
     val temperatureC: Float? = null,
     val voltageMv: Int? = null,
     val saver: Boolean = false,
+    val currentMa: Double? = null,
+    val powerMw: Double? = null,
+    val capturedAt: Long? = null,
+    val powerState: BatteryPowerState = BatteryPowerState.UNKNOWN,
 )
 enum class AccessState { CHECKING, NOT_RUNNING, NEEDS_PERMISSION, CONNECTING, READY, ERROR }
 data class PolicyState(
@@ -72,6 +80,16 @@ data class UiState(
     val busy: Boolean = false,
     val changes: List<ChangeRecord> = emptyList(),
     val message: String? = null,
+    val resources: ResourceSnapshot? = null,
+    val energy: EnergySnapshot? = null,
+    val resourceLoading: Boolean = false,
+    val energyLoading: Boolean = false,
+    val monitorPaused: Boolean = false,
+    val monitorIntervalMs: Long = 5_000,
+    val monitoring: Boolean = false,
+    val resourceHistory: List<ResourceHistoryPoint> = emptyList(),
+    val diagnostics: AppDiagnostics? = null,
+    val diagnosticsLoading: Boolean = false,
 )
 fun bucketLabel(bucket: Int?): String = when (bucket) {
     5 -> "Exempt"; 10 -> "Active"; 20 -> "Working set"; 30 -> "Frequent"

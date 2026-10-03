@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.shell.BoundedProcessRunnerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-03T22:14:46.096Z" hostname="ubuntu-server" time="0.225">
+  <properties/>
+  <testcase name="reducesProcessDumpWithoutLosingPackagesOrStates" classname="dev.bgcheck.app.shell.BoundedProcessRunnerTest" time="0.015"/>
+  <testcase name="batteryReductionKeepsAttributionButBoundsVerboseHistory" classname="dev.bgcheck.app.shell.BoundedProcessRunnerTest" time="0.024"/>
+  <testcase name="drainsBothPipesAndPreservesFailureExitStatus" classname="dev.bgcheck.app.shell.BoundedProcessRunnerTest" time="0.013"/>
+  <testcase name="killsProcessThatExceedsDeadline" classname="dev.bgcheck.app.shell.BoundedProcessRunnerTest" time="0.154"/>
+  <testcase name="rejectsRawOutputOverflowEvenWhenDiscardingEveryLine" classname="dev.bgcheck.app.shell.BoundedProcessRunnerTest" time="0.01"/>
+  <testcase name="rejectsCombinedOutputOverflowWithoutDeadlock" classname="dev.bgcheck.app.shell.BoundedProcessRunnerTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

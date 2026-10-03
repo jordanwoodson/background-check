@@ -55,13 +55,22 @@ class AppInventory(private val context: Context) {
         val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
         val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
-        val status = intent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+        val status = intent?.takeIf { it.hasExtra(BatteryManager.EXTRA_STATUS) }?.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+        val plugged = intent?.takeIf { it.hasExtra(BatteryManager.EXTRA_PLUGGED) }?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
+        val powerState = BatteryFlow.powerState(status, plugged)
+        val voltage = intent?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0)?.takeIf { it > 0 }
+        val current = runCatching { context.getSystemService(BatteryManager::class.java)
+            .getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) }.getOrDefault(Int.MIN_VALUE)
+        val flow = BatteryFlow.from(current, voltage)
         return BatteryInfo(
             percent = if (level >= 0 && scale > 0) ((level * 100f) / scale).toInt().coerceIn(0,100) else null,
-            charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL,
+            charging = powerState == BatteryPowerState.CHARGING || powerState == BatteryPowerState.FULL,
+            powerState = powerState,
             temperatureC = intent?.takeIf { it.hasExtra(BatteryManager.EXTRA_TEMPERATURE) }?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0)?.div(10f),
-            voltageMv = intent?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0)?.takeIf { it > 0 },
+            voltageMv = voltage,
             saver = context.getSystemService(PowerManager::class.java).isPowerSaveMode,
+            currentMa = flow.currentMa, powerMw = flow.powerMw,
+            capturedAt = System.currentTimeMillis(),
         )
     }
 }

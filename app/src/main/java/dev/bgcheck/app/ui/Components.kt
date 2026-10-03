@@ -39,7 +39,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.bgcheck.app.data.AppEntry
+import dev.bgcheck.app.data.AppSort
 import dev.bgcheck.app.data.ProcessState
+import dev.bgcheck.app.data.bucketLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.DateFormat
@@ -100,7 +102,7 @@ internal fun InfoCard(title: String, message: String, icon: ImageVector, modifie
 }
 
 @Composable
-internal fun AppRow(app: AppEntry, onClick: () -> Unit) {
+internal fun AppRow(app: AppEntry, sort: AppSort = AppSort.NAME, onClick: () -> Unit) {
     Surface(onClick = onClick, color = Panel, shape = RoundedCornerShape(20.dp)) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AppIcon(app.packageName)
@@ -115,6 +117,13 @@ internal fun AppRow(app: AppEntry, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = if (app.processState == ProcessState.FOREGROUND || app.processState == ProcessState.SERVICE) Lime else Muted,
                 )
+                val sortValue = when (sort) {
+                    AppSort.PACKAGE -> app.packageName
+                    AppSort.UID -> "UID ${app.uid}"
+                    AppSort.STANDBY -> "Standby: ${bucketLabel(app.standbyBucket)}"
+                    else -> null
+                }
+                sortValue?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Muted) }
             }
             Icon(Icons.Rounded.ChevronRight, null, tint = Muted, modifier = Modifier.size(20.dp))
         }

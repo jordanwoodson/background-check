@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.data.ChangeHistoryTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-03T22:14:45.963Z" hostname="ubuntu-server" time="0.012">
+  <properties/>
+  <testcase name="malformedHistoryDoesNotCrashStartup" classname="dev.bgcheck.app.data.ChangeHistoryTest" time="0.004"/>
+  <testcase name="policyRoundTripPreservesUnknownAndUserExemption" classname="dev.bgcheck.app.data.ChangeHistoryTest" time="0.004"/>
+  <testcase name="interruptedChangeRetainsRecoveryIntentAcrossRestart" classname="dev.bgcheck.app.data.ChangeHistoryTest" time="0.0"/>
+  <testcase name="historyKeepsNewestFifty" classname="dev.bgcheck.app.data.ChangeHistoryTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

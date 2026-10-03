@@ -204,13 +204,14 @@ class ShizukuBridge(context: Context) {
     fun close() {
         if (closed) return
         closed = true
-        handler.post {
+        val cleanup = {
             Shizuku.removeBinderReceivedListener(binderReceived)
             Shizuku.removeBinderDeadListener(binderDead)
             Shizuku.removeRequestPermissionResultListener(permissionResult)
             detach()
             scope.cancel()
         }
+        if (Looper.myLooper() == Looper.getMainLooper()) cleanup() else handler.post { cleanup() }
     }
 
     private fun permitted() = Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
@@ -225,7 +226,12 @@ class ShizukuBridge(context: Context) {
 
     private fun detach() {
         clearService()
-        if (registered) runCatching { Shizuku.unbindUserService(serviceArgs, connection, true) }
+        if (registered) {
+            // remove=true alone leaves Shizuku's local connection cache alive until binder death.
+            // Detach it synchronously before removal so an immediate bind cannot reuse a dying listener.
+            runCatching { Shizuku.unbindUserService(serviceArgs, connection, false) }
+            runCatching { Shizuku.unbindUserService(serviceArgs, connection, true) }
+        }
         registered = false
     }
 

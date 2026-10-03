@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.data.ResourceParsersTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-03T21:52:59.255Z" hostname="ubuntu-server" time="0.008">
+  <properties/>
+  <testcase name="memoryDetailsSumsDistinctProcessesWithoutCountingSummaryTwice" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.001"/>
+  <testcase name="energyRejectsUnknownVersionAndPreservesGoodMetricsAfterMalformedRecord" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.001"/>
+  <testcase name="unavailableProcessMetricsAreNotZero" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.001"/>
+  <testcase name="servicesFiltersExactPackageAndUserAndIdentifiesForeground" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.001"/>
+  <testcase name="topRequiresSecondCompleteFrameAndRejectsDuplicatedThreadRows" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.001"/>
+  <testcase name="unnamedPowerComponentsAreIndependentContributions" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.0"/>
+  <testcase name="energyUsesOnlyCurrentUidAggregatesWithCorrectUnitsAndNoDoubleCounting" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.001"/>
+  <testcase name="missingOrIncompleteMemoryIsNeverReportedAsZero" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.0"/>
+  <testcase name="servicesWithoutRecognizedProcessAssociationAreUnavailable" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.001"/>
+  <testcase name="topUsesSecondIntervalAndKeepsCommandsAndLargeCoreUsage" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.0"/>
+  <testcase name="availableMemoryIncludesReclaimablePagesAndRejectsMissingFields" classname="dev.bgcheck.app.data.ResourceParsersTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
