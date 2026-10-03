@@ -21,6 +21,8 @@ Stage 1 succeeded: Obtainium installed `1.1.1-bgcheck.1` and refreshed it succes
 - [x] Use readable text contrast, responsive wrapping and accessible touch targets at normal and enlarged font sizes.
 - [x] Update current branding documentation and screenshots; retain clearly identified historical verification evidence.
 - [x] Run the existing unit/lint/build checks and relevant device UI tests, then inspect the rendered screens and dialogs.
-- [ ] Push the rebrand through the same automatic release workflow and verify the new version updates through Obtainium.
+- [x] Push the rebrand through the same automatic release workflow and verify the new version updates through Obtainium.
+
+Stage 2 succeeded: the signed `1.1.1-bgcheck.2` release (version code 5) was installed through Obtainium, its installed APK hash matches GitHub, existing app data was retained, and a subsequent refresh reports the installed and latest versions correctly. See [final verification](../../dracula-verification.md).
 
 Keep the package ID, signing certificate, Shizuku integration, measurements, sorting, policy confirmation/readback and recovery behavior intact throughout.

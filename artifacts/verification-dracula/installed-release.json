@@ -1,0 +1,9 @@
+{
+  "versionName": "1.1.1-bgcheck.2",
+  "versionCode": 5,
+  "installedSha256": "9b63dbf22eec922410ab7478f6ae3a3c354cc30c694bf8588d84fa3b2b9cf380",
+  "matchesGitHubRelease": true,
+  "installer": "dev.imranr.obtainium",
+  "debuggable": false,
+  "existingDataDirectoryPreserved": true
+}

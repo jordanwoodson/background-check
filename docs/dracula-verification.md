@@ -22,4 +22,17 @@ At font scale 1.5, [Overview](../artifacts/screenshots/dracula-large-text-overvi
 
 During resource reorganization, Android's incremental merger omitted the moved mipmap file from its output. Regenerating debug and release resource outputs fixed the local linker error; the final build and lint then passed.
 
-Release publication and Obtainium update evidence will be appended after CI completes.
+The disposable fixture and instrumentation packages were uninstalled after testing. Two fixture-only history records were removed; other records were preserved. The previously published release was restored over the debug preview before verifying the new release as a normal upgrade through Obtainium. The original font scale and stay-awake setting were restored, and temporary device UI dumps were removed; see [cleanup evidence](../artifacts/verification-dracula/cleanup.json).
+
+## Published release and Obtainium update
+
+Verified on October 3, 2026:
+
+- [Actions run 37161206453](https://github.com/jordanwoodson/background-check/actions/runs/37161206453) completed successfully for theme commit `aa113c5145962d9a7032f0b5b54ed3eebe642482`, including unit tests, release lint, build, signing/version checks and publication.
+- [Release 1.1.1-bgcheck.2](https://github.com/jordanwoodson/background-check/releases/tag/1.1.1-bgcheck.2) contains the signed APK and `SHA256SUMS.txt`; it is neither a draft nor a prerelease. The version code is **5** and the package remains `dev.bgcheck.app`.
+- The downloaded APK passed its checksum and signature checks with the established signing certificate. Its SHA-256 is `9b63dbf22eec922410ab7478f6ae3a3c354cc30c694bf8588d84fa3b2b9cf380`.
+- Obtainium fetched the new private release and its **Update** action installed it. Android reports `dev.imranr.obtainium` as installer, version `1.1.1-bgcheck.2`, code 5, and a non-debuggable package. The installed APK hash exactly matches the published release; see [installed release evidence](../artifacts/verification-dracula/installed-release.json).
+- The original first-install time and credential-encrypted data inode were unchanged, confirming an in-place update that retained the existing data directory.
+- A subsequent Obtainium refresh recorded **1.1.1-bgcheck.2** as both installed and latest. Tracking remains enabled with `trackOnly=false`, `versionDetection=true`, and `exemptFromBackgroundUpdates=false`; see [sanitized tracking evidence](../artifacts/verification-dracula/obtainium.json).
+
+The private repository and automatic signed-release workflow now deliver the Dracula theme through the same update path as the initial setup.

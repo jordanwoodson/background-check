@@ -1,0 +1,13 @@
+{
+  "id": "dev.bgcheck.app",
+  "url": "https://github.com/jordanwoodson/background-check",
+  "name": "Background Check",
+  "installedVersion": "1.1.1-bgcheck.2",
+  "latestVersion": "1.1.1-bgcheck.2",
+  "lastUpdateCheck": 1791069891879538,
+  "settings": {
+    "trackOnly": false,
+    "versionDetection": true,
+    "exemptFromBackgroundUpdates": false
+  }
+}

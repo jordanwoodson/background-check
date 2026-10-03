@@ -14,4 +14,4 @@ Verified on October 3, 2026, before applying the Dracula rebrand.
 
 Local pre-push verification passed all 88 unit tests, release lint (0 errors, 11 existing warnings), the signed release build, `actionlint`, and version-allocation checks for the initial release, successor and double-digit numbering. Keystore files, passwords and local SDK configuration were excluded from Git; the four signing values were stored in repository Actions secrets.
 
-The Dracula rebrand will be verified separately and delivered through this same update path.
+The [Dracula rebrand verification](dracula-verification.md) records the subsequent `1.1.1-bgcheck.2` release and successful update through this same Obtainium path.

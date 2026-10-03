@@ -1,0 +1,11 @@
+{
+  "restoredSettings": {
+    "stay_on_while_plugged_in": "0",
+    "font_scale": "1.0"
+  },
+  "remainingBackgroundCheckPackages": [
+    "package:dev.bgcheck.app"
+  ],
+  "fixtureAndInstrumentationRemoved": true,
+  "temporaryDeviceUiDumpsRemoved": true
+}
