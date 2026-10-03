@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.bgcheck.app.data.PolicyEngineTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-03T20:47:19.993Z" hostname="ubuntu-server" time="0.099">
+  <properties/>
+  <testcase name="recoveryDoesNotOverwriteUnrelatedPolicyDrift" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.052"/>
+  <testcase name="lostConnectionAfterWriteCanRecoverAfterReconnect" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.008"/>
+  <testcase name="interruptedLegacyUndoRecoversToOriginalBeforeState" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.004"/>
+  <testcase name="uidOverrideAndProtectedAppsCannotBeChanged" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.005"/>
+  <testcase name="failedLegacyUpdateRollsBackCompletedBackgroundUpdate" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.003"/>
+  <testcase name="validatedCheckpointRunsBeforeWriteAndAlsoForNoOp" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.004"/>
+  <testcase name="restrictionIsVerifiedAndDoesNotAlterIndependentDozeChoice" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.002"/>
+  <testcase name="stalePolicyIsRejectedBeforeWriting" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.002"/>
+  <testcase name="undoRestoresUserMembershipAndRejectsLaterExternalChanges" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.006"/>
+  <testcase name="systemExemptionCannotBeRemoved" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.003"/>
+  <testcase name="successfulExitWithoutChangedStateIsNotSuccess" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.002"/>
+  <testcase name="unavailableReadNeverAllowsMutation" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.002"/>
+  <testcase name="failedCheckpointPreventsAllWrites" classname="dev.bgcheck.app.data.PolicyEngineTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
