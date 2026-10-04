@@ -7,6 +7,7 @@ Final results are summarized in [the verification record](../../docs/ui-polish-v
 - `captures-normal.log`: 15 passing final capture and overview/app sorting checks.
 - `captures-large-text.log`, `captures-largest-text.log`, `captures-landscape.log`: 11 passing capture checks each.
 - `reduced-motion-tests.log`: 18 passing checks with Android animation scales at zero.
+- `release-*` and `release.json`: published CI artifact metadata, signature/version/checksum verification, and emulator smoke evidence.
 - `fixture-restored.txt`: fixture background app-op after the undo flow.
 - `after/ux-captures`: 27 current screenshots for each of normal, 1.5×, 2× and landscape configurations, using supplied sample data.
 - `before/ux-captures`: historical baseline screenshots. `access-regression-before.log` intentionally demonstrates the old authorized-access failure.

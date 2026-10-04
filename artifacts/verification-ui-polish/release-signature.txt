@@ -1,0 +1,4 @@
+Signer #1 certificate DN: CN=Background Check, O=Local Android Apps
+Signer #1 certificate SHA-256 digest: 3d770ebfa7c2eacd7735adc9fadca193b62e59424659aed58afe2243c1879951
+Signer #1 certificate SHA-1 digest: 91b8c3356124f4706312b8ef6589195364f33061
+Signer #1 certificate MD5 digest: a5f22e21a8c684ea43ce97a561b948b5

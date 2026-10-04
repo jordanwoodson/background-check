@@ -1,0 +1,11 @@
+{
+  "installedOn": "Android 15 / API 35 emulator (emulator-5554)",
+  "source": "downloaded GitHub release APK",
+  "versionName": "1.1.1-bgcheck.4",
+  "versionCode": 7,
+  "launch": "passed",
+  "shizuku": "connected",
+  "authorizedAccessUi": "passed; connection help collapsed, no authorization/setup actions shown",
+  "physicalPhoneOrObtainiumDelivery": "not verified",
+  "monitor": "passed; active sampling with numeric CPU/RAM readings (Live and Sampling are valid polling states)"
+}
