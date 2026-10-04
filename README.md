@@ -58,6 +58,8 @@ Unavailable or unsupported readings remain **Unavailable**, with warnings where 
 
 ## App controls
 
+Package rows now explain what each package does. Open a package to read its full description and source, or search by purpose as well as name or package ID. **Uninstalled** shows only removed packages Android still retains for this user, with read-only details. Unknown purposes are explicitly marked; the guide cannot identify every package. See [package descriptions](docs/package-descriptions.md) for sources and coverage.
+
 **Force stop app** is available only for an ordinary unprotected app. It requires confirmation, rechecks the package identity, Android user and shared UID before sending the command, and verifies Android’s stopped flag and process observation afterward. System/core apps, protected apps and shared UIDs are refused. Force stop can discard unsaved work and interrupt notifications or scheduled work until the app is opened again. **Force stop has no Undo**; the separate policy Undo remains available.
 
 Process state is a point-in-time observation, not a battery-drain measurement. Cached processes are kept for quick reopening. The Android standby bucket, background app-op and Doze exemption are separate readings. Changing background access does not change the independent Doze exemption or Motorola-specific battery settings. Doze exemptions apply to the app across Android profiles. System-provided exemptions cannot be removed here. Shared Android identities, core system services, the active home screen/keyboard, and remote-access apps use Android Settings rather than quick controls.

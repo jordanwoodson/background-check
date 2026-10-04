@@ -153,7 +153,7 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             try {
                 gate.withLock {
-                    val apps = inventory.load()
+                    val (apps, uninstalledApps) = inventory.load().partition { it.installed }
                     val battery = inventory.battery()
                     val snapshot = if (bridge.access.value == AccessState.READY) engine.snapshot() else null
                     val connected = bridge.access.value == AccessState.READY
@@ -165,9 +165,9 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                             dozeExempt = if (snapshot.exemptionsKnown) app.packageName in snapshot.exemptPackages || app.uid % 100000 in snapshot.exemptAppIds else null,
                         )
                     }
-                    mutableState.update { old -> old.copy(apps = merged, battery = battery, loading = false,
+                    mutableState.update { old -> old.copy(apps = merged, uninstalledApps = uninstalledApps, battery = battery, loading = false,
                         capturedAt = snapshot?.capturedAt.takeIf { connected }, warnings = snapshot?.warnings.orEmpty(),
-                        selected = old.selected?.let { selected -> merged.firstOrNull { it.packageName == selected.packageName } }) }
+                        selected = old.selected?.let { selected -> (merged + uninstalledApps).firstOrNull { it.packageName == selected.packageName } }) }
                 }
                 if (foreground) {
                     state.value.selected?.let { loadDetail(it) }
@@ -194,8 +194,8 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         val revision = ++detailRevision
         detailJob?.cancel()
         diagnosticsJob?.cancel()
-        if (!foreground || bridge.access.value != AccessState.READY) {
-            mutableState.update { it.copy(detailLoading = false, diagnosticsLoading = false) }
+        if (!app.installed || !foreground || bridge.access.value != AccessState.READY) {
+            mutableState.update { it.copy(detailLoading = false, diagnosticsLoading = false, policy = null, diagnostics = null) }
             return
         }
         mutableState.update { it.copy(detailLoading = true) }

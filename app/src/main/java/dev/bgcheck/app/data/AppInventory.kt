@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.BatteryManager
 import android.os.PowerManager
 import android.provider.Settings
@@ -36,11 +37,17 @@ class AppInventory(private val context: Context) {
             protected[it] = "This app handles your calls or messages. Manage it in Android Settings."
         }
         @Suppress("DEPRECATION")
-        pm.getInstalledApplications(0).map { info ->
+        // The broad query may have less metadata; prefer the normal query for installed apps.
+        val applications = (pm.getInstalledApplications(0) +
+            pm.getInstalledApplications(PackageManager.MATCH_UNINSTALLED_PACKAGES)).distinctBy { it.packageName }
+        applications.map { info ->
             AppEntry(
                 packageName = info.packageName, label = runCatching { info.loadLabel(pm).toString() }.getOrDefault(info.packageName),
                 uid = info.uid, system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0,
                 enabled = info.enabled, targetSdk = info.targetSdkVersion,
+                installed = info.flags and ApplicationInfo.FLAG_INSTALLED != 0,
+                description = PackageDescriptions.describe(info.packageName,
+                    runCatching { info.loadDescription(pm)?.toString() }.getOrNull(), info.category),
                 protectedReason = when {
                     info.uid % 100000 < 10000 -> "Core Android component. Use Android Settings for this app."
                     protected[info.packageName] != null -> protected[info.packageName]

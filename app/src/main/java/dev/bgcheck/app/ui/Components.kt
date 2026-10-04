@@ -126,11 +126,15 @@ internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort 
             AppIcon(app.packageName)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(app.label, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(app.description.text, style = MaterialTheme.typography.bodySmall, color = Foreground,
+                    maxLines = 3, overflow = TextOverflow.Ellipsis)
                 Text(
                     buildString {
-                        append(app.processState.label)
-                        if (app.system) append(" · System")
-                        if (!app.enabled) append(" · Disabled")
+                        append(if (app.system) "System" else "User")
+                        if (!app.installed) append(" · Uninstalled") else {
+                            append(" · ${app.processState.label}")
+                            if (!app.enabled) append(" · Disabled")
+                        }
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = if (app.processState == ProcessState.FOREGROUND || app.processState == ProcessState.SERVICE) Green else Muted,

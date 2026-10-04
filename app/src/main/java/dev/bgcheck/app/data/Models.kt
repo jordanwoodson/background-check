@@ -14,6 +14,8 @@ data class AppEntry(
     val standbyBucket: Int? = null,
     val dozeExempt: Boolean? = null,
     val protectedReason: String? = null,
+    val installed: Boolean = true,
+    val description: PackageDescription = PackageDescriptions.describe(packageName),
 )
 enum class BatteryPowerState(val label: String) {
     CHARGING("Charging"), FULL("Full"), PLUGGED_IDLE("Plugged in · not charging"),
@@ -69,6 +71,7 @@ data class UiState(
     val access: AccessState = AccessState.CHECKING,
     val accessMessage: String? = null,
     val apps: List<AppEntry> = emptyList(),
+    val uninstalledApps: List<AppEntry> = emptyList(),
     val battery: BatteryInfo = BatteryInfo(),
     val loading: Boolean = true,
     val refreshing: Boolean = false,

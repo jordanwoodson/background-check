@@ -7,6 +7,15 @@ import org.junit.Test
 class PolicyEngineTest {
     private val app = AppEntry("com.example.app", "Example", 10101, false)
 
+    @Test fun uninstalledPackageCannotReadOrChangePolicy() = runBlocking {
+        var commands = 0
+        val engine = PolicyEngine({ commands++; "" }, 0)
+        val removed = app.copy(installed = false)
+        expectFailure { engine.read(removed) }
+        expectFailure { engine.apply(removed, PolicyState(app.packageName, "allow", null, false), ControlAction.RESTRICT_BACKGROUND) }
+        assertEquals(0, commands)
+    }
+
     @Test fun restrictionIsVerifiedAndDoesNotAlterIndependentDozeChoice() = runBlocking {
         val device = Device(userExempt = true)
         val engine = PolicyEngine(device::exec, 0)

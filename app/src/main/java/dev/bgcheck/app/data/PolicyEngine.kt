@@ -146,6 +146,7 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
     }
 
     private fun validateIdentity(app: AppEntry) {
+        check(app.installed) { "This package is not installed for this Android user" }
         require(userId >= 0 && ShellParsers.validPackage(app.packageName)) { "Invalid package or Android user" }
         require(app.uid >= 0 && app.uid / 100000 == userId) { "The app belongs to another Android user" }
     }

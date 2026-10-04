@@ -29,6 +29,7 @@ class ProcessManagerTest {
 
     @Test fun unsafeLocalIdentityIsRejectedWithoutCallingTransport() = runBlocking {
         val blocked = listOf(
+            app.copy(installed = false),
             app.copy(protectedReason = "Active keyboard"),
             app.copy(system = true),
             app.copy(uid = 1000),

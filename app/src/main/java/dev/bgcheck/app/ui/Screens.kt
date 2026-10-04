@@ -106,6 +106,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.bgcheck.app.data.AccessState
 import dev.bgcheck.app.data.AppEntry
+import dev.bgcheck.app.data.PackageType
+import dev.bgcheck.app.data.matchesPackage
 import dev.bgcheck.app.data.AppSort
 import dev.bgcheck.app.data.BatteryInfo
 import dev.bgcheck.app.data.BatteryPowerState
@@ -437,23 +439,20 @@ private fun HistoryCard(record: ChangeRecord, canUndo: Boolean, onUndo: (ChangeR
     }
 }
 
-private enum class AppType(val label: String) { USER("Your apps"), ALL("All apps"), SYSTEM("System") }
 private enum class ProcessFilter(val label: String) { ALL("Any state"), ACTIVE("Active"), CACHED("Cached"), NOT_OBSERVED("Not observed") }
 
 @Composable
 private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: () -> Unit) {
     val focusManager = LocalFocusManager.current
     var query by rememberSaveable { mutableStateOf("") }
-    var type by rememberSaveable { mutableStateOf(AppType.USER) }
+    var type by rememberSaveable { mutableStateOf(PackageType.USER) }
     var process by rememberSaveable { mutableStateOf(ProcessFilter.ALL) }
     var sort by rememberSaveable { mutableStateOf(AppSort.NAME) }
     var direction by rememberSaveable { mutableStateOf(SortDirection.ASCENDING) }
-    val effectiveProcess = if (state.access == AccessState.READY) process else ProcessFilter.ALL
-    val apps = remember(state.apps, query, type, effectiveProcess, sort, direction) {
-        val needle = query.trim()
-        ListSorting.apps(state.apps.filter { app ->
-            (needle.isEmpty() || app.label.contains(needle, true) || app.packageName.contains(needle, true)) &&
-                (type == AppType.ALL || app.system == (type == AppType.SYSTEM)) &&
+    val effectiveProcess = if (state.access == AccessState.READY && type != PackageType.UNINSTALLED) process else ProcessFilter.ALL
+    val apps = remember(state.apps, state.uninstalledApps, query, type, effectiveProcess, sort, direction) {
+        ListSorting.apps((state.apps + state.uninstalledApps).filter { app ->
+            matchesPackage(app, type, query) &&
                 when (effectiveProcess) {
                     ProcessFilter.ALL -> true
                     ProcessFilter.ACTIVE -> app.processState in setOf(ProcessState.FOREGROUND, ProcessState.SERVICE, ProcessState.BACKGROUND)
@@ -467,7 +466,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             Column(verticalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.padding(bottom = 10.dp)) {
                 Eyebrow("package inventory")
                 Text("Your apps", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
-                Text("Inspect packages, processes and background policies.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                Text("See what each package does, then inspect its activity and background settings.", style = MaterialTheme.typography.bodyMedium, color = Muted)
             }
         }
         item {
@@ -476,7 +475,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 label = { Text("Search apps") },
-                placeholder = { Text("App name or package") },
+                placeholder = { Text("Name, package or purpose") },
                 leadingIcon = { Icon(Icons.Rounded.Search, null) },
                 trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = { query = "" }) { Icon(Icons.Rounded.Close, "Clear search") } }) else null,
                 shape = RoundedCornerShape(8.dp),
@@ -485,10 +484,12 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
         }
         item {
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AppType.entries.forEach { item -> FilterChip(selected = type == item, onClick = { type = item }, label = { Text(item.label) }, modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors()) }
+                PackageType.entries.forEach { item -> FilterChip(selected = type == item, onClick = { type = item }, label = { Text(item.label) }, modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors()) }
             }
         }
-        if (state.access == AccessState.READY) {
+        if (type == PackageType.UNINSTALLED) {
+            item { Text("Not installed for this Android user. Only packages Android still has a record of are shown; this is not a complete uninstall history.", style = MaterialTheme.typography.bodySmall, color = Muted) }
+        } else if (state.access == AccessState.READY) {
             item {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ProcessFilter.entries.forEach { item -> FilterChip(selected = process == item, onClick = { process = item }, label = { Text(item.label) }, modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors()) }
@@ -509,7 +510,13 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             SortControls("apps", AppSort.entries, sort, direction, onSort = { sort = it }, onDirection = { direction = it })
         }
         item {
-            Text("${apps.size} ${if (apps.size == 1) "app" else "apps"}" + if (state.capturedAt != null && state.access == AccessState.READY) " · Snapshot ${timeLabel(state.capturedAt)}" else " · Installed on this device", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(vertical = 6.dp))
+            val scope = when {
+                type == PackageType.UNINSTALLED -> "Retained by Android"
+                type == PackageType.ALL -> "Installed and retained packages"
+                state.capturedAt != null && state.access == AccessState.READY -> "Snapshot ${timeLabel(state.capturedAt)}"
+                else -> "Installed for this Android user"
+            }
+            Text("${apps.size} ${if (apps.size == 1) "app" else "apps"} · $scope", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(vertical = 6.dp))
         }
         if (state.loading && state.apps.isEmpty()) {
             item { InfoCard("Finding your apps", "Reading the apps installed on this device.", Icons.Rounded.Apps) }
@@ -517,7 +524,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoCard("No matching apps", "Try another app name or reset your search and filters.", Icons.Rounded.Search)
-                    TextButton(onClick = { query = ""; type = AppType.ALL; process = ProcessFilter.ALL; focusManager.clearFocus() }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Reset filters") }
+                    TextButton(onClick = { query = ""; type = PackageType.ALL; process = ProcessFilter.ALL; focusManager.clearFocus() }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Reset filters") }
                 }
             }
         } else {
