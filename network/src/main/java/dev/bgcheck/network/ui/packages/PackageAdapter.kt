@@ -236,7 +236,7 @@ class PackageAdapter(
             }
 
             // Row 1 Right: Enabled/Disabled/Uninstalled Badge (always shown)
-            // Check if package is uninstalled (versionName is null for uninstalled packages)
+            // Installation is explicit: a disabled installed app can have no version name.
             // Dedicated SINGULAR status strings, not the filter-chip labels. The chips are plural
             // ("Activate", "Ativados"), and reusing them on a single row mixed plural and singular
             // in five of the seven locales, beside the already-singular "Uninstalled".
@@ -245,7 +245,7 @@ class PackageAdapter(
             // they are lowercased and compared in a dozen places - and putting them on screen made
             // the list mix languages: translated filter chips beside hardcoded English badges.
             // The keys stay English; only what the user reads is translated.
-            if (pkg.versionName == null && !pkg.isEnabled && pkg.type == PackageType.SYSTEM) {
+            if (!pkg.isInstalled) {
                 binding.enabledBadge.setText(R.string.status_uninstalled)
                 binding.enabledBadge.setBackgroundResource(R.drawable.status_badge_background)
             } else if (pkg.isEnabled) {

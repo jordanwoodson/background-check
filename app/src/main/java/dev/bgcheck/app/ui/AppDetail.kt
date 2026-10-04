@@ -165,6 +165,7 @@ internal fun AppDetailSheet(
                     Text(app.description.source.label, style = MaterialTheme.typography.bodySmall, color = Muted)
                     PackageSources(app)
                 }
+                InternetRecommendationCard(app, onOpenNetwork)
                 AssociatedPackages(state, app, onSelectPackage)
                 if (!app.installed) {
                     InfoCard("Uninstalled for this user", "Android still retains a record of this package. It may retain app data, be part of the system image, or be installed for another user. Live readings and app controls are unavailable here.", Icons.Rounded.Info)
@@ -247,9 +248,6 @@ internal fun AppDetailSheet(
                     }
                     sheetMessage?.let { message ->
                         SelectionContainer { InfoCard("Update", message, Icons.Rounded.Info, accent = Green) }
-                    }
-                    OutlinedButton(onClick = onOpenNetwork, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
-                        Text("Network and internet access")
                     }
                     OutlinedButton(onClick = { onOpenAppSettings(app.packageName) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
                         Icon(Icons.Rounded.Settings, null, modifier = Modifier.size(19.dp))

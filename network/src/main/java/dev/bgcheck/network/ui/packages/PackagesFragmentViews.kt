@@ -762,6 +762,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
         binding.actionSheetAppIcon.setImageResource(R.drawable.de1984_icon)
         binding.actionSheetAppName.text = pkg.name
         binding.actionSheetPackageName.text = pkg.packageName
+        dev.bgcheck.network.ui.common.InternetRecommendationView.bind(binding.internetRecommendation, pkg)
 
         // Load icon asynchronously to prevent blocking main thread
         // Work profile apps require slow shell commands via HiddenApiHelper
@@ -878,7 +879,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
             binding.firewallRulesDivider.visibility = View.GONE
         }
 
-        val isUninstalled = pkg.versionName == null && !pkg.isEnabled && pkg.type == PackageType.SYSTEM
+        val isUninstalled = !pkg.isInstalled
         // Not installed in this profile: nothing to stop or enable, only Reinstall applies.
         val installedOnly = if (isUninstalled) View.GONE else View.VISIBLE
         binding.forceStopAction.visibility = installedOnly

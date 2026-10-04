@@ -892,6 +892,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         binding.actionSheetAppIcon.setImageResource(R.drawable.de1984_icon)
         binding.actionSheetAppName.text = pkg.name
         binding.actionSheetPackageName.text = pkg.packageName
+        dev.bgcheck.network.ui.common.InternetRecommendationView.bind(binding.internetRecommendation, pkg)
 
         // Load icon asynchronously to prevent blocking main thread
         // Work profile apps require slow shell commands via HiddenApiHelper
@@ -1319,6 +1320,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         binding.actionSheetAppIcon.setImageResource(R.drawable.de1984_icon)
         binding.actionSheetAppName.text = pkg.name
         binding.actionSheetPackageName.text = pkg.packageName
+        dev.bgcheck.network.ui.common.InternetRecommendationView.bind(binding.internetRecommendation, pkg)
 
         // Load icon asynchronously to prevent blocking main thread
         // Work profile apps require slow shell commands via HiddenApiHelper

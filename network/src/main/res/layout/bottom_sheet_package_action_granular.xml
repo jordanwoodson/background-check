@@ -71,6 +71,16 @@
 
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/internet_recommendation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:padding="12dp"
+            android:background="@drawable/affects_info_box_background"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="14sp" />
+
         <!-- Protection Warning Banner -->
         <include
             android:id="@+id/protection_warning_banner"

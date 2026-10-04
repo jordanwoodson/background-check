@@ -65,7 +65,8 @@ data class NetworkPackage(
         dev.bgcheck.network.utils.Constants.Settings.DEFAULT_FIREWALL_POLICY ==
             dev.bgcheck.network.utils.Constants.Settings.POLICY_BLOCK_ALL,
     val isWorkProfile: Boolean = false,
-    val isCloneProfile: Boolean = false
+    val isCloneProfile: Boolean = false,
+    val permissionsKnown: Boolean = false,
 ) {
     /**
      * This row's OWN saved rule, whether or not the displayed flags have been replaced.

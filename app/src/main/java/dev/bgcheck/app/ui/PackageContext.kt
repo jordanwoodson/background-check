@@ -25,6 +25,36 @@ import androidx.compose.ui.unit.dp
 import dev.bgcheck.app.data.AppEntry
 import dev.bgcheck.app.data.PackageDescriptions
 import dev.bgcheck.app.data.UiState
+import dev.bgcheck.app.data.internetRecommendation
+import dev.bgcheck.network.domain.model.InternetRecommendations
+
+@Composable
+internal fun InternetRecommendationCard(app: AppEntry, onOpenNetwork: () -> Unit) {
+    val recommendation = app.internetRecommendation
+    val uriHandler = LocalUriHandler.current
+    Surface(color = Panel, shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()
+        .testTag("internet-recommendation")) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Internet firewall recommendation", style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() })
+            Text(recommendation.advice.label, style = MaterialTheme.typography.titleSmall, color = Cyan)
+            Text(recommendation.reason, style = MaterialTheme.typography.bodySmall)
+            Text(recommendation.consequence, style = MaterialTheme.typography.bodySmall, color = Muted)
+            recommendation.afterInstall?.let { restored ->
+                Text("If reinstalled: ${restored.advice.label}", style = MaterialTheme.typography.titleSmall, color = Purple)
+                Text("${restored.reason} ${restored.consequence}", style = MaterialTheme.typography.bodySmall)
+            }
+            Disclosure("Recommendation details", "Permissions, scope and source") {
+                recommendation.notes.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = Muted) }
+                Text(InternetRecommendations.GUIDANCE_NOTE, style = MaterialTheme.typography.bodySmall, color = Muted)
+                recommendation.sourceUrl?.let { url ->
+                    TextButton(onClick = { uriHandler.openUri(url) }) { Text("Recommendation source") }
+                }
+            }
+            if (app.installed) TextButton(onClick = onOpenNetwork) { Text("Network and internet access") }
+        }
+    }
+}
 
 @Composable
 internal fun PackageSources(app: AppEntry) {

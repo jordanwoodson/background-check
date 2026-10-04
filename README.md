@@ -19,6 +19,8 @@ See the [Dracula terminal identity and screenshots](docs/dracula-theme.md), [Dra
 
 ## Network and internet controls
 
+Package rows and details now include **internet firewall recommendations** for system, user and retained-uninstalled packages. Guidance explains why to allow, consider blocking or review access, accounts for shared/core UIDs and INTERNET permission, and shows reinstall advice for removed packages. The same guidance appears beside Network's firewall controls. Recommendations do not change rules automatically. See [recommendations and their sources](docs/internet-recommendations.md).
+
 The **Network** workspace retains De1984’s four firewall backends, per-app and batch rules, Wi-Fi/mobile/roaming and screen-off controls, LAN blocking with root, allow-by-default/block-by-default policies, profile-aware app lists, package enable/disable/force-stop/uninstall/restore, rule backup and restore, captive-portal settings, Quick Settings tile, widget, installation notifications, logs, appearance and language settings. The MIT source and attribution are included; see [provenance](network/UPSTREAM.md) and the [feature and verification matrix](docs/network-controls-verification.md).
 
 **AUTO** selects iptables with real root, then ConnectivityManager with Shizuku on supported Android versions, then the local VPN. NetworkPolicyManager is manually selectable. On standard Android it restricts metered background data only; the app labels that limitation and does not claim full internet blocking. Full NPM protection depends on the ROM.

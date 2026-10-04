@@ -47,6 +47,11 @@ class AppInventory(private val context: Context) {
                 uid = info.uid, system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0,
                 enabled = info.enabled, targetSdk = info.targetSdkVersion,
                 installed = info.flags and ApplicationInfo.FLAG_INSTALLED != 0,
+                hasInternetPermission = if (info.flags and ApplicationInfo.FLAG_INSTALLED == 0) null else runCatching {
+                    @Suppress("DEPRECATION")
+                    val permissions = pm.getPackageInfo(info.packageName, PackageManager.GET_PERMISSIONS).requestedPermissions
+                    permissions?.contains(android.Manifest.permission.INTERNET) == true
+                }.getOrNull(),
                 description = PackageDescriptions.describe(info.packageName,
                     runCatching { info.loadDescription(pm)?.toString() }.getOrNull(), info.category),
                 protectedReason = when {

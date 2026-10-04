@@ -46,7 +46,8 @@ private data class PackageMetadata(
     val versionCode: Long?,
     val installTime: Long?,
     val updateTime: Long?,
-    val hasNetworkAccess: Boolean
+    val hasNetworkAccess: Boolean,
+    val permissionsKnown: Boolean = false,
 )
 
 class AndroidPackageDataSource(
@@ -313,6 +314,7 @@ class AndroidPackageDataSource(
                                 installTime = metadata.installTime,
                                 updateTime = metadata.updateTime,
                                 permissions = metadata.permissions,
+                                permissionsKnown = metadata.permissionsKnown,
                                 hasNetworkAccess = metadata.hasNetworkAccess,
                                 isNetworkBlocked = blockingState.isNetworkBlocked,
                                 wifiBlocked = blockingState.wifiBlocked,
@@ -395,8 +397,8 @@ class AndroidPackageDataSource(
                 ) ?: return@withContext null
 
                 val rule = firewallRepository.getRuleByPackage(packageName, userId).first()
-                val permissions = getAppPermissions(packageName, userId)
-                val isVpnApp = hasVpnService(packageName, userId)
+                val metadata = getPackageMetadataBatch(packageName, userId)
+                val isVpnApp = metadata.isVpnApp
 
                 val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
                 val defaultPolicy = prefs.getString(
@@ -475,12 +477,13 @@ class AndroidPackageDataSource(
                     icon = getAppIconEmoji(appInfo),
                     isEnabled = appInfo.enabled,
                     type = if (isSystemApp(appInfo)) Constants.Packages.TYPE_SYSTEM else Constants.Packages.TYPE_USER,
-                    versionName = getVersionName(appInfo.packageName, userId),
-                    versionCode = getVersionCode(appInfo.packageName, userId),
-                    installTime = getInstallTime(appInfo.packageName, userId),
-                    updateTime = getUpdateTime(appInfo.packageName, userId),
-                    permissions = permissions,
-                    hasNetworkAccess = hasNetworkPermissions(appInfo.packageName, userId),
+                    versionName = metadata.versionName,
+                    versionCode = metadata.versionCode,
+                    installTime = metadata.installTime,
+                    updateTime = metadata.updateTime,
+                    permissions = metadata.permissions,
+                    permissionsKnown = metadata.permissionsKnown,
+                    hasNetworkAccess = metadata.hasNetworkAccess,
                     isNetworkBlocked = blockingState.isNetworkBlocked,
                     wifiBlocked = blockingState.wifiBlocked,
                     mobileBlocked = blockingState.mobileBlocked,
@@ -582,6 +585,7 @@ class AndroidPackageDataSource(
                     .map { packageName ->
                         PackageEntity(
                             packageName = packageName,
+                            isInstalled = false,
                             userId = profile.userId,
                             uid = 0,
                             name = packageName,
@@ -782,11 +786,7 @@ class AndroidPackageDataSource(
                 serviceInfo.permission == Constants.Firewall.VPN_SERVICE_PERMISSION
             } ?: false
 
-            val hasNetworkAccess = permissions.any { permission ->
-                permission == "android.permission.INTERNET" ||
-                permission == "android.permission.ACCESS_NETWORK_STATE" ||
-                permission == "android.permission.ACCESS_WIFI_STATE"
-            }
+            val hasNetworkAccess = permissions.any { it in Constants.Firewall.NETWORK_PERMISSIONS }
 
             val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                 packageInfo.longVersionCode
@@ -802,7 +802,8 @@ class AndroidPackageDataSource(
                 versionCode = versionCode,
                 installTime = packageInfo.firstInstallTime,
                 updateTime = packageInfo.lastUpdateTime,
-                hasNetworkAccess = hasNetworkAccess
+                hasNetworkAccess = hasNetworkAccess,
+                permissionsKnown = true,
             )
         } catch (e: Exception) {
             AppLogger.d(TAG, "Failed to get metadata for $packageName: ${e.message}")
@@ -815,45 +816,6 @@ class AndroidPackageDataSource(
                 updateTime = null,
                 hasNetworkAccess = false
             )
-        }
-    }
-
-    private fun getVersionName(packageName: String, userId: Int = 0): String? {
-        return try {
-            HiddenApiHelper.getPackageInfoAsUser(context, packageName, 0, userId)?.versionName
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun getVersionCode(packageName: String, userId: Int = 0): Long? {
-        return try {
-            val packageInfo = HiddenApiHelper.getPackageInfoAsUser(context, packageName, 0, userId)
-                ?: return null
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun getInstallTime(packageName: String, userId: Int = 0): Long? {
-        return try {
-            HiddenApiHelper.getPackageInfoAsUser(context, packageName, 0, userId)?.firstInstallTime
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun getUpdateTime(packageName: String, userId: Int = 0): Long? {
-        return try {
-            HiddenApiHelper.getPackageInfoAsUser(context, packageName, 0, userId)?.lastUpdateTime
-        } catch (e: Exception) {
-            null
         }
     }
 

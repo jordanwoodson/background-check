@@ -230,6 +230,7 @@ private fun dev.bgcheck.network.data.model.PackageEntity.toNetworkDomain(): Netw
         backgroundBlocked = backgroundBlocked,
         lanBlocked = lanBlocked,
         networkPermissions = permissions,
+        permissionsKnown = permissionsKnown,
         versionName = versionName,
         versionCode = versionCode,
         installTime = installTime,
