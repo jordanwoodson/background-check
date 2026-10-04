@@ -20,6 +20,10 @@ class FirewallBackupTest {
         rejects(valid.replace("\"rulesCount\":1", "\"rulesCount\":2"))
         rejects(valid.replace("\"uid\":10123", "\"userId\":-1,\"uid\":10123"))
     }
+    @Test fun preservesProfileSerialForRestoreValidation() {
+        val rule = FirewallBackupCodec.decode(valid.replace("\"uid\":10123", "\"uid\":10123,\"userSerial\":42")).rules.single()
+        assertEquals(42L, rule.userSerial)
+    }
     private fun rejects(json: String) {
         try { FirewallBackupCodec.decode(json); fail("Invalid backup accepted") }
         catch (expected: IllegalArgumentException) { }

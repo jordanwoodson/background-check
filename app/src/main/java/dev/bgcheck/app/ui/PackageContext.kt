@@ -50,7 +50,7 @@ internal fun CanaDebloatRecommendationCard(app: AppEntry) {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = Orange)
             }
             Text("Source: Android Debloat List bundled with Cana", style = MaterialTheme.typography.labelSmall, color = Muted)
-            key(app.packageName) {
+            key(app.key) {
                 Disclosure("Cana list details", "Package notes, dependencies and replacements") {
                     recommendation.description?.takeIf { it.isNotBlank() }?.let {
                         Text("Upstream package notes", style = MaterialTheme.typography.titleSmall)
@@ -94,7 +94,7 @@ internal fun PackageSources(app: AppEntry) {
         Text(it, style = MaterialTheme.typography.bodySmall, color = Muted)
     }
     if (app.description.citations.isEmpty()) return
-    var expanded by remember(app.packageName) { mutableStateOf(false) }
+    var expanded by remember(app.key) { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
     Column {
         TextButton(onClick = { expanded = !expanded }) {
@@ -110,8 +110,8 @@ internal fun PackageSources(app: AppEntry) {
 
 @Composable
 internal fun AssociatedPackages(state: UiState, app: AppEntry, onSelect: (AppEntry) -> Unit) {
-    val entries = remember(state.apps, state.uninstalledApps) {
-        (state.apps + state.uninstalledApps).associateBy { it.packageName }
+    val entries = remember(state.apps, state.uninstalledApps, app.userId) {
+        (state.apps + state.uninstalledApps).filter { it.userId == app.userId }.associateBy { it.packageName }
     }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Associated packages", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
@@ -120,7 +120,7 @@ internal fun AssociatedPackages(state: UiState, app: AppEntry, onSelect: (AppEnt
                 style = MaterialTheme.typography.bodySmall, color = Muted)
         }
         app.associations.groupBy { it.kind }.forEach { (kind, associations) ->
-            var expanded by remember(app.packageName, kind) { mutableStateOf(false) }
+            var expanded by remember(app.key, kind) { mutableStateOf(false) }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("${kind.label} (${associations.size})", style = MaterialTheme.typography.titleMedium)
                 Text(kind.explanation, style = MaterialTheme.typography.bodySmall, color = Muted)
@@ -133,9 +133,10 @@ internal fun AssociatedPackages(state: UiState, app: AppEntry, onSelect: (AppEnt
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(entry?.label ?: PackageDescriptions.label(association.packageName, association.packageName),
                                 style = MaterialTheme.typography.titleSmall, color = Purple)
+                            entry?.let { ProfileLabel(it.profile) }
                             Text(association.packageName, style = MaterialTheme.typography.bodySmall, color = Muted)
                             Text(when {
-                                entry == null -> "Not in this user's app inventory"
+                                entry == null -> "Not in ${app.profile.name} app inventory"
                                 !entry.installed -> "Uninstalled for this user · view details"
                                 !entry.enabled -> "Installed · disabled · view details"
                                 else -> "Installed · view details"

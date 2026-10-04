@@ -26,7 +26,9 @@ data class Package(
     val isCloneProfile: Boolean = false,
     val isInstalled: Boolean = true,
     val permissionsKnown: Boolean = false,
+    val userSerial: Long? = null,
 ) {
+    val identity: PackageIdentity get() = PackageIdentity(uid, userSerial)
     val id: PackageId get() = PackageId(packageName, userId)
 }
 

@@ -26,5 +26,6 @@ data class FirewallRuleEntity(
     val hasInternetPermission: Boolean = false,
 
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val userSerial: Long? = null
 )

@@ -1,5 +1,7 @@
 package dev.bgcheck.network.domain.repository
 
+import dev.bgcheck.network.domain.model.PackageId
+import dev.bgcheck.network.domain.model.PackageIdentity
 import dev.bgcheck.network.domain.model.Package
 import dev.bgcheck.network.domain.model.ReinstallBatchResult
 import dev.bgcheck.network.domain.model.UninstallBatchResult
@@ -11,17 +13,17 @@ interface PackageRepository {
 
     suspend fun getUninstalledSystemPackages(): Result<List<Package>>
 
-    suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean): Result<Unit>
+    suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity? = null): Result<Unit>
 
     suspend fun getPackage(packageName: String, userId: Int): Result<Package>
 
-    suspend fun uninstallPackage(packageName: String, userId: Int): Result<Unit>
+    suspend fun uninstallPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Result<Unit>
 
-    suspend fun uninstallMultiplePackages(packages: List<Pair<String, Int>>): Result<UninstallBatchResult>
+    suspend fun uninstallMultiplePackages(packages: List<Pair<String, Int>>, expected: Map<PackageId, PackageIdentity> = emptyMap()): Result<UninstallBatchResult>
 
-    suspend fun reinstallPackage(packageName: String, userId: Int): Result<Unit>
+    suspend fun reinstallPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Result<Unit>
 
-    suspend fun reinstallMultiplePackages(packages: List<Pair<String, Int>>): Result<ReinstallBatchResult>
+    suspend fun reinstallMultiplePackages(packages: List<Pair<String, Int>>, expected: Map<PackageId, PackageIdentity> = emptyMap()): Result<ReinstallBatchResult>
 
-    suspend fun forceStopPackage(packageName: String, userId: Int): Result<Unit>
+    suspend fun forceStopPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Result<Unit>
 }

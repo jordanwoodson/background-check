@@ -67,7 +67,9 @@ data class NetworkPackage(
     val isWorkProfile: Boolean = false,
     val isCloneProfile: Boolean = false,
     val permissionsKnown: Boolean = false,
+    val userSerial: Long? = null,
 ) {
+    val identity: PackageIdentity get() = PackageIdentity(uid, userSerial)
     /**
      * This row's OWN saved rule, whether or not the displayed flags have been replaced.
      *

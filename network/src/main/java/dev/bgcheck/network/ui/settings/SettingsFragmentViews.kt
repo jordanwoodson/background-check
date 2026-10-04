@@ -41,6 +41,7 @@ import dev.bgcheck.network.domain.model.CaptivePortalMode
 import dev.bgcheck.network.domain.model.UninstallBatchResult
 import dev.bgcheck.network.domain.model.CaptivePortalPreset
 import dev.bgcheck.network.databinding.PermissionTierSectionBinding
+import dev.bgcheck.network.presentation.viewmodel.ImportProfileSelection
 import dev.bgcheck.network.presentation.viewmodel.ImportUninstalledPreview
 import dev.bgcheck.network.presentation.viewmodel.SettingsViewModel
 import dev.bgcheck.network.ui.base.BaseFragment
@@ -564,11 +565,16 @@ class SettingsFragmentViews : BaseFragment<FragmentSettingsBinding>() {
         }
 
         state.error?.let { error ->
+            progressDialog?.dismiss()
             viewModel.clearError()
             StandardDialog.showError(
                 context = requireContext(),
                 message = error
             )
+        }
+
+        state.importProfileSelection?.let { selection ->
+            if (importProfileDialog?.isShowing != true) showImportProfileDialog(selection)
         }
 
         state.importUninstalledPreview?.let { preview ->
@@ -1743,8 +1749,25 @@ class SettingsFragmentViews : BaseFragment<FragmentSettingsBinding>() {
     }
 
 
+    private var importProfileDialog: AlertDialog? = null
+
+    private fun showImportProfileDialog(selection: ImportProfileSelection) {
+        importProfileDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Name-only list: choose target profile")
+            .setItems(selection.profiles.map { "${it.label} · ${selection.document.count} package names" }.toTypedArray()) { _, index ->
+                viewModel.selectImportProfile(selection.profiles[index].userId)
+            }
+            .setNegativeButton(R.string.dialog_cancel) { _, _ -> viewModel.clearImportProfileSelection() }
+            .setOnCancelListener { viewModel.clearImportProfileSelection() }
+            .show()
+    }
+
+    private fun importScopeMessage(preview: ImportUninstalledPreview): String =
+        preview.legacyProfile?.let { "This name-only list will remove apps only from $it.\n\n" }
+            ?: "Apps will be removed only from the profiles recorded in this file.\n\n"
+
     private fun showImportPreviewDialog(preview: ImportUninstalledPreview) {
-        val packageList = preview.packagesToUninstall.take(10).joinToString("\n") { pkg -> "• $pkg" }
+        val packageList = preview.packagesToUninstall.take(10).joinToString("\n") { (name, userId) -> "• ${preview.targetLabel(name, userId)}" }
         val moreText = if (preview.packagesToUninstall.size > 10) {
             "\n${getString(R.string.batch_uninstall_results_and_more, preview.packagesToUninstall.size - 10)}"
         } else {
@@ -1754,7 +1777,7 @@ class SettingsFragmentViews : BaseFragment<FragmentSettingsBinding>() {
         StandardDialog.showConfirmation(
             context = requireContext(),
             title = getString(R.string.dialog_import_preview_title),
-            message = getString(
+            message = importScopeMessage(preview) + getString(
                 R.string.dialog_import_preview_message,
                 preview.packagesToUninstall.size,
                 packageList + moreText
@@ -1772,7 +1795,7 @@ class SettingsFragmentViews : BaseFragment<FragmentSettingsBinding>() {
     }
 
     private fun showImportWarningDialog(preview: ImportUninstalledPreview) {
-        val foundList = preview.packagesToUninstall.take(10).joinToString("\n") { pkg -> "• $pkg" }
+        val foundList = preview.packagesToUninstall.take(10).joinToString("\n") { (name, userId) -> "• ${preview.targetLabel(name, userId)}" }
         val foundMoreText = if (preview.packagesToUninstall.size > 10) {
             "\n${getString(R.string.batch_uninstall_results_and_more, preview.packagesToUninstall.size - 10)}"
         } else {
@@ -1802,7 +1825,7 @@ class SettingsFragmentViews : BaseFragment<FragmentSettingsBinding>() {
         StandardDialog.showConfirmation(
             context = requireContext(),
             title = getString(R.string.dialog_import_warning_title),
-            message = getString(
+            message = importScopeMessage(preview) + getString(
                 R.string.dialog_import_warning_message,
                 preview.packagesToUninstall.size,
                 preview.totalPackages,

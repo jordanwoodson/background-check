@@ -5,6 +5,17 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class CommandPolicyTest {
+    @Test fun profileSettingsAndPidDiagnosticsRemainNarrowlyScoped() {
+        val settings = listOf("am", "start", "--user", "10", "-a", "android.settings.APPLICATION_DETAILS_SETTINGS", "-d", "package:dev.example")
+        assertEquals(settings, CommandPolicy.validate(settings))
+        assertEquals(listOf("ps", "-A", "-o", "PID,UID,NAME"), CommandPolicy.validate(listOf("ps", "-A", "-o", "PID,UID,NAME")))
+        assertEquals(listOf("dumpsys", "meminfo", "--local", "31"), CommandPolicy.validate(listOf("dumpsys", "meminfo", "--local", "31")))
+        listOf(settings.toMutableList().apply { set(3, "all") }, settings.toMutableList().apply { set(5, "android.intent.action.DELETE") },
+            settings.toMutableList().apply { set(7, "package:dev.example;id") },
+            listOf("ps", "-A"), listOf("dumpsys", "meminfo", "--local", "-1")).forEach { command ->
+            assertThrows(IllegalArgumentException::class.java) { CommandPolicy.validate(command) }
+        }
+    }
     @Test fun acceptsBoundedResourceQueriesAndUserScopedStop() {
         val commands = listOf(
             listOf("top", "-b", "-n", "2", "-d", "1", "-s", "4", "-o", "PID,PPID,UID,%CPU,RSS,VSZ,S,USER,CMDLINE"),

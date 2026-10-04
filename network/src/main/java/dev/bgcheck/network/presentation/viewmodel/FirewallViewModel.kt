@@ -1,5 +1,6 @@
 package dev.bgcheck.network.presentation.viewmodel
 
+import dev.bgcheck.network.domain.model.PackageIdentity
 import dev.bgcheck.network.utils.AppLogger
 import android.app.Application
 import android.content.Context
@@ -437,6 +438,8 @@ class FirewallViewModel(
             }
             .onEach { packages ->
                 cachedPackages = packages
+                _uiState.value = _uiState.value.copy(profileWarnings =
+                    (getApplication<Application>() as dev.bgcheck.network.De1984Application).dependencies.packageDataSource.profileWarnings.value)
                 cachedInstalledUids = withContext(Dispatchers.IO) {
                     runCatching { dev.bgcheck.network.data.multiuser.HiddenApiHelper.getInstalledUids(getApplication()) }
                         .getOrDefault(cachedInstalledUids)
@@ -532,11 +535,9 @@ class FirewallViewModel(
         // saying the filter had been ignored. The two real defects were never the empty list. They
         // were that the saved filter got overwritten, and that the chip could vanish leaving no way
         // out - and both are fixed where they happen.
-        result = when (filterState.profileFilter.lowercase()) {
-            "personal" -> result.filter { !it.isWorkProfile && !it.isCloneProfile }
-            "work" -> result.filter { it.isWorkProfile }
-            "clone" -> result.filter { it.isCloneProfile }
-            else -> result
+        result = result.filter {
+            dev.bgcheck.network.domain.model.ProfileFilter.matches(
+                filterState.profileFilter, it.userId, it.userSerial, it.isWorkProfile, it.isCloneProfile)
         }
 
         if (filterState.internetOnly) {
@@ -588,7 +589,7 @@ class FirewallViewModel(
         applyFilters(newFilterState)
     }
 
-    fun setWifiBlocking(packageName: String, userId: Int = 0, blocked: Boolean) {
+    fun setWifiBlocking(packageName: String, userId: Int = 0, blocked: Boolean, expected: PackageIdentity? = null) {
         viewModelScope.launch {
             // Asked BEFORE the optimistic write. updatePackageInList stamps hasExplicitRule
             // and the new flags into cachedPackages, and enforcedVectorFor folds a row's own
@@ -602,7 +603,7 @@ class FirewallViewModel(
                 updated
             }
 
-            manageNetworkAccessUseCase.setWifiBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked)
+            manageNetworkAccessUseCase.setWifiBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked, expected = expected)
                                 .onFailure { error ->
                     restoreRow(snapshot)
                     if (superuserBannerState.shouldShowBannerForError(error)) {
@@ -613,7 +614,7 @@ class FirewallViewModel(
         }
     }
 
-    fun setMobileBlocking(packageName: String, userId: Int = 0, blocked: Boolean) {
+    fun setMobileBlocking(packageName: String, userId: Int = 0, blocked: Boolean, expected: PackageIdentity? = null) {
         viewModelScope.launch {
             if (blocked) {
                 // Asked BEFORE the optimistic write. updatePackageInList stamps hasExplicitRule
@@ -634,7 +635,7 @@ class FirewallViewModel(
                 // already blocks roaming in enforcement AND on screen without storing it.
                 // Storing it destroyed the user's own roaming choice - block Mobile then
                 // unblock it, and roaming stayed blocked because nothing put it back.
-                manageNetworkAccessUseCase.setMobileBlocking(packageName, userId, blocked = true, stampDefaultOnUntouched = !masked)
+                manageNetworkAccessUseCase.setMobileBlocking(packageName, userId, blocked = true, stampDefaultOnUntouched = !masked, expected = expected)
                                         .onFailure { error ->
                         restoreRow(snapshot)
                         if (superuserBannerState.shouldShowBannerForError(error)) {
@@ -666,7 +667,7 @@ class FirewallViewModel(
                     updated
                 }
 
-                manageNetworkAccessUseCase.setMobileBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked)
+                manageNetworkAccessUseCase.setMobileBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked, expected = expected)
                                         .onFailure { error ->
                         restoreRow(snapshot)
                         if (superuserBannerState.shouldShowBannerForError(error)) {
@@ -678,7 +679,7 @@ class FirewallViewModel(
         }
     }
 
-    fun setRoamingBlocking(packageName: String, userId: Int = 0, blocked: Boolean) {
+    fun setRoamingBlocking(packageName: String, userId: Int = 0, blocked: Boolean, expected: PackageIdentity? = null) {
         viewModelScope.launch {
             // Per user preference: "enabling Roaming block should auto-enable Mobile block"
             // and "roaming requires mobile" so unblocking roaming also unblocks mobile
@@ -702,7 +703,7 @@ class FirewallViewModel(
                 updated
             }
 
-            manageNetworkAccessUseCase.setMobileAndRoaming(packageName, userId, mobileBlocked = blocked, roamingBlocked = blocked, stampDefaultOnUntouched = !masked)
+            manageNetworkAccessUseCase.setMobileAndRoaming(packageName, userId, mobileBlocked = blocked, roamingBlocked = blocked, stampDefaultOnUntouched = !masked, expected = expected)
                                 .onFailure { error ->
                     restoreRow(snapshot)
                     if (superuserBannerState.shouldShowBannerForError(error)) {
@@ -724,7 +725,7 @@ class FirewallViewModel(
         }
     }
 
-    fun setBackgroundBlocking(packageName: String, userId: Int = 0, blocked: Boolean) {
+    fun setBackgroundBlocking(packageName: String, userId: Int = 0, blocked: Boolean, expected: PackageIdentity? = null) {
         viewModelScope.launch {
             AppLogger.d(TAG, "setBackgroundBlocking: packageName=$packageName, userId=$userId, blocked=$blocked")
             // false in BOTH directions: the background insert writes the networks flat, never the
@@ -742,7 +743,7 @@ class FirewallViewModel(
                 updated
             }
 
-            manageNetworkAccessUseCase.setBackgroundBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked)
+            manageNetworkAccessUseCase.setBackgroundBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked, expected = expected)
                 .onSuccess {
                     AppLogger.d(TAG, "setBackgroundBlocking: SUCCESS - persisted to database")
                 }
@@ -757,7 +758,7 @@ class FirewallViewModel(
         }
     }
 
-    fun setLanBlocking(packageName: String, userId: Int = 0, blocked: Boolean) {
+    fun setLanBlocking(packageName: String, userId: Int = 0, blocked: Boolean, expected: PackageIdentity? = null) {
         viewModelScope.launch {
             AppLogger.d(TAG, "setLanBlocking: packageName=$packageName, userId=$userId, blocked=$blocked")
             // Asked BEFORE the optimistic write. updatePackageInList stamps hasExplicitRule
@@ -772,7 +773,7 @@ class FirewallViewModel(
                 updated
             }
 
-            manageNetworkAccessUseCase.setLanBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked)
+            manageNetworkAccessUseCase.setLanBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked, expected = expected)
                 .onSuccess {
                     AppLogger.d(TAG, "setLanBlocking: SUCCESS - persisted to database")
                 }
@@ -787,7 +788,7 @@ class FirewallViewModel(
         }
     }
 
-    fun setAllNetworkBlocking(packageName: String, userId: Int = 0, blocked: Boolean) {
+    fun setAllNetworkBlocking(packageName: String, userId: Int = 0, blocked: Boolean, expected: PackageIdentity? = null) {
         val startTime = System.currentTimeMillis()
         AppLogger.d(TAG, "🔥 [TIMING] setAllNetworkBlocking START: pkg=$packageName, userId=$userId, blocked=$blocked, timestamp=$startTime")
 
@@ -808,7 +809,7 @@ class FirewallViewModel(
             }
             AppLogger.d(TAG, "🔥 [TIMING] UI optimistic update done: +${System.currentTimeMillis() - startTime}ms")
 
-            manageNetworkAccessUseCase.setAllNetworkBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked)
+            manageNetworkAccessUseCase.setAllNetworkBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked, expected = expected)
                 .onSuccess {
                     AppLogger.d(TAG, "🔥 [TIMING] UseCase SUCCESS: +${System.currentTimeMillis() - startTime}ms - DB update complete")
                 }
@@ -1071,7 +1072,7 @@ class FirewallViewModel(
         _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
-    fun batchBlockPackages(packageIds: List<PackageId>) {
+    fun batchBlockPackages(packageIds: List<PackageId>, expected: Map<PackageId, PackageIdentity> = emptyMap()) {
         viewModelScope.launch {
             AppLogger.d(TAG, "🔥 batchBlockPackages: Starting batch block for ${packageIds.size} packages")
             val succeeded = mutableListOf<String>()
@@ -1107,7 +1108,7 @@ class FirewallViewModel(
                 // clears it through the same path - and those backends ignore lanBlocked entirely.
                 // Hiding rather than disabling unenforceable controls is a settled decision that is
                 // not implemented yet; see PLAN.md, product decision 4.
-                manageNetworkAccessUseCase.setNetworkAccess(packageId.packageName, packageId.userId, allowed = false, stampDefaultOnUntouched = !masked)
+                manageNetworkAccessUseCase.setNetworkAccess(packageId.packageName, packageId.userId, allowed = false, stampDefaultOnUntouched = !masked, expected = expected[packageId])
                     .onSuccess {
                         succeeded.add(packageId.packageName)
                     }
@@ -1132,7 +1133,7 @@ class FirewallViewModel(
         }
     }
 
-    fun batchAllowPackages(packageIds: List<PackageId>) {
+    fun batchAllowPackages(packageIds: List<PackageId>, expected: Map<PackageId, PackageIdentity> = emptyMap()) {
         viewModelScope.launch {
             AppLogger.d(TAG, "🔥 batchAllowPackages: Starting batch allow for ${packageIds.size} packages")
             val succeeded = mutableListOf<String>()
@@ -1161,7 +1162,7 @@ class FirewallViewModel(
 
                 // Persist
                 // Mirrors batchBlockPackages: "Allow All Networks" must clear LAN too.
-                manageNetworkAccessUseCase.setNetworkAccess(packageId.packageName, packageId.userId, allowed = true, stampDefaultOnUntouched = !masked)
+                manageNetworkAccessUseCase.setNetworkAccess(packageId.packageName, packageId.userId, allowed = true, stampDefaultOnUntouched = !masked, expected = expected[packageId])
                     .onSuccess {
                         succeeded.add(packageId.packageName)
                     }
@@ -1195,7 +1196,7 @@ class FirewallViewModel(
      * `supportsGranularControl() == false`. They have one switch per app, so the sheet shows one
      * "Internet Access" toggle instead of three. See issue #72.
      */
-    fun batchSetAllNetworkBlocking(packages: List<Pair<String, Int>>, blocked: Boolean) {
+    fun batchSetAllNetworkBlocking(packages: List<Pair<String, Int>>, blocked: Boolean, expected: Map<PackageId, PackageIdentity> = emptyMap()) {
         viewModelScope.launch {
             AppLogger.d(TAG, "🔥 batchSetAllNetworkBlocking: Setting all networks blocked=$blocked for ${packages.size} packages")
             for ((packageName, userId) in packages) {
@@ -1227,7 +1228,7 @@ class FirewallViewModel(
                         roamingBlockedUnderived = blocked,
                     )
                 }
-                manageNetworkAccessUseCase.setAllNetworkBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked)
+                manageNetworkAccessUseCase.setAllNetworkBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked, expected = expected[PackageId(packageName, userId)])
                     .onFailure { error ->
                         AppLogger.e(TAG, "🔥 batchSetAllNetworkBlocking: Failed for $packageName (user=$userId): ${error.message}")
                         // Undo this row, and only this row. Snapshotting without ever
@@ -1246,7 +1247,7 @@ class FirewallViewModel(
         }
     }
 
-    fun batchSetWifiBlocking(packages: List<Pair<String, Int>>, blocked: Boolean) {
+    fun batchSetWifiBlocking(packages: List<Pair<String, Int>>, blocked: Boolean, expected: Map<PackageId, PackageIdentity> = emptyMap()) {
         viewModelScope.launch {
             AppLogger.d(TAG, "🔥 batchSetWifiBlocking: Setting WiFi blocked=$blocked for ${packages.size} packages")
             for ((packageName, userId) in packages) {
@@ -1277,7 +1278,7 @@ class FirewallViewModel(
                 val snapshot = updatePackageInList(packageName, userId, firstRuleKeepsBlockAllDefault = (!blocked) && !masked) { pkg ->
                     pkg.copy(wifiBlocked = blocked)
                 }
-                manageNetworkAccessUseCase.setWifiBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked)
+                manageNetworkAccessUseCase.setWifiBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked, expected = expected[PackageId(packageName, userId)])
                     .onFailure { error ->
                         AppLogger.e(TAG, "🔥 batchSetWifiBlocking: Failed for $packageName (user=$userId): ${error.message}")
                         // Undo this row, and only this row. Snapshotting without ever
@@ -1296,7 +1297,7 @@ class FirewallViewModel(
         }
     }
 
-    fun batchSetMobileBlocking(packages: List<Pair<String, Int>>, blocked: Boolean) {
+    fun batchSetMobileBlocking(packages: List<Pair<String, Int>>, blocked: Boolean, expected: Map<PackageId, PackageIdentity> = emptyMap()) {
         viewModelScope.launch {
             AppLogger.d(TAG, "🔥 batchSetMobileBlocking: Setting Mobile blocked=$blocked for ${packages.size} packages")
             for ((packageName, userId) in packages) {
@@ -1330,13 +1331,13 @@ class FirewallViewModel(
                 // row on failure, retire it on success. This one was missed because its two calls
                 // sit inside an if/else rather than following the shared shape.
                 if (blocked) {
-                    manageNetworkAccessUseCase.setMobileBlocking(packageName, userId, blocked = true, stampDefaultOnUntouched = !masked)
+                    manageNetworkAccessUseCase.setMobileBlocking(packageName, userId, blocked = true, stampDefaultOnUntouched = !masked, expected = expected[PackageId(packageName, userId)])
                         .onFailure { error ->
                             AppLogger.e(TAG, "🔥 batchSetMobileBlocking: Failed for $packageName (user=$userId): ${error.message}")
                             restoreRow(snapshot, reconcile = false)
                         }
                 } else {
-                    manageNetworkAccessUseCase.setMobileBlocking(packageName, userId, blocked = false, stampDefaultOnUntouched = !masked)
+                    manageNetworkAccessUseCase.setMobileBlocking(packageName, userId, blocked = false, stampDefaultOnUntouched = !masked, expected = expected[PackageId(packageName, userId)])
                         .onFailure { error ->
                             AppLogger.e(TAG, "🔥 batchSetMobileBlocking: Failed for $packageName (user=$userId): ${error.message}")
                             restoreRow(snapshot, reconcile = false)
@@ -1351,7 +1352,7 @@ class FirewallViewModel(
         }
     }
 
-    fun batchSetRoamingBlocking(packages: List<Pair<String, Int>>, blocked: Boolean) {
+    fun batchSetRoamingBlocking(packages: List<Pair<String, Int>>, blocked: Boolean, expected: Map<PackageId, PackageIdentity> = emptyMap()) {
         viewModelScope.launch {
             AppLogger.d(TAG, "🔥 batchSetRoamingBlocking: Setting Roaming blocked=$blocked for ${packages.size} packages")
             for ((packageName, userId) in packages) {
@@ -1381,7 +1382,7 @@ class FirewallViewModel(
                         pkg.copy(mobileBlocked = false, roamingBlocked = false, roamingBlockedUnderived = false)
                     }
                 }
-                manageNetworkAccessUseCase.setMobileAndRoaming(packageName, userId, mobileBlocked = blocked, roamingBlocked = blocked, stampDefaultOnUntouched = !masked)
+                manageNetworkAccessUseCase.setMobileAndRoaming(packageName, userId, mobileBlocked = blocked, roamingBlocked = blocked, stampDefaultOnUntouched = !masked, expected = expected[PackageId(packageName, userId)])
                     .onFailure { error ->
                         AppLogger.e(TAG, "🔥 batchSetRoamingBlocking: Failed for $packageName (user=$userId): ${error.message}")
                         // Undo this row, and only this row. Snapshotting without ever
@@ -1400,7 +1401,7 @@ class FirewallViewModel(
         }
     }
 
-    fun batchSetLanBlocking(packages: List<Pair<String, Int>>, blocked: Boolean) {
+    fun batchSetLanBlocking(packages: List<Pair<String, Int>>, blocked: Boolean, expected: Map<PackageId, PackageIdentity> = emptyMap()) {
         viewModelScope.launch {
             AppLogger.d(TAG, "🔥 batchSetLanBlocking: Setting LAN blocked=$blocked for ${packages.size} packages")
             for ((packageName, userId) in packages) {
@@ -1419,7 +1420,7 @@ class FirewallViewModel(
                 val snapshot = updatePackageInList(packageName, userId, firstRuleKeepsBlockAllDefault = (!blocked) && !masked) { pkg ->
                     pkg.copy(lanBlocked = blocked)
                 }
-                manageNetworkAccessUseCase.setLanBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked)
+                manageNetworkAccessUseCase.setLanBlocking(packageName, userId, blocked, stampDefaultOnUntouched = !masked, expected = expected[PackageId(packageName, userId)])
                     .onFailure { error ->
                         AppLogger.e(TAG, "🔥 batchSetLanBlocking: Failed for $packageName (user=$userId): ${error.message}")
                         // Undo this row, and only this row. Snapshotting without ever
@@ -1468,6 +1469,7 @@ class FirewallViewModel(
 }
 
 data class FirewallUiState(
+    val profileWarnings: List<String> = emptyList(),
     val packages: List<NetworkPackage> = emptyList(),
     val filterState: FirewallFilterState = FirewallFilterState(),
     val searchQuery: String = "",

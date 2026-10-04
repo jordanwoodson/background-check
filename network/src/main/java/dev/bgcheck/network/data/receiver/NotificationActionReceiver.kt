@@ -45,13 +45,25 @@ class NotificationActionReceiver : BroadcastReceiver() {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             scope.launch {
                 try {
+                    val profile = dev.bgcheck.network.data.multiuser.HiddenApiHelper.currentProfile(context, userId)
+                    val expectedUid = intent.getIntExtra(Intent.EXTRA_UID, -1)
+                    val serial = intent.getLongExtra("user_serial", -1)
+                    check(profile != null && profile.available && serial >= 0 && profile.serialNumber == serial) {
+                        "Profile changed or is unavailable; reopen Network to change this app."
+                    }
+                    dev.bgcheck.network.data.multiuser.HiddenApiHelper.clearInstalledAppsCache()
+                    val current = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getApplicationInfoAsUser(context, packageName, 0, userId)
+                    check(current != null && current.uid == expectedUid && current.uid / 100000 == userId) {
+                        "App identity changed; reopen Network to change this app."
+                    }
                     // Update firewall rule for all networks.
                     //
                     // setNetworkAccess, not setAllNetworkBlocking: these buttons say "Block All" and
                     // "Allow All", so they must cover all four dimensions including LAN. The narrow
                     // call could not clear the lanBlocked that a new app's own Block All rule sets,
                     // so tapping "Allow All" left the app's LAN blocked while the list read Allowed.
-                    manageNetworkAccessUseCase.setNetworkAccess(packageName, userId = userId, allowed = !blocked)
+                    manageNetworkAccessUseCase.setNetworkAccess(packageName, userId = userId, allowed = !blocked,
+                        expected = dev.bgcheck.network.domain.model.PackageIdentity(expectedUid, serial))
                         .onSuccess {
                             AppLogger.d(TAG, "Successfully updated network access for $packageName: blocked=$blocked")
 
@@ -75,6 +87,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
     private fun dismissNotification(context: Context, packageName: String, userId: Int) {
         try {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel("$userId:$packageName", NewAppNotificationManager.notificationId(packageName, userId))
             notificationManager.cancel(NewAppNotificationManager.notificationId(packageName, userId))
             AppLogger.d(TAG, "Dismissed notification for $packageName (userId=$userId)")
         } catch (e: Exception) {

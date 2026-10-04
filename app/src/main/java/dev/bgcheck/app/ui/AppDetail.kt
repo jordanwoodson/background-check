@@ -75,7 +75,7 @@ internal fun AppDetailSheet(
     app: AppEntry,
     onDismiss: () -> Unit,
     onAction: (ControlAction) -> Unit,
-    onOpenAppSettings: (String) -> Unit,
+    onOpenAppSettings: (AppEntry) -> Unit,
     onConnect: () -> Unit,
     onForceStop: () -> Unit,
     onRetry: () -> Unit = {},
@@ -86,32 +86,40 @@ internal fun AppDetailSheet(
     val compactHeight = with(LocalDensity.current) { windowHeight.toDp() < 480.dp }
     val confirmationModifier = if (compactHeight) Modifier.widthIn(max = 560.dp).fillMaxWidth() else Modifier
     val confirmationProperties = DialogProperties(usePlatformDefaultWidth = !compactHeight)
-    val policy = state.policy?.takeIf { app.installed && it.packageName == app.packageName }
-    var confirmation by remember(app.packageName) { mutableStateOf<ControlAction?>(null) }
-    var confirmForceStop by remember(app.packageName) { mutableStateOf(false) }
+    val profile = state.profiles.firstOrNull { it.userId == app.userId } ?: app.profile
+    val profileAvailable = profile.available && (app.profile.serialNumber == null || profile.serialNumber == null || app.profile.serialNumber == profile.serialNumber)
+    val policy = state.policy?.takeIf {
+        app.installed && it.packageName == app.packageName && it.userId == app.userId &&
+            (it.uid == null || it.uid == app.uid) &&
+            (it.userSerial == null || profile.serialNumber == null || it.userSerial == profile.serialNumber)
+    }
+    var confirmation by remember(app.key) { mutableStateOf<ControlAction?>(null) }
+    var confirmForceStop by remember(app.key) { mutableStateOf(false) }
     // Keep the full result available after the global snackbar has timed out.
-    var sheetMessage by remember(app.packageName) { mutableStateOf(state.message) }
-    LaunchedEffect(app.packageName, state.message) {
+    var sheetMessage by remember(app.key) { mutableStateOf(state.message) }
+    LaunchedEffect(app.key, state.message) {
         state.message?.let { sheetMessage = it }
     }
     // Keep these in the caller's saveable registry, above the sheet's dialog composition.
-    var processSort by rememberSaveable(app.packageName) { mutableStateOf(ProcessSort.PID) }
-    var processDirection by rememberSaveable(app.packageName) { mutableStateOf(SortDirection.ASCENDING) }
-    var serviceSort by rememberSaveable(app.packageName) { mutableStateOf(ServiceSort.NAME) }
-    var serviceDirection by rememberSaveable(app.packageName) { mutableStateOf(SortDirection.ASCENDING) }
+    var processSort by rememberSaveable(app.key) { mutableStateOf(ProcessSort.PID) }
+    var processDirection by rememberSaveable(app.key) { mutableStateOf(SortDirection.ASCENDING) }
+    var serviceSort by rememberSaveable(app.key) { mutableStateOf(ServiceSort.NAME) }
+    var serviceDirection by rememberSaveable(app.key) { mutableStateOf(SortDirection.ASCENDING) }
     val sharedApps = state.apps.filter { it.uid == app.uid }
     val forceStopRestriction = when {
+        !profileAvailable -> profile.unavailableReason ?: "This profile is unavailable. Resume or unlock it before changing app settings."
+        !app.installed -> "This app is uninstalled for the selected profile."
         app.protectedReason != null -> app.protectedReason
         app.system -> "System apps cannot be force-stopped here."
         app.uid % 100_000 < 10_000 -> "Core Android UIDs cannot be force-stopped here."
         sharedApps.size > 1 -> "This UID is shared by several apps. Force stop is unavailable because it may affect other packages."
-        sharedApps.none { it.packageName == app.packageName } -> "App identity is unavailable. Refresh the installed app list."
+        sharedApps.none { it.packageName == app.packageName && it.userId == app.userId } -> "App identity is unavailable. Refresh the installed app list."
         else -> null
     }
     val ready = state.access == AccessState.READY
     val canForceStop = ready && !state.busy && !state.detailLoading && forceStopRestriction == null
     val writableModes = setOf("allow", "ignore", "deny", "default")
-    val canChange = ready && !state.busy && !state.detailLoading && policy != null && policy.error == null && app.protectedReason == null &&
+    val canChange = profileAvailable && ready && !state.busy && !state.detailLoading && policy != null && policy.error == null && app.protectedReason == null &&
         policy.uidOverride == false && policy.backgroundMode in writableModes && policy.userExempt != null &&
         (app.targetSdk >= 26 || policy.legacyMode in writableModes)
     val legacyRelevant = app.targetSdk < 26
@@ -150,12 +158,13 @@ internal fun AppDetailSheet(
                     }
                 }
             }
-            Column(Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(start = 22.dp, end = 22.dp, bottom = 30.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Column(Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(key(app.key) { rememberScrollState() }).padding(start = 22.dp, end = 22.dp, bottom = 30.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
-                    AppIcon(app.packageName, 62.dp)
+                    AppIcon(app.packageName, 62.dp, userId = app.userId, userSerial = app.profile.serialNumber)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(app.label, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
                         Text(app.packageName, style = MaterialTheme.typography.bodySmall, color = Muted)
+                        ProfileLabel(profile)
                         Text((if (app.system) "System app" else "User app") + if (!app.installed) " · Uninstalled" else "", style = MaterialTheme.typography.labelMedium, color = Green)
                     }
                 }
@@ -167,6 +176,9 @@ internal fun AppDetailSheet(
                 }
                 CanaDebloatRecommendationCard(app)
                 AssociatedPackages(state, app, onSelectPackage)
+                if (!profileAvailable) {
+                    InfoCard("Profile unavailable", profile.unavailableReason ?: "Resume or unlock ${profile.name} before changing app settings.", Icons.Rounded.Lock, accent = Orange)
+                }
                 if (!app.installed) {
                     InfoCard("Uninstalled for this user", "Android still retains a record of this package. It may retain app data, be part of the system image, or be installed for another user. Live readings and app controls are unavailable here.", Icons.Rounded.Info)
                 } else {
@@ -228,7 +240,7 @@ internal fun AppDetailSheet(
                     HorizontalDivider(color = Outline)
                     Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                         Text("Battery optimization", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-                        Text("Doze pauses activity while your phone is idle. It is separate from background access.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                        Text("Doze pauses activity while your phone is idle. Its exemption applies across Android profiles.", style = MaterialTheme.typography.bodyMedium, color = Muted)
                         DetailValue("Doze exemption", if (!ready) "Access needed" else when (policy?.dozeExempt) { true -> "Exempt"; false -> "Not exempt"; null -> "Unknown" })
                         if (policy?.systemExempt == true) {
                             Text("Android includes this app in its built-in exemption list. That exemption cannot be removed here.", style = MaterialTheme.typography.bodySmall, color = Orange)
@@ -252,13 +264,13 @@ internal fun AppDetailSheet(
                     OutlinedButton(onClick = onOpenNetwork, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
                         Text("Network and internet access")
                     }
-                    OutlinedButton(onClick = { onOpenAppSettings(app.packageName) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
+                    OutlinedButton(onClick = { onOpenAppSettings(app) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
                         Icon(Icons.Rounded.Settings, null, modifier = Modifier.size(19.dp))
                         Spacer(Modifier.width(10.dp))
                         Text("Open Android app settings", modifier = Modifier.weight(1f))
                         Icon(Icons.Rounded.OpenInNew, null, modifier = Modifier.size(17.dp))
                     }
-                    key(app.packageName) {
+                    key(app.key) {
                         Disclosure("Resource diagnostics", summary = "Processes, battery, memory and services") {
                             DetailValue("Process", if (ready) app.processState.label else "Access needed")
                             DetailValue("Standby group", if (ready) bucketLabel(policy?.standbyBucket ?: app.standbyBucket) else "Access needed")
@@ -288,6 +300,7 @@ internal fun AppDetailSheet(
             title = { Text("Force stop ${app.label}?") },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Profile: ${profile.displayLabel()}")
                     Text("This ends the app’s activity now. Unsaved work may be lost, and notifications, syncing and scheduled work may stop until you open the app again.")
                     Text("Force stop has no Undo. Your background and battery optimization settings remain in place.")
                     if (!canForceStop) Text("App identity or access changed. Close this dialog and refresh before continuing.", color = Orange)
@@ -311,8 +324,12 @@ internal fun AppDetailSheet(
             title = { Text(actionTitle(action)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("For ${app.label}: " + actionExplanation(action))
-                    if (action == ControlAction.EXEMPT_DOZE || action == ControlAction.OPTIMIZE_DOZE) Text("Doze exemptions apply to the package across Android users. This may also affect this app in another user or work profile.", style = MaterialTheme.typography.bodySmall)
+                    Text("For ${app.label} in ${profile.name}: " + actionExplanation(action))
+                    if (action == ControlAction.EXEMPT_DOZE || action == ControlAction.OPTIMIZE_DOZE) {
+                        val copies = state.apps.filter { it.packageName == app.packageName }.map { it.profile.displayLabel() }.distinct()
+                        Text("This changes the Doze exemption across Android profiles, including personal and work copies. Undo also affects every copy.", style = MaterialTheme.typography.bodySmall, color = Orange)
+                        if (copies.isNotEmpty()) Text("Known copies: ${copies.joinToString()}", style = MaterialTheme.typography.bodySmall)
+                    }
                     if (app.system) Text("This is a system app. Changing its behavior could affect other phone features.", color = Orange)
                     Text("The current setting will be saved so you can undo this change.", style = MaterialTheme.typography.bodySmall, color = Muted)
                     if (!allowed) Text("Access or settings changed. Close this dialog and refresh before continuing.", color = Orange)
@@ -344,10 +361,11 @@ private fun AppResourceDiagnostics(
     val uidApps = state.apps.filter { it.uid == app.uid }
     val processes = ListSorting.processes(resources?.processes.orEmpty().filter { it.uid == app.uid }, processSort, processDirection)
     val energy = state.energy?.uids?.firstOrNull { it.uid == app.uid }
-    val diagnostics = state.diagnostics?.takeIf { it.packageName == app.packageName }
+    val diagnostics = state.diagnostics?.takeIf { it.packageName == app.packageName && it.userId == app.userId }
     val services = ListSorting.services(diagnostics?.services.orEmpty(), serviceSort, serviceDirection)
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ResourceValue("Android UID", app.uid.toString())
+        ProfileLabel(app.profile)
         if (uidApps.size > 1) {
             Text("Shared UID · ${uidApps.size} apps", style = MaterialTheme.typography.titleMedium, color = Orange)
             SourceNote("${uidApps.joinToString { it.label }} share this UID. All process and battery figures below belong to the shared UID, not solely to ${app.label}.")

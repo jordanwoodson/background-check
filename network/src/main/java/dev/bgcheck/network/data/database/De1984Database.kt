@@ -9,7 +9,7 @@ import dev.bgcheck.network.data.database.entity.FirewallRuleEntity
     entities = [
         FirewallRuleEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class De1984Database : RoomDatabase() {

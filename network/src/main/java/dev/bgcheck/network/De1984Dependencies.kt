@@ -34,6 +34,7 @@ import dev.bgcheck.network.ui.common.SuperuserBannerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -77,6 +78,60 @@ class De1984Dependencies(private val context: Context) {
         _packageDataChanged.tryEmit(Unit)
     }
 
+
+    init {
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: android.content.Intent) {
+                dev.bgcheck.network.data.multiuser.HiddenApiHelper.clearUserCache()
+                packageDataSource.invalidateCache()
+                notifyPackageDataChanged()
+                applicationScope.launch(Dispatchers.IO) {
+                    // Removal deletes only the departed user's rules; a later profile may reuse its ID.
+                    if (intent.action == android.content.Intent.ACTION_MANAGED_PROFILE_REMOVED) {
+                        @Suppress("DEPRECATION")
+                        val handle = intent.getParcelableExtra<android.os.UserHandle>(android.content.Intent.EXTRA_USER)
+                        if (handle != null && dev.bgcheck.network.data.multiuser.HiddenApiHelper.currentProfile(context, handle.hashCode()) == null) {
+                            firewallRepository.deleteRulesByUserId(handle.hashCode())
+                        }
+                    }
+                    context.sendBroadcast(android.content.Intent("dev.bgcheck.network.FIREWALL_RULES_CHANGED").setPackage(context.packageName))
+                }
+            }
+        }
+        val filter = android.content.IntentFilter().apply {
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_ADDED)
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_REMOVED)
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_AVAILABLE)
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_UNAVAILABLE)
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_UNLOCKED)
+            addAction(android.content.Intent.ACTION_USER_UNLOCKED)
+        }
+        androidx.core.content.ContextCompat.registerReceiver(context, receiver, filter, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
+        // LauncherApps delivers package events from visible managed profiles too. A manifest
+        // PACKAGE_ADDED receiver does not, and polling alone leaves new apps waiting for a tick.
+        context.getSystemService(android.content.pm.LauncherApps::class.java).registerCallback(
+            object : android.content.pm.LauncherApps.Callback() {
+                private fun changed(packageName: String?, user: android.os.UserHandle, added: Boolean = false) {
+                    dev.bgcheck.network.data.multiuser.HiddenApiHelper.clearInstalledAppsCache()
+                    packageDataSource.invalidateCache()
+                    notifyPackageDataChanged()
+                    context.sendBroadcast(android.content.Intent("dev.bgcheck.network.FIREWALL_RULES_CHANGED").setPackage(context.packageName))
+                    if (added && packageName != null) applicationScope.launch(Dispatchers.IO) {
+                        val userId = user.hashCode()
+                        val info = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getApplicationInfoAsUser(context, packageName, 0, userId)
+                        if (info != null && provideHandleNewAppInstallUseCase().execute(packageName, info.uid).isSuccess) {
+                            newAppNotificationManager.showNewAppNotification(packageName, userId)
+                        }
+                    }
+                }
+                override fun onPackageAdded(packageName: String, user: android.os.UserHandle) = changed(packageName, user, true)
+                override fun onPackageRemoved(packageName: String, user: android.os.UserHandle) = changed(packageName, user)
+                override fun onPackageChanged(packageName: String, user: android.os.UserHandle) = changed(packageName, user)
+                override fun onPackagesAvailable(packageNames: Array<out String>, user: android.os.UserHandle, replacing: Boolean) = changed(null, user)
+                override fun onPackagesUnavailable(packageNames: Array<out String>, user: android.os.UserHandle, replacing: Boolean) = changed(null, user)
+            }, android.os.Handler(android.os.Looper.getMainLooper())
+        )
+    }
 
     /**
      * v1.0.0 shipped database version 3, and version 4 renamed `blockWhenScreenOff` to
@@ -189,7 +244,7 @@ class De1984Dependencies(private val context: Context) {
             De1984Database::class.java,
             "de1984_database"
         )
-            .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, dev.bgcheck.network.data.database.FirewallDatabaseMigrations.profileIdentity(context))
             .fallbackToDestructiveMigration()
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onDestructiveMigration(db: SupportSQLiteDatabase) {

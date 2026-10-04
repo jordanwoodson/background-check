@@ -1,5 +1,7 @@
 package dev.bgcheck.network.data.repository
 
+import dev.bgcheck.network.domain.model.PackageId
+import dev.bgcheck.network.domain.model.PackageIdentity
 import android.content.Context
 import android.util.Log
 import dev.bgcheck.network.R
@@ -49,9 +51,9 @@ class PackageRepositoryImpl(
         }
     }
 
-    override suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean): Result<Unit> {
+    override suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setPackageEnabled(packageName, userId, enabled)
+            val success = packageDataSource.setPackageEnabled(packageName, userId, enabled, expected = expected)
             if (success) {
                 onDataChanged?.invoke()
                 Result.success(Unit)
@@ -78,9 +80,9 @@ class PackageRepositoryImpl(
         }
     }
 
-    override suspend fun uninstallPackage(packageName: String, userId: Int): Result<Unit> {
+    override suspend fun uninstallPackage(packageName: String, userId: Int, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.uninstallPackage(packageName, userId)
+            val success = packageDataSource.uninstallPackage(packageName, userId, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -91,13 +93,13 @@ class PackageRepositoryImpl(
         }
     }
 
-    override suspend fun uninstallMultiplePackages(packages: List<Pair<String, Int>>): Result<UninstallBatchResult> {
+    override suspend fun uninstallMultiplePackages(packages: List<Pair<String, Int>>, expected: Map<PackageId, PackageIdentity>): Result<UninstallBatchResult> {
         return try {
             val succeeded = mutableListOf<String>()
             val failed = mutableListOf<Pair<String, String>>()
 
             packages.forEach { (packageName, userId) ->
-                val result = uninstallPackage(packageName, userId)
+                val result = uninstallPackage(packageName, userId, expected[PackageId(packageName, userId)])
                 result.fold(
                     onSuccess = { succeeded.add(packageName) },
                     onFailure = { error -> failed.add(packageName to (error.message ?: context.getString(R.string.error_unknown))) }
@@ -110,9 +112,9 @@ class PackageRepositoryImpl(
         }
     }
 
-    override suspend fun reinstallPackage(packageName: String, userId: Int): Result<Unit> {
+    override suspend fun reinstallPackage(packageName: String, userId: Int, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.reinstallPackage(packageName, userId)
+            val success = packageDataSource.reinstallPackage(packageName, userId, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -123,13 +125,13 @@ class PackageRepositoryImpl(
         }
     }
 
-    override suspend fun reinstallMultiplePackages(packages: List<Pair<String, Int>>): Result<ReinstallBatchResult> {
+    override suspend fun reinstallMultiplePackages(packages: List<Pair<String, Int>>, expected: Map<PackageId, PackageIdentity>): Result<ReinstallBatchResult> {
         return try {
             val succeeded = mutableListOf<String>()
             val failed = mutableListOf<Pair<String, String>>()
 
             packages.forEach { (packageName, userId) ->
-                val result = reinstallPackage(packageName, userId)
+                val result = reinstallPackage(packageName, userId, expected[PackageId(packageName, userId)])
                 result.fold(
                     onSuccess = { succeeded.add(packageName) },
                     onFailure = { error -> failed.add(packageName to (error.message ?: context.getString(R.string.error_unknown))) }
@@ -142,9 +144,9 @@ class PackageRepositoryImpl(
         }
     }
 
-    override suspend fun forceStopPackage(packageName: String, userId: Int): Result<Unit> {
+    override suspend fun forceStopPackage(packageName: String, userId: Int, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.forceStopPackage(packageName, userId)
+            val success = packageDataSource.forceStopPackage(packageName, userId, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {

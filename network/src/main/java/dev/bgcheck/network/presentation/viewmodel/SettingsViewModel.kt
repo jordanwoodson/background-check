@@ -25,6 +25,12 @@ import dev.bgcheck.network.domain.model.CaptivePortalPreset
 import dev.bgcheck.network.domain.model.CaptivePortalSettings
 import dev.bgcheck.network.domain.model.FirewallRulesBackup
 import dev.bgcheck.network.domain.model.Package
+import dev.bgcheck.network.domain.model.PackageId
+import dev.bgcheck.network.domain.model.PackageIdentity
+import dev.bgcheck.network.domain.model.PackageListCodec
+import dev.bgcheck.network.domain.model.PackageListDocument
+import dev.bgcheck.network.domain.model.PackageListEntry
+import dev.bgcheck.network.data.multiuser.HiddenApiHelper
 import dev.bgcheck.network.domain.model.PackageCriticality
 import dev.bgcheck.network.domain.model.UninstallBatchResult
 import dev.bgcheck.network.domain.repository.FirewallRepository
@@ -848,12 +854,26 @@ class SettingsViewModel(
                     return@launch
                 }
 
+                val profiles = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getUsers(context)
+                    .mapNotNull { profile ->
+                        val fresh = dev.bgcheck.network.data.multiuser.HiddenApiHelper.currentProfile(context, profile.userId)
+                        fresh?.serialNumber?.takeIf { fresh.available }?.let { profile.userId to it }
+                    }.toMap()
+                dev.bgcheck.network.domain.model.FirewallBackupCodec.validateProfiles(
+                    backup, profiles, Constants.Firewall.ownUserId()
+                )
+
                 // Re-point every rule at the uid its package holds NOW. The file carries the uid from
                 // export time, and a reinstall since then changed it; the backends fall back to that
                 // stored uid wherever a profile's app list cannot be read (rulesByCurrentUid), and it
                 // could then match no app or another one.
                 val rules = withContext(Dispatchers.IO) {
-                    backup.rules.map { HandleNewAppInstallUseCase.withCurrentIdentity(context, it) }
+                    backup.rules.map { saved ->
+                        val info = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getApplicationInfoAsUser(
+                            context, saved.packageName, android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES, saved.userId
+                        ) ?: error("Cannot verify ${saved.packageName} in profile ${saved.userId}. No rules were restored.")
+                        HandleNewAppInstallUseCase.withCurrentIdentity(context, saved, info)
+                    }
                 }
                 val repointed = rules.indices.count { rules[it].uid != backup.rules[it].uid }
                 if (repointed > 0) {
@@ -980,12 +1000,9 @@ class SettingsViewModel(
                     return@launch
                 }
 
-                val result = packageRepository.getUninstalledSystemPackages()
-                // The file carries names only, so it holds De1984's own profile, the one import applies it to.
-                val ownUserId = Constants.Firewall.ownUserId()
-                val packages = result.getOrNull()?.filter { it.userId == ownUserId }
+                val packages = packageRepository.getUninstalledSystemPackages().getOrThrow()
 
-                if (packages.isNullOrEmpty()) {
+                if (packages.isEmpty()) {
                     AppLogger.d(TAG, "📤 EXPORT: No uninstalled system packages found")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -1016,24 +1033,17 @@ class SettingsViewModel(
         }
     }
 
-    private fun createExportContent(packages: List<Package>): String {
-        return buildString {
-            appendLine("# Background Check Uninstalled Apps Export")
-            appendLine("# Date: ${getCurrentDate()}")
-            appendLine("# App Version: ${BuildConfig.VERSION_NAME}")
-            appendLine("# Count: ${packages.size}")
-            appendLine()
-            packages.forEach { pkg ->
-                appendLine(pkg.packageName)
-            }
-        }
-    }
+    private fun createExportContent(packages: List<Package>): String = PackageListCodec.encode(packages.map { pkg ->
+        PackageListEntry(pkg.packageName, pkg.userId,
+            requireNotNull(pkg.userSerial) { "Refresh the package list to verify profile ${pkg.userId} before exporting." })
+    })
 
     fun importUninstalledApps(uri: Uri) {
         viewModelScope.launch {
             try {
                 AppLogger.d(TAG, "📥 IMPORT: Starting import from file: $uri")
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null, message = null)
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null, message = null,
+                    importUninstalledPreview = null, importProfileSelection = null)
 
                 AppLogger.d(TAG, "📥 IMPORT: Privilege check - root=${rootManager.hasRootPermission}, shizuku=${shizukuManager.hasShizukuPermission}")
                 if (!rootManager.hasRootPermission && !shizukuManager.hasShizukuPermission) {
@@ -1045,67 +1055,17 @@ class SettingsViewModel(
                 }
 
                 val content = readFromUri(uri)
-                val packageNames = parseUninstalledAppsFile(content)
-
-                AppLogger.d(TAG, "📥 IMPORT: Parsed ${packageNames.size} package names from file")
-
-                if (packageNames.isEmpty()) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = context.getString(dev.bgcheck.network.R.string.dialog_import_empty_file)
-                    )
-                    return@launch
+                val document = PackageListCodec.decode(content)
+                require(document.count > 0) { context.getString(dev.bgcheck.network.R.string.dialog_import_empty_file) }
+                if (document.requiresProfileSelection) {
+                    val profiles = currentImportProfiles()
+                    require(profiles.isNotEmpty()) { "No available profile can be verified. Resume or unlock a profile and try again." }
+                    _uiState.value = _uiState.value.copy(isLoading = false,
+                        importProfileSelection = ImportProfileSelection(document, profiles))
+                } else {
+                    prepareImportPreview(document)
                 }
 
-                val installedPackages = packageRepository.getPackages().first()
-                // Names without a profile: checked and uninstalled in De1984's own profile only.
-                val ownUserId = Constants.Firewall.ownUserId()
-                val installedPackageNames = installedPackages.filter { it.userId == ownUserId }.map { it.packageName }.toSet()
-
-                val packagesNotFound = packageNames.filter { it !in installedPackageNames }
-                val installedFromFile = packageNames.filter { it in installedPackageNames }
-
-                // A package list is a file the user can be handed by anyone. Nothing here checked
-                // criticality: the only filter was "is it installed", so an ESSENTIAL package or
-                // De1984 itself would be uninstalled without the typed confirmation the Packages
-                // screen demands for exactly those apps. Protected packages are dropped from the
-                // batch and reported, never silently uninstalled.
-                val packagesProtected = mutableListOf<String>()
-                val packagesToUninstallNames = mutableListOf<String>()
-                for (name in installedFromFile) {
-                    val isProtected = Constants.App.isOwnApp(name) ||
-                        Constants.Firewall.isSystemCritical(name) ||
-                        PackageSafetyLoader.getCriticality(context, name) == PackageCriticality.ESSENTIAL
-                    if (isProtected) packagesProtected.add(name) else packagesToUninstallNames.add(name)
-                }
-
-                val packagesToUninstall = packagesToUninstallNames.map { it to ownUserId }
-
-                AppLogger.d(TAG, "📥 IMPORT: Validation - ${packagesToUninstall.size} found, " +
-                        "${packagesNotFound.size} not found, ${packagesProtected.size} protected and skipped")
-                if (packagesProtected.isNotEmpty()) {
-                    AppLogger.w(TAG, "📥 IMPORT: refusing to uninstall protected packages: ${packagesProtected.joinToString()}")
-                }
-
-                when {
-                    packagesToUninstall.isEmpty() -> {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = context.getString(dev.bgcheck.network.R.string.dialog_import_all_not_found, packagesNotFound.size)
-                        )
-                    }
-                    else -> {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            importUninstalledPreview = ImportUninstalledPreview(
-                                totalPackages = packageNames.size,
-                                packagesToUninstall = packagesToUninstall,
-                                packagesNotFound = packagesNotFound,
-                                packagesProtected = packagesProtected
-                            )
-                        )
-                    }
-                }
             } catch (e: IOException) {
                 AppLogger.e(TAG, "📥 IMPORT: File read failed", e)
                 _uiState.value = _uiState.value.copy(
@@ -1148,43 +1108,107 @@ class SettingsViewModel(
         }
     }
 
-    private fun parseUninstalledAppsFile(content: String): List<String> {
-        return content.lines()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .filter { !it.startsWith("#") }
-            .filter { it.contains(".") }
-            .distinct()
+    private suspend fun currentImportProfiles(): List<ImportProfileChoice> = withContext(Dispatchers.IO) {
+        HiddenApiHelper.getUsers(context).mapNotNull { known ->
+            val current = HiddenApiHelper.currentProfile(context, known.userId)
+            current?.serialNumber?.takeIf { current.available }?.let {
+                ImportProfileChoice(current.userId, it, current.displayName)
+            }
+        }
     }
 
-    fun confirmImportUninstall() {
+    fun selectImportProfile(userId: Int) {
+        val selection = _uiState.value.importProfileSelection ?: return
+        val chosen = selection.profiles.singleOrNull { it.userId == userId } ?: return
+        _uiState.value = _uiState.value.copy(importProfileSelection = null, isLoading = true, error = null)
         viewModelScope.launch {
-            val preview = _uiState.value.importUninstalledPreview ?: return@launch
+            try {
+                // Bind to the profile incarnation shown in the picker; a recreated profile is rejected below.
+                val entries = PackageListCodec.resolve(selection.document, mapOf(userId to chosen.serial), userId)
+                prepareImportPreview(PackageListDocument(entries), legacyProfile = chosen.label)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message ?: "Unable to prepare this package list.")
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
 
-            AppLogger.d(TAG, "📥 IMPORT: User confirmed - starting batch uninstall of ${preview.packagesToUninstall.size} packages")
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                importUninstalledPreview = null
-            )
+    fun clearImportProfileSelection() {
+        _uiState.value = _uiState.value.copy(importProfileSelection = null)
+    }
 
-            val result = packageRepository.uninstallMultiplePackages(preview.packagesToUninstall)
-
-            result.fold(
-                onSuccess = { batchResult ->
-                    AppLogger.d(TAG, "📥 IMPORT: Batch uninstall complete - ${batchResult.succeeded.size} succeeded, ${batchResult.failed.size} failed")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        batchUninstallResult = batchResult
-                    )
-                },
-                onFailure = { error ->
-                    AppLogger.e(TAG, "📥 IMPORT: Batch uninstall failed", error)
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = error.message ?: context.getString(dev.bgcheck.network.R.string.error_unknown)
-                    )
+    private suspend fun prepareImportPreview(document: PackageListDocument, legacyProfile: String? = null) {
+        val profiles = currentImportProfiles()
+        val entries = PackageListCodec.resolve(document, profiles.associate { it.userId to it.serial })
+        val installed = packageRepository.getPackages().first().filter { it.isInstalled }.associateBy { it.id }
+        val notFound = mutableListOf<String>()
+        val protected = mutableListOf<String>()
+        val targets = mutableListOf<PackageListEntry>()
+        val identities = mutableMapOf<PackageId, PackageIdentity>()
+        val names = profiles.associate { it.userId to it.label }
+        entries.forEach { entry ->
+            val id = PackageId(entry.packageName, entry.userId)
+            val pkg = installed[id]
+            val label = "${entry.packageName} · ${names[entry.userId] ?: "User ${entry.userId}"}"
+            when {
+                pkg == null -> notFound.add(label)
+                isImportProtected(entry.packageName) -> protected.add(label)
+                else -> {
+                    require(pkg.uid / 100000 == entry.userId && pkg.userSerial == entry.userSerial) {
+                        "Package identity changed in profile ${entry.userId}. Refresh and import again."
+                    }
+                    targets.add(entry)
+                    identities[id] = pkg.identity
                 }
-            )
+            }
+        }
+        require(targets.isNotEmpty()) { "No eligible installed packages in the selected profiles. ${notFound.size} not found; ${protected.size} protected and skipped." }
+        _uiState.value = _uiState.value.copy(isLoading = false,
+            importUninstalledPreview = ImportUninstalledPreview(entries.size,
+                targets.map { it.packageName to it.userId }, notFound, protected,
+                targets, identities, names, legacyProfile))
+    }
+
+    private suspend fun isImportProtected(name: String): Boolean = Constants.App.isOwnApp(name) ||
+        Constants.Firewall.isSystemCritical(name) || PackageSafetyLoader.getCriticality(context, name) == PackageCriticality.ESSENTIAL
+
+    fun confirmImportUninstall() {
+        val preview = _uiState.value.importUninstalledPreview ?: return
+        _uiState.value = _uiState.value.copy(isLoading = true, importUninstalledPreview = null)
+        viewModelScope.launch {
+            try {
+                val profiles = currentImportProfiles()
+                PackageListCodec.resolve(PackageListDocument(preview.entries), profiles.associate { it.userId to it.serial })
+                withContext(Dispatchers.IO) {
+                    HiddenApiHelper.clearInstalledAppsCache()
+                    preview.entries.forEach { entry ->
+                        val identity = requireNotNull(preview.expectedIdentities[PackageId(entry.packageName, entry.userId)])
+                        val current = HiddenApiHelper.getApplicationInfoAsUser(context, entry.packageName, 0, entry.userId)
+                            ?: error("${entry.packageName} is no longer installed in User ${entry.userId}. Import again.")
+                        identity.requireCurrent(entry.userId, current.uid, profiles.single { it.userId == entry.userId }.serial, true)
+                        require(!isImportProtected(entry.packageName)) { "A protected package cannot be removed by importing a list." }
+                    }
+                }
+                val succeeded = mutableListOf<String>()
+                val failed = mutableListOf<Pair<String, String>>()
+                preview.packagesToUninstall.forEach { (name, userId) ->
+                    val label = preview.targetLabel(name, userId)
+                    // Each action also revalidates the captured UID and serial, so a mid-batch profile change fails safely.
+                    val result = packageRepository.uninstallPackage(name, userId,
+                        requireNotNull(preview.expectedIdentities[PackageId(name, userId)]))
+                    result.fold(onSuccess = { succeeded.add(label) }, onFailure = { failed.add(label to (it.message ?: "Uninstall failed")) })
+                }
+                _uiState.value = _uiState.value.copy(batchUninstallResult = UninstallBatchResult(succeeded, failed))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message ?: "Import validation failed. No packages were removed.")
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
         }
     }
 
@@ -1466,6 +1490,7 @@ data class SettingsUiState(
     val captivePortalError: String? = null,
 
     val importUninstalledPreview: ImportUninstalledPreview? = null,
+    val importProfileSelection: ImportProfileSelection? = null,
     val batchUninstallResult: UninstallBatchResult? = null,
 
     val pendingModeChange: FirewallMode? = null,
@@ -1486,5 +1511,17 @@ data class ImportUninstalledPreview(
     val packagesToUninstall: List<Pair<String, Int>>,
     val packagesNotFound: List<String>,
     /** Installed, but refused: De1984 itself, system-critical packages, ESSENTIAL packages. */
-    val packagesProtected: List<String> = emptyList()
-)
+    val packagesProtected: List<String> = emptyList(),
+    val entries: List<PackageListEntry> = emptyList(),
+    val expectedIdentities: Map<PackageId, PackageIdentity> = emptyMap(),
+    val profileNames: Map<Int, String> = emptyMap(),
+    val legacyProfile: String? = null,
+) {
+    fun targetLabel(packageName: String, userId: Int): String = "$packageName · ${profileNames[userId] ?: "User $userId"}"
+}
+
+data class ImportProfileChoice(val userId: Int, val serial: Long, val name: String) {
+    val label: String get() = "$name (User $userId)"
+}
+
+data class ImportProfileSelection(val document: PackageListDocument, val profiles: List<ImportProfileChoice>)

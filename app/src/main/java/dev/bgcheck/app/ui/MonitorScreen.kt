@@ -62,6 +62,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.bgcheck.app.data.AccessState
+import dev.bgcheck.app.data.AndroidProfile
 import dev.bgcheck.app.data.AppEntry
 import dev.bgcheck.app.data.AppSort
 import dev.bgcheck.app.data.ComponentSort
@@ -88,6 +89,8 @@ internal fun MonitorScreen(
     onSelectApp: (AppEntry) -> Unit,
     onAccess: () -> Unit,
 ) {
+    var profileId by rememberSaveable { mutableStateOf(ALL_PROFILES) }
+    val profiles = state.visibleProfiles()
     var mode by rememberSaveable { mutableStateOf(MonitorMode.LIVE) }
     var processQuery by rememberSaveable { mutableStateOf("") }
     var energyQuery by rememberSaveable { mutableStateOf("") }
@@ -112,7 +115,7 @@ internal fun MonitorScreen(
     val largeText = LocalDensity.current.fontScale > 1.3f
     val hasResourceReadings = state.resources?.let { it.cpuPercent != null || it.memory != null || it.processesKnown } == true
     val focusManager = LocalFocusManager.current
-    val processes = remember(state.resources, processQuery, filter, sort, processDirection, appsByUid) {
+    val processes = remember(state.resources, profileId, processQuery, filter, sort, processDirection, appsByUid) {
         val needle = processQuery.trim()
         state.resources?.processes.orEmpty().filter { process ->
             val packages = appsByUid[process.uid].orEmpty()
@@ -122,15 +125,16 @@ internal fun MonitorScreen(
                 MonitorProcessFilter.APPS -> userApp
                 MonitorProcessFilter.SYSTEM -> !userApp
             }
-            matchesScope && (needle.isEmpty() || listOf(process.pid.toString(), process.parentPid.toString(), process.uid.toString(), process.user, process.name, process.command)
+            (profileId == ALL_PROFILES || process.uid / 100000 == profileId) && matchesScope && (needle.isEmpty() || listOf(process.pid.toString(), process.parentPid.toString(), process.uid.toString(), process.user, process.name, process.command)
                 .any { it.contains(needle, ignoreCase = true) } || packages.any { it.label.contains(needle, true) || it.packageName.contains(needle, true) })
         }.let { ListSorting.processes(it, sort, processDirection) }
     }
-    val energy = remember(state.energy, energyQuery, energySort, energyDirection, appsByUid) {
+    val energy = remember(state.energy, profileId, energyQuery, energySort, energyDirection, appsByUid) {
         val needle = energyQuery.trim()
         state.energy?.uids.orEmpty().filter { item ->
-            needle.isEmpty() || item.uid.toString().contains(needle) || appsByUid[item.uid].orEmpty()
-                .any { it.label.contains(needle, true) || it.packageName.contains(needle, true) }
+            (profileId == ALL_PROFILES || item.uid / 100000 == profileId) &&
+                (needle.isEmpty() || item.uid.toString().contains(needle) || appsByUid[item.uid].orEmpty()
+                    .any { it.label.contains(needle, true) || it.packageName.contains(needle, true) })
         }.let { ListSorting.energy(it, energySort, energyDirection, appsByUid) }
     }
     val components = remember(state.energy, componentSort, componentDirection) {
@@ -161,6 +165,10 @@ internal fun MonitorScreen(
                 ) {
                     item(key = "monitor-heading") {
                         Text("Resource monitor", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
+                    }
+                    item(key = "profile-filters") {
+                        ProfileFilters("monitor", profiles, profileId) { profileId = it; selectedProcess = null; selectedEnergy = null }
+                        SourceNote("Profile filters apply to processes and UID battery use. Device CPU, RAM, battery flow and component totals cover the whole device.")
                     }
                     if (displayedMode == MonitorMode.ENERGY) {
                         item(key = "battery-flow") { BatteryFlowCard(state.battery) }
@@ -268,11 +276,11 @@ internal fun MonitorScreen(
                             if (processes.isEmpty()) {
                                 item(key = "process-no-match") {
                                     InfoCard("No matching processes", "Try another search or reset the process filter.", Icons.Rounded.Search)
-                                    TextButton(onClick = { processQuery = ""; filter = MonitorProcessFilter.ALL }) { Text("Reset search and filter") }
+                                    TextButton(onClick = { processQuery = ""; filter = MonitorProcessFilter.ALL; profileId = ALL_PROFILES }) { Text("Reset search and filter") }
                                 }
                             }
                             items(processes, key = { "process-${it.pid}" }) { process ->
-                                ProcessRow(process, appsByUid[process.uid].orEmpty(), sort,
+                                ProcessRow(process, appsByUid[process.uid].orEmpty(), sort, profile = profiles.firstOrNull { it.userId == process.uid / 100000 } ?: AndroidProfile(process.uid / 100000),
                                     modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = tween(220)),
                                     onClick = { focusManager.clearFocus(); selectedProcess = process; selectedAt = state.resources.capturedAt })
                             }
@@ -287,7 +295,7 @@ internal fun MonitorScreen(
                                 state.energy?.let { snapshot ->
                                     ResourceValue("Estimated total", mahLabel(snapshot.estimatedTotalMah), accent = true)
                                     ResourceValue("Time on battery", durationLabel(snapshot.batteryRealtimeMs))
-                                    SourceNote("Battery statistics sampled ${resourceTimeLabel(snapshot.capturedAt)}")
+                                    SourceNote("Whole-device battery statistics sampled ${resourceTimeLabel(snapshot.capturedAt)}")
                                     Disclosure("About these estimates", "Cumulative Android battery history") {
                                         ResourceValue("History begins", snapshot.startClockTimeMs?.let { dateTimeLabel(it) } ?: "Unavailable")
                                         SourceNote("Cumulative estimates from Android’s current battery history, not instantaneous power. Each UID is counted once. History can reset after charging or a system reset. Missing readings mean unavailable, not zero.")
@@ -335,10 +343,11 @@ internal fun MonitorScreen(
                                 items(energy, key = { "energy-${it.uid}" }) { item ->
                                     val packages = appsByUid[item.uid].orEmpty()
                                     Surface(onClick = { focusManager.clearFocus(); selectedEnergy = item; selectedEnergyAt = snapshot.capturedAt },
-                                        modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = tween(220)),
+                                        modifier = Modifier.testTag("energy-row-${item.uid}").animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = tween(220)),
                                         color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
                                         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                                             Text(uidTitle(item.uid, packages), style = MaterialTheme.typography.titleMedium)
+                                            ProfileLabel(profiles.firstOrNull { it.userId == item.uid / 100000 } ?: AndroidProfile(item.uid / 100000))
                                             Text(mahLabel(item.estimatedMah), style = MaterialTheme.typography.headlineMedium, color = Cyan)
                                             SourceNote("UID ${item.uid}${if (packages.size > 1) " · Shared by ${packages.size} apps" else ""}")
                                             SourceNote("CPU ${durationLabel(item.cpuTimeMs)} · Wakelock ${durationLabel(item.wakelockMs)}")
@@ -358,11 +367,11 @@ internal fun MonitorScreen(
         }
     }
     selectedProcess?.let { process ->
-        ProcessDetailSheet(process, selectedAt, appsByUid[process.uid].orEmpty(), relatedSort, relatedDirection,
+        ProcessDetailSheet(process, selectedAt, appsByUid[process.uid].orEmpty(), profiles.firstOrNull { it.userId == process.uid / 100000 } ?: AndroidProfile(process.uid / 100000), relatedSort, relatedDirection,
             onRelatedSort = { relatedSort = it }, onRelatedDirection = { relatedDirection = it }, onDismiss = { selectedProcess = null }, onSelect = { selectedProcess = null; onSelectApp(it) })
     }
     selectedEnergy?.let { item ->
-        EnergyDetailSheet(item, selectedEnergyAt, appsByUid[item.uid].orEmpty(), relatedSort, relatedDirection,
+        EnergyDetailSheet(item, selectedEnergyAt, appsByUid[item.uid].orEmpty(), profiles.firstOrNull { it.userId == item.uid / 100000 } ?: AndroidProfile(item.uid / 100000), relatedSort, relatedDirection,
             onRelatedSort = { relatedSort = it }, onRelatedDirection = { relatedDirection = it }, onDismiss = { selectedEnergy = null }, onSelect = { selectedEnergy = null; onSelectApp(it) })
     }
 }
@@ -386,10 +395,11 @@ private fun MonitorAccessCard(access: AccessState, onAccess: () -> Unit) {
 }
 
 @Composable
-private fun ProcessRow(process: ProcessResource, apps: List<AppEntry>, sort: ProcessSort, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier, color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+private fun ProcessRow(process: ProcessResource, apps: List<AppEntry>, sort: ProcessSort, profile: AndroidProfile, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(onClick = onClick, modifier = modifier.testTag("process-row-${process.pid}"), color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(process.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            ProfileLabel(profile)
             SourceNote("PID ${process.pid} · UID ${process.uid} · ${process.state}")
             if (apps.isNotEmpty()) SourceNote(apps.joinToString { it.label } + if (apps.size > 1) " · Shared UID" else "")
             ResourceValue("CPU", percent(process.cpuPercent), accent = true)
@@ -402,7 +412,7 @@ private fun ProcessRow(process: ProcessResource, apps: List<AppEntry>, sort: Pro
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProcessDetailSheet(
-    process: ProcessResource, capturedAt: Long?, apps: List<AppEntry>, relatedSort: AppSort,
+    process: ProcessResource, capturedAt: Long?, apps: List<AppEntry>, profile: AndroidProfile, relatedSort: AppSort,
     relatedDirection: SortDirection, onRelatedSort: (AppSort) -> Unit, onRelatedDirection: (SortDirection) -> Unit,
     onDismiss: () -> Unit, onSelect: (AppEntry) -> Unit,
 ) {
@@ -415,6 +425,7 @@ private fun ProcessDetailSheet(
             } }
             ResourceValue("PID / parent PID", "${process.pid} / ${process.parentPid}")
             ResourceValue("UID / user", "${process.uid} / ${process.user}")
+            ProfileLabel(profile)
             ResourceValue("Scheduler state", process.state)
             SourceNote("R: running · S: sleeping · D: uninterruptible sleep · T: stopped · Z: zombie. Additional flags depend on Android.")
             ResourceValue("CPU · one core = 100%", percent(process.cpuPercent), accent = true)
@@ -430,7 +441,7 @@ private fun ProcessDetailSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EnergyDetailSheet(
-    energy: UidEnergy, capturedAt: Long?, apps: List<AppEntry>, relatedSort: AppSort,
+    energy: UidEnergy, capturedAt: Long?, apps: List<AppEntry>, profile: AndroidProfile, relatedSort: AppSort,
     relatedDirection: SortDirection, onRelatedSort: (AppSort) -> Unit, onRelatedDirection: (SortDirection) -> Unit,
     onDismiss: () -> Unit, onSelect: (AppEntry) -> Unit,
 ) {
@@ -439,6 +450,7 @@ private fun EnergyDetailSheet(
             DetailSheetHeading("UID battery details", onDismiss)
             Text(uidTitle(energy.uid, apps), style = MaterialTheme.typography.headlineMedium)
             ResourceValue("UID", energy.uid.toString())
+            ProfileLabel(profile)
             ResourceValue("Estimated battery use", mahLabel(energy.estimatedMah), accent = true)
             ResourceValue("CPU time", durationLabel(energy.cpuTimeMs))
             ResourceValue("Network received", bytesLabel(energy.networkRxBytes))
@@ -476,6 +488,7 @@ private fun RelatedApps(
         sort, direction, onSort, onDirection)
     sortedApps.forEach { app ->
         Button(onClick = { onSelect(app) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Open ${app.label}") }
+        ProfileLabel(app.profile)
         SelectionContainer { SourceNote(app.packageName) }
         if (sort == AppSort.STATE) SourceNote(app.processState.label)
     }

@@ -19,7 +19,7 @@ class AppsRecommendationsUiTest {
     private val system = AppEntry("com.android.systemui", "System UI", 1000, true)
     private val removed = browser.copy(installed = false, uid = 1000)
 
-    private fun show(app: AppEntry, selected: Boolean = true, onNetwork: (String?) -> Unit = {}) {
+    private fun show(app: AppEntry, selected: Boolean = true, onNetwork: (AppEntry?) -> Unit = {}) {
         val state = mutableStateOf(UiState(access = AccessState.NOT_RUNNING, loading = false,
             apps = listOf(app).filter { it.installed }, uninstalledApps = listOf(app).filterNot { it.installed },
             selected = app.takeIf { selected }))
@@ -36,7 +36,7 @@ class AppsRecommendationsUiTest {
     }
 
     @Test fun userDebloatBadgeOpensDetailsAndKeepsTheNetworkShortcut() {
-        var opened: String? = null
+        var opened: AppEntry? = null
         show(browser, selected = false, onNetwork = { opened = it })
         compose.onNodeWithText("Apps").performClick()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasText("Chrome"))
@@ -53,7 +53,7 @@ class AppsRecommendationsUiTest {
         }
         screenshot.recycle()
         compose.onNodeWithText("Network and internet access").performScrollTo().performClick()
-        assertEquals("com.android.chrome", opened)
+        assertEquals(browser.key, opened?.key)
     }
 
     @Test fun systemAppsKeepCanasUnsafeRatingAndSource() {

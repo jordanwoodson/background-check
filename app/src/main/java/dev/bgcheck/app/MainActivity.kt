@@ -1,6 +1,9 @@
 package dev.bgcheck.app
 
 import android.content.Intent
+import android.content.ComponentName
+import android.content.pm.LauncherApps
+import android.os.UserHandle
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -28,7 +31,13 @@ class MainActivity : ComponentActivity() {
                     state = model.state.collectAsStateWithLifecycle().value,
                     onRefresh = model::refresh, onConnect = model::connect, onSelect = model::select,
                     onDismissDetail = model::dismissDetail, onAction = model::apply, onUndo = model::undo,
-                    onOpenAppSettings = { open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$it"))) },
+                    onOpenAppSettings = { app ->
+                        runCatching {
+                            requireNotNull(getSystemService(LauncherApps::class.java)).startAppDetailsActivity(
+                                ComponentName(app.packageName, ""), UserHandle.getUserHandleForUid(app.uid), null, null,
+                            )
+                        }.onFailure { model.openAppSettings(app) }
+                    },
                     onOpenShizuku = { open(packageManager.getLaunchIntentForPackage("moe.shizuku.privileged.api")
                         ?: Intent(Intent.ACTION_VIEW, Uri.parse("https://shizuku.rikka.app/download/"))) },
                     onOpenWirelessSettings = { open(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)) },
@@ -39,9 +48,10 @@ class MainActivity : ComponentActivity() {
                     onSetMonitorInterval = model::setMonitorInterval,
                     onMonitorVisible = model::setMonitorVisible,
                     onForceStop = model::forceStop,
-                    onOpenNetwork = { packageName ->
+                    onOpenNetwork = { app ->
                         open(Intent(this, dev.bgcheck.network.ui.MainActivity::class.java)
-                            .putExtra("dev.bgcheck.network.PACKAGE", packageName))
+                            .putExtra("dev.bgcheck.network.PACKAGE", app?.packageName)
+                            .apply { app?.let { putExtra("dev.bgcheck.network.USER_ID", it.userId) } })
                     },
                 )
             }

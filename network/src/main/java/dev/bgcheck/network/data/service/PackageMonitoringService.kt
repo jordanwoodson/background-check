@@ -384,6 +384,7 @@ class PackageMonitoringService : Service() {
                     profile.userId
                 )
 
+                check(packages.isNotEmpty()) { "Cannot read user ${profile.userId}; preserving package baseline" }
                 packages
                     .filter { appInfo -> isWatchedApp(appInfo, profile.userId) }
                     .forEach { appInfo ->

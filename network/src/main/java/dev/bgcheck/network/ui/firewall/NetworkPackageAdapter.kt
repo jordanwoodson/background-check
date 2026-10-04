@@ -311,11 +311,11 @@ class NetworkPackageAdapter(
             noInternetBadge.visibility = if (!pkg.hasInternetPermission) View.VISIBLE else View.GONE
 
             when {
-                pkg.userId >= 10 && pkg.userId < 100 -> {
+                pkg.isWorkProfile -> {
                     profileBadge.text = itemView.context.getString(R.string.badge_work_profile)
                     profileBadge.visibility = View.VISIBLE
                 }
-                pkg.userId >= 100 -> {
+                pkg.isCloneProfile -> {
                     profileBadge.text = itemView.context.getString(R.string.badge_clone_profile)
                     profileBadge.visibility = View.VISIBLE
                 }

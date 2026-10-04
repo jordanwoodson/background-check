@@ -41,7 +41,7 @@ class FirewallIntegrationTest {
 
     @Test fun backendProfileLimitsAreHonest() {
         assertFalse(FirewallBackendType.VPN.reachesUser(10, 0))
-        assertFalse(FirewallBackendType.CONNECTIVITY_MANAGER.reachesUser(10, 0))
+        assertTrue(FirewallBackendType.CONNECTIVITY_MANAGER.reachesUser(10, 0))
         assertTrue(FirewallBackendType.IPTABLES.reachesUser(10, 0))
         assertTrue(FirewallBackendType.NETWORK_POLICY_MANAGER.reachesUser(10, 0))
         assertFalse(FirewallBackendType.CONNECTIVITY_MANAGER.canBlockSystemUids())

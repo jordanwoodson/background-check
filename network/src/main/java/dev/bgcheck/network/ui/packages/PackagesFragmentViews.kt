@@ -132,6 +132,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
 
     private var isSelectionMode = false
     private val selectedPackages = mutableSetOf<PackageId>()
+    private val selectionIdentities = mutableMapOf<PackageId, dev.bgcheck.network.domain.model.PackageIdentity>()
     private var progressDialog: androidx.appcompat.app.AlertDialog? = null
 
 
@@ -229,6 +230,12 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
         adapter.setOnSelectionChangedListener { selected ->
             selectedPackages.clear()
             selectedPackages.addAll(selected)
+            selectionIdentities.keys.retainAll(selected)
+            selected.forEach { id ->
+                if (id !in selectionIdentities) lastSubmittedPackages.firstOrNull { it.id == id }?.let {
+                    selectionIdentities[id] = it.identity
+                }
+            }
             updateSelectionToolbar()
         }
 
@@ -269,12 +276,9 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
             getString(dev.bgcheck.network.R.string.packages_filter_disabled),
             getString(dev.bgcheck.network.R.string.status_uninstalled)
         )
-        val profileFilters = listOf(
-            getString(dev.bgcheck.network.R.string.filter_profile_all),
-            getString(dev.bgcheck.network.R.string.filter_profile_personal),
-            getString(dev.bgcheck.network.R.string.filter_profile_work),
-            getString(dev.bgcheck.network.R.string.filter_profile_clone)
-        )
+        val profileFilters = (listOf(getString(R.string.filter_profile_all)) +
+            currentProfileChoices().map { it.second }).toMutableList()
+
 
         currentTypeFilter = getString(dev.bgcheck.network.R.string.packages_filter_all)
         currentStateFilter = null
@@ -516,6 +520,9 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
     }
 
     private fun updateUI(state: PackagesUiState) {
+        binding.profileWarningBanner.text = state.profileWarnings.joinToString("\n")
+        binding.profileWarningBanner.visibility = if (state.profileWarnings.isEmpty()) View.GONE else View.VISIBLE
+
         if (state.isLoadingData && state.packages.isEmpty()) {
             binding.packagesRecyclerView.visibility = View.INVISIBLE
             binding.loadingState.visibility = View.VISIBLE
@@ -761,7 +768,9 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
 
         binding.actionSheetAppIcon.setImageResource(R.drawable.de1984_icon)
         binding.actionSheetAppName.text = pkg.name
-        binding.actionSheetPackageName.text = pkg.packageName
+        val profileName = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getUsers(requireContext())
+            .firstOrNull { it.userId == pkg.userId }?.displayName ?: "Profile"
+        binding.actionSheetPackageName.text = "$profileName (user ${pkg.userId}) · ${pkg.packageName}"
         dev.bgcheck.network.ui.common.InternetRecommendationView.bind(binding.internetRecommendation, pkg)
 
         // Load icon asynchronously to prevent blocking main thread
@@ -786,7 +795,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
         // User preference: Settings cog icon on the right opens Android app settings
         // ============================================================================
         binding.actionSheetSettingsIcon.setOnClickListener {
-            requireContext().openAppSettings(pkg.packageName)
+            requireContext().openAppSettings(pkg.packageName, pkg.userId)
             dialog.dismiss()
         }
 
@@ -1006,7 +1015,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
             },
             confirmButtonText = getString(dev.bgcheck.network.R.string.action_force_stop),
             onConfirm = {
-                viewModel.forceStopPackage(pkg.packageName, pkg.userId)
+                viewModel.forceStopPackage(pkg.packageName, pkg.userId, expected = pkg.identity)
             }
         )
     }
@@ -1031,7 +1040,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
             },
             confirmButtonText = action,
             onConfirm = {
-                viewModel.setPackageEnabled(pkg.packageName, pkg.userId, enable)
+                viewModel.setPackageEnabled(pkg.packageName, pkg.userId, enable, expected = pkg.identity)
             }
         )
     }
@@ -1050,7 +1059,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
                     confirmWord = getString(R.string.uninstall_dialog_confirm_word),
                     confirmButtonText = getString(R.string.uninstall_dialog_button_uninstall),
                     onConfirm = {
-                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name)
+                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name, expected = pkg.identity)
                     }
                 )
             }
@@ -1065,7 +1074,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
                     message = getString(R.string.uninstall_dialog_message_important, pkg.name, affectsText),
                     confirmButtonText = getString(R.string.uninstall_dialog_button_uninstall),
                     onConfirm = {
-                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name)
+                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name, expected = pkg.identity)
                     }
                 )
             }
@@ -1080,7 +1089,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
                     },
                     confirmButtonText = getString(R.string.uninstall_dialog_button_uninstall),
                     onConfirm = {
-                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name)
+                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name, expected = pkg.identity)
                     }
                 )
             }
@@ -1091,7 +1100,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
                     message = getString(R.string.uninstall_dialog_message_bloatware),
                     confirmButtonText = getString(R.string.uninstall_dialog_button_uninstall),
                     onConfirm = {
-                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name)
+                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name, expected = pkg.identity)
                     }
                 )
             }
@@ -1107,7 +1116,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
                     },
                     confirmButtonText = getString(R.string.uninstall_dialog_button_uninstall),
                     onConfirm = {
-                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name)
+                        viewModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name, expected = pkg.identity)
                     }
                 )
             }
@@ -1121,7 +1130,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
             message = getString(R.string.reinstall_dialog_message),
             confirmButtonText = getString(R.string.reinstall_dialog_button_reinstall),
             onConfirm = {
-                viewModel.reinstallPackage(pkg.packageName, pkg.userId, pkg.name)
+                viewModel.reinstallPackage(pkg.packageName, pkg.userId, pkg.name, expected = pkg.identity)
             }
         )
     }
@@ -1177,7 +1186,8 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
      * language switcher - as does a dark-mode change. Selecting apps for a batch action and losing
      * all of it to one of those is a real thing to lose.
      *
-     * Stored as "packageName|userId" strings rather than making PackageId Parcelable: two fields,
+     * Stored with package name, user ID, UID and profile serial so a restored selection cannot
+     * attach to a recreated profile. Plain strings avoid making PackageId Parcelable,
      * and a Bundle of strings cannot drift out of step with a data class definition.
      */
     override fun onSaveInstanceState(outState: Bundle) {
@@ -1186,7 +1196,9 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
         outState.putBoolean(KEY_SELECTION_MODE, true)
         outState.putStringArrayList(
             KEY_SELECTED_PACKAGES,
-            ArrayList(selectedPackages.map { "${it.packageName}|${it.userId}" })
+            ArrayList(selectedPackages.mapNotNull { id -> selectionIdentities[id]?.let {
+                "${id.packageName}|${id.userId}|${it.uid}|${it.userSerial}"
+            } })
         )
     }
 
@@ -1199,11 +1211,15 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
             .mapNotNull { entry ->
                 val parts = entry.split("|")
                 val userId = parts.getOrNull(1)?.toIntOrNull()
-                if (parts.size == 2 && parts[0].isNotEmpty() && userId != null) {
-                    PackageId(parts[0], userId)
-                } else {
-                    null
-                }
+                val uid = parts.getOrNull(2)?.toIntOrNull()
+                val serial = parts.getOrNull(3)?.toLongOrNull()
+                val current = userId?.let { dev.bgcheck.network.data.multiuser.HiddenApiHelper.currentProfile(requireContext(), it) }
+                if (parts.size == 4 && parts[0].isNotEmpty() && userId != null && uid != null &&
+                    uid / 100000 == userId && serial != null && current?.serialNumber == serial && current.available) {
+                    PackageId(parts[0], userId).also {
+                        selectionIdentities[it] = dev.bgcheck.network.domain.model.PackageIdentity(uid, serial)
+                    }
+                } else null
             }
             .toSet()
 
@@ -1245,6 +1261,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
     private fun exitSelectionMode() {
         isSelectionMode = false
         selectedPackages.clear()
+        selectionIdentities.clear()
         adapter.setSelectionMode(false)
         adapter.clearSelection()
         binding.selectionToolbar.visibility = View.GONE
@@ -1265,7 +1282,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
     }
 
     private fun showMultiUninstallConfirmation() {
-        val packages = lastSubmittedPackages.filter { selectedPackages.contains(it.id) }
+        val packages = lastSubmittedPackages.filter { selectedPackages.contains(it.id) && selectionIdentities[it.id] == it.identity }
 
         val userApps = packages.filter { it.type == PackageType.USER }
         val bloatware = packages.filter { it.criticality == PackageCriticality.BLOATWARE }
@@ -1319,13 +1336,13 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
                     AppLogger.w(TAG, "Batch uninstall: ${selectedPackages.size - packages.size} " +
                             "selected package(s) are not in the visible list - not uninstalling them")
                 }
-                performBatchUninstall(packages.map { it.packageName to it.userId })
+                performBatchUninstall(packages)
             },
             cancelButtonText = Constants.Packages.MultiSelect.DIALOG_BUTTON_CANCEL
         )
     }
 
-    private fun performBatchUninstall(packages: List<Pair<String, Int>>) {
+    private fun performBatchUninstall(packages: List<Package>) {
         progressDialog?.dismiss()
 
         progressDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
@@ -1340,7 +1357,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
 
         progressDialog?.show()
 
-        viewModel.uninstallMultiplePackages(packages)
+        viewModel.uninstallMultiplePackages(packages.map { it.packageName to it.userId }, packages.associate { it.id to it.identity })
     }
 
     private fun showBatchUninstallResults(result: dev.bgcheck.network.domain.model.UninstallBatchResult) {
@@ -1387,7 +1404,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
     }
 
     private fun showMultiReinstallConfirmation() {
-        val packages = lastSubmittedPackages.filter { selectedPackages.contains(it.id) }
+        val packages = lastSubmittedPackages.filter { selectedPackages.contains(it.id) && selectionIdentities[it.id] == it.identity }
         val count = packages.size
 
         val message = buildString {
@@ -1419,13 +1436,13 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
                     AppLogger.w(TAG, "Batch reinstall: ${selectedPackages.size - packages.size} " +
                             "selected package(s) are not in the visible list - not reinstalling them")
                 }
-                performBatchReinstall(packages.map { it.packageName to it.userId })
+                performBatchReinstall(packages)
             },
             cancelButtonText = getString(R.string.dialog_cancel)
         )
     }
 
-    private fun performBatchReinstall(packages: List<Pair<String, Int>>) {
+    private fun performBatchReinstall(packages: List<Package>) {
         progressDialog?.dismiss()
 
         progressDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
@@ -1440,7 +1457,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
 
         progressDialog?.show()
 
-        viewModel.reinstallMultiplePackages(packages)
+        viewModel.reinstallMultiplePackages(packages.map { it.packageName to it.userId }, packages.associate { it.id to it.identity })
     }
 
     private fun showBatchReinstallResults(result: dev.bgcheck.network.domain.model.ReinstallBatchResult) {
@@ -1524,7 +1541,15 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
         }
     }
 
+    private fun currentProfileChoices(): List<Pair<String, String>> =
+        dev.bgcheck.network.data.multiuser.HiddenApiHelper.getUsers(requireContext()).map {
+            dev.bgcheck.network.domain.model.ProfileFilter.key(it.userId, it.serialNumber) to
+                "${it.displayName} (user ${it.userId})"
+        }
+
     private fun mapProfileFilterToInternal(translatedFilter: String): String {
+        currentProfileChoices().firstOrNull { it.second == translatedFilter }?.let { return it.first }
+
         return when (translatedFilter) {
             getString(dev.bgcheck.network.R.string.filter_profile_all) -> "All"
             getString(dev.bgcheck.network.R.string.filter_profile_personal) -> "Personal"
@@ -1535,6 +1560,9 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
     }
 
     private fun mapInternalToProfileFilter(internalFilter: String): String {
+        currentProfileChoices().firstOrNull { it.first == internalFilter }?.let { return it.second }
+        if (internalFilter.startsWith("user:")) return "Unavailable profile (${internalFilter.substringAfter("user:").substringBefore(':')})"
+
         return when (internalFilter) {
             "All" -> getString(dev.bgcheck.network.R.string.filter_profile_all)
             "Personal" -> getString(dev.bgcheck.network.R.string.filter_profile_personal)

@@ -51,13 +51,9 @@ enum class FirewallBackendType {
      * Whether this backend can act on a uid outside the app range - "Android System" at 1000,
      * the phone/radio uid, and the rest of the platform.
      *
-     * Neither Shizuku backend can. `cmd connectivity set-package-networking-enabled` answers
-     * "Can't set package firewall rule for system app <pkg> with appId <n>" and
-     * NetworkPolicyManager throws "cannot apply policy to UID <uid>". Each refusal costs a Shizuku
-     * process and enough of them kill the daemon, which is why
-     * [Constants.Firewall.isFirewallableAppUid] stops those commands from ever being sent - see
-     * issue #93. That guard is correct, but it is silent: the rule is still written and the switch
-     * still reads "Blocked" while the app keeps its network.
+     * Shizuku backends intentionally restrict enforcement to application UIDs. NetworkPolicyManager
+     * rejects platform UIDs; ConnectivityManager follows the same conservative application range
+     * to avoid changing Android's shared system services. The UI reflects this restriction.
      *
      * iptables matches on the raw uid and never asks the platform's permission. The VPN backend
      * captures every packet the tunnel carries, including the platform's, and names apps by
@@ -68,16 +64,15 @@ enum class FirewallBackendType {
         CONNECTIVITY_MANAGER, NETWORK_POLICY_MANAGER -> false
     }
 
-    /** Whether this backend can act on an app in [userId] while De1984 runs in [ownUserId]. A backend that names packages decides only De1984's own profile. */
+    /** Whether this backend can act on an app in [userId] while De1984 runs in [ownUserId]. VPN routing belongs to the profile hosting the VPN service. */
     fun reachesUser(userId: Int, ownUserId: Int): Boolean = when (this) {
-        IPTABLES, NETWORK_POLICY_MANAGER -> true
-        CONNECTIVITY_MANAGER, VPN -> userId == ownUserId
+        IPTABLES, NETWORK_POLICY_MANAGER, CONNECTIVITY_MANAGER -> true
+        VPN -> userId == ownUserId
     }
 
     /** Whether the verdict this backend gives an app in De1984's own profile also reaches that app's copy in every other profile. */
     fun ownProfileVerdictReachesEveryProfile(): Boolean = when (this) {
-        CONNECTIVITY_MANAGER -> true
-        IPTABLES, NETWORK_POLICY_MANAGER, VPN -> false
+        CONNECTIVITY_MANAGER, IPTABLES, NETWORK_POLICY_MANAGER, VPN -> false
     }
 }
 
@@ -102,25 +97,18 @@ fun uidBlockedNow(
 }
 
 /**
- * Enabled rules grouped by the uid their app has now, per [installedUids] (user -> package -> uid, empty when
- * unread). A rule counts nowhere only once every profile was read and its app is in none; else it keeps a uid.
+ * Resolve only verified identities in the selected user. An unreadable or deleted profile cannot
+ * authorize using a saved UID: Android can reuse both user IDs and app IDs.
  */
 fun rulesByCurrentUid(
     rules: List<FirewallRule>,
     installedUids: Map<Int, Map<String, Int>>,
 ): Map<Int, List<FirewallRule>> {
-    val everyProfileRead = installedUids.isNotEmpty() && installedUids.values.none { it.isEmpty() }
     return rules
         .filter { it.enabled }
         .mapNotNull { rule ->
-            val listed = installedUids[rule.userId]
-            val uid = when {
-                listed.isNullOrEmpty() -> rule.uid
-                rule.packageName in listed -> listed.getValue(rule.packageName)
-                else -> installedUids.values.firstNotNullOfOrNull { it[rule.packageName] }
-                    ?.let { Constants.Firewall.uidForUser(rule.userId, it) }
-                    ?: if (everyProfileRead) return@mapNotNull null else rule.uid
-            }
+            val uid = installedUids[rule.userId]?.get(rule.packageName) ?: return@mapNotNull null
+            if (uid < 0 || uid / 100000 != rule.userId) return@mapNotNull null
             uid to rule
         }
         .groupBy({ it.first }, { it.second })
@@ -160,14 +148,14 @@ enum class UnblockableReason(
      * The row belongs to another profile and the running backend names packages rather than uids,
      * so it decides only apps in the profile De1984 runs in, never by this row's own rule.
      *
-     * FirewallVpnService and ConnectivityManagerFirewallBackend both build their app list from
-     * De1984's own profile only. Under ConnectivityManager this is raised only for an app absent there.
+     * FirewallVpnService can route only apps in the profile that owns its VPN service.
+     * ConnectivityManager, iptables and NetworkPolicyManager address full Android UIDs.
      */
     OTHER_PROFILE_UNREACHABLE(fixableHere = false),
 
     /**
-     * As [OTHER_PROFILE_UNREACHABLE], but the same app is in De1984's profile and the backend's
-     * command for it reaches this copy too, so [asEnforcedBy] paints that copy's verdict here.
+     * Reserved for legacy package-based backends that share a verdict across profiles.
+     * None of the current backends use this scope.
      */
     OTHER_PROFILE_FOLLOWS_OWN_PROFILE(fixableHere = false),
 

@@ -1,9 +1,11 @@
 package dev.bgcheck.network.data.datasource
 
+import dev.bgcheck.network.domain.model.PackageIdentity
 import dev.bgcheck.network.data.model.PackageEntity
 import kotlinx.coroutines.flow.Flow
 
 interface PackageDataSource {
+    val profileWarnings: kotlinx.coroutines.flow.StateFlow<List<String>>
 
     fun getPackages(): Flow<List<PackageEntity>>
 
@@ -20,10 +22,10 @@ interface PackageDataSource {
     suspend fun getUninstalledSystemPackages(): List<PackageEntity>
 
 
-    suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean): Boolean
-    suspend fun uninstallPackage(packageName: String, userId: Int): Boolean
-    suspend fun reinstallPackage(packageName: String, userId: Int): Boolean
-    suspend fun forceStopPackage(packageName: String, userId: Int): Boolean
+    suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity? = null): Boolean
+    suspend fun uninstallPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Boolean
+    suspend fun reinstallPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Boolean
+    suspend fun forceStopPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Boolean
 
 
     /**
@@ -38,14 +40,14 @@ interface PackageDataSource {
      * row never displayed and the user never asked for. Such a row's own first rule should claim
      * nothing beyond the tap - the neighbour's blocks keep showing through the union anyway.
      */
-    suspend fun setNetworkAccess(packageName: String, userId: Int, allowed: Boolean, stampDefaultOnUntouched: Boolean = true): Boolean
-    suspend fun setWifiBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true): Boolean
-    suspend fun setMobileBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true): Boolean
-    suspend fun setRoamingBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true): Boolean
-    suspend fun setBackgroundBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true): Boolean
-    suspend fun setLanBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true): Boolean
-    suspend fun setAllNetworkBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true): Boolean
-    suspend fun setMobileAndRoaming(packageName: String, userId: Int, mobileBlocked: Boolean, roamingBlocked: Boolean, stampDefaultOnUntouched: Boolean = true): Boolean
+    suspend fun setNetworkAccess(packageName: String, userId: Int, allowed: Boolean, stampDefaultOnUntouched: Boolean = true, expected: PackageIdentity? = null): Boolean
+    suspend fun setWifiBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true, expected: PackageIdentity? = null): Boolean
+    suspend fun setMobileBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true, expected: PackageIdentity? = null): Boolean
+    suspend fun setRoamingBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true, expected: PackageIdentity? = null): Boolean
+    suspend fun setBackgroundBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true, expected: PackageIdentity? = null): Boolean
+    suspend fun setLanBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true, expected: PackageIdentity? = null): Boolean
+    suspend fun setAllNetworkBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean = true, expected: PackageIdentity? = null): Boolean
+    suspend fun setMobileAndRoaming(packageName: String, userId: Int, mobileBlocked: Boolean, roamingBlocked: Boolean, stampDefaultOnUntouched: Boolean = true, expected: PackageIdentity? = null): Boolean
 }
 
 /**

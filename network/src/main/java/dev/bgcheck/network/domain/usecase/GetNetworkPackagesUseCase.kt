@@ -55,12 +55,9 @@ class GetNetworkPackagesUseCase constructor(
         }
 
         val profileFilteredFlow = baseFlow.map { packages ->
-            when (filterState.profileFilter.lowercase()) {
-                "personal" -> packages.filter { !it.isWorkProfile && !it.isCloneProfile }
-                "work" -> packages.filter { it.isWorkProfile }
-                "clone" -> packages.filter { it.isCloneProfile }
-                "all" -> packages
-                else -> packages
+            packages.filter {
+                dev.bgcheck.network.domain.model.ProfileFilter.matches(
+                    filterState.profileFilter, it.userId, it.userSerial, it.isWorkProfile, it.isCloneProfile)
             }
         }
 

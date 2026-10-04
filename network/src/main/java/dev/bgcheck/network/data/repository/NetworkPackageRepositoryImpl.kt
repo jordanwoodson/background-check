@@ -1,5 +1,6 @@
 package dev.bgcheck.network.data.repository
 
+import dev.bgcheck.network.domain.model.PackageIdentity
 import android.content.Context
 import dev.bgcheck.network.R
 import dev.bgcheck.network.data.datasource.PackageDataSource
@@ -52,9 +53,9 @@ class NetworkPackageRepositoryImpl(
             }
     }
 
-    override suspend fun setNetworkAccess(packageName: String, userId: Int, allowed: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+    override suspend fun setNetworkAccess(packageName: String, userId: Int, allowed: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setNetworkAccess(packageName, userId, allowed, stampDefaultOnUntouched)
+            val success = packageDataSource.setNetworkAccess(packageName, userId, allowed, stampDefaultOnUntouched, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -108,9 +109,9 @@ class NetworkPackageRepositoryImpl(
         return getNetworkPackagesByAccessState(NetworkAccessState.ALLOWED)
     }
 
-    override suspend fun setWifiBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+    override suspend fun setWifiBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setWifiBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            val success = packageDataSource.setWifiBlocking(packageName, userId, blocked, stampDefaultOnUntouched, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -121,9 +122,9 @@ class NetworkPackageRepositoryImpl(
         }
     }
 
-    override suspend fun setMobileBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+    override suspend fun setMobileBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setMobileBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            val success = packageDataSource.setMobileBlocking(packageName, userId, blocked, stampDefaultOnUntouched, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -134,9 +135,9 @@ class NetworkPackageRepositoryImpl(
         }
     }
 
-    override suspend fun setRoamingBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+    override suspend fun setRoamingBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setRoamingBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            val success = packageDataSource.setRoamingBlocking(packageName, userId, blocked, stampDefaultOnUntouched, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -147,9 +148,9 @@ class NetworkPackageRepositoryImpl(
         }
     }
 
-    override suspend fun setBackgroundBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+    override suspend fun setBackgroundBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setBackgroundBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            val success = packageDataSource.setBackgroundBlocking(packageName, userId, blocked, stampDefaultOnUntouched, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -160,9 +161,9 @@ class NetworkPackageRepositoryImpl(
         }
     }
 
-    override suspend fun setLanBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+    override suspend fun setLanBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setLanBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            val success = packageDataSource.setLanBlocking(packageName, userId, blocked, stampDefaultOnUntouched, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -173,9 +174,9 @@ class NetworkPackageRepositoryImpl(
         }
     }
 
-    override suspend fun setAllNetworkBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+    override suspend fun setAllNetworkBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setAllNetworkBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            val success = packageDataSource.setAllNetworkBlocking(packageName, userId, blocked, stampDefaultOnUntouched, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -186,9 +187,9 @@ class NetworkPackageRepositoryImpl(
         }
     }
 
-    override suspend fun setMobileAndRoaming(packageName: String, userId: Int, mobileBlocked: Boolean, roamingBlocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+    override suspend fun setMobileAndRoaming(packageName: String, userId: Int, mobileBlocked: Boolean, roamingBlocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Result<Unit> {
         return try {
-            val success = packageDataSource.setMobileAndRoaming(packageName, userId, mobileBlocked, roamingBlocked, stampDefaultOnUntouched)
+            val success = packageDataSource.setMobileAndRoaming(packageName, userId, mobileBlocked, roamingBlocked, stampDefaultOnUntouched, expected = expected)
             if (success) {
                 Result.success(Unit)
             } else {
@@ -231,6 +232,7 @@ private fun dev.bgcheck.network.data.model.PackageEntity.toNetworkDomain(): Netw
         lanBlocked = lanBlocked,
         networkPermissions = permissions,
         permissionsKnown = permissionsKnown,
+        userSerial = userSerial,
         versionName = versionName,
         versionCode = versionCode,
         installTime = installTime,

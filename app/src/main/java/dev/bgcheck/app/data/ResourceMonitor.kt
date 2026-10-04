@@ -25,17 +25,32 @@ class ResourceMonitor(private val execute: suspend (List<String>) -> String) {
         require(ShellParsers.validPackage(app.packageName) && app.uid >= 0) { "Invalid app identity" }
         val warnings = mutableListOf<String>()
         val memory = read("Package memory", warnings) {
-            ResourceParsers.appMemory(execute(listOf("dumpsys", "meminfo", "--local", "--package", app.packageName)))
+            check(app.profile.available) { app.profile.unavailableReason ?: "Profile unavailable" }
+            val before = ResourceParsers.processIdentities(execute(PROCESS_IDENTITIES)).filterValues { it.first == app.uid }
+            check(before.isNotEmpty()) { "No processes are running for this app's UID in ${app.profile.name}." }
+            check(before.size <= 64) { "Too many processes for a bounded memory sample." }
+            val readings = before.map { (pid, _) ->
+                val output = execute(listOf("dumpsys", "meminfo", "--local", pid.toString()))
+                val reported = Regex("\\*\\* MEMINFO in pid (\\d+) ").findAll(output).map { it.groupValues[1].toInt() }.toList()
+                check(reported == listOf(pid)) { "Android returned memory for a different process." }
+                ResourceParsers.appMemory(output)
+            }
+            val after = ResourceParsers.processIdentities(execute(PROCESS_IDENTITIES)).filterValues { it.first == app.uid }
+            check(before == after) { "Processes changed during the memory sample. Refresh to read again." }
+            fun sum(select: (ResourceParsers.AppMemory) -> Long) = readings.fold(0L) { total, reading -> Math.addExact(total, select(reading)) }
+            ResourceParsers.AppMemory(sum { it.pssKb }, sum { it.privateDirtyKb }, sum { it.swapPssKb })
         }
         val services = read("Running services", warnings) {
             ResourceParsers.services(execute(listOf("dumpsys", "activity", "-p", app.packageName, "services")),
                 app.packageName, app.uid / 100000)
         }
-        if (memory != null) warnings += "Package memory includes all profiles and shared processes that load this package."
+        if (memory != null) warnings += "Memory covers this profile's UID, including apps sharing that UID."
         return AppDiagnostics(packageName = app.packageName, pssKb = memory?.pssKb,
             privateDirtyKb = memory?.privateDirtyKb, swapPssKb = memory?.swapPssKb,
-            services = services.orEmpty(), servicesKnown = services != null, warnings = warnings)
+            services = services.orEmpty(), servicesKnown = services != null, warnings = warnings, userId = app.userId)
     }
+
+    private val PROCESS_IDENTITIES = listOf("ps", "-A", "-o", "PID,UID,NAME")
 
     private suspend fun <T> read(source: String, warnings: MutableList<String>, block: suspend () -> T): T? = try {
         block()

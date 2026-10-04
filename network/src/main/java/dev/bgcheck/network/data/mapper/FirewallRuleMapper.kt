@@ -18,7 +18,8 @@ fun FirewallRuleEntity.toDomain(): FirewallRule {
         isSystemApp = isSystemApp,
         hasInternetPermission = hasInternetPermission,
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        userSerial = userSerial
     )
 }
 
@@ -37,7 +38,8 @@ fun FirewallRule.toEntity(): FirewallRuleEntity {
         isSystemApp = isSystemApp,
         hasInternetPermission = hasInternetPermission,
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        userSerial = userSerial
     )
 }
 

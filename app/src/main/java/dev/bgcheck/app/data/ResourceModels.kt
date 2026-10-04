@@ -67,4 +67,5 @@ data class AppDiagnostics(
     val servicesKnown: Boolean = false,
     val capturedAt: Long = System.currentTimeMillis(),
     val warnings: List<String> = emptyList(),
+    val userId: Int = 0,
 )

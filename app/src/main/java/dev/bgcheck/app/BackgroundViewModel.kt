@@ -25,9 +25,9 @@ import java.util.UUID
 class BackgroundViewModel(application: Application) : AndroidViewModel(application) {
     private val bridge = ShizukuBridge(application)
     private val inventory = AppInventory(application)
-    private val engine = PolicyEngine(bridge::execute, Process.myUid() / 100000)
+    private fun engine(userId: Int) = PolicyEngine(bridge::execute, userId)
     private val monitor = ResourceMonitor(bridge::execute)
-    private val processManager = ProcessManager(bridge::execute, Process.myUid() / 100000)
+
     private val preferences = application.getSharedPreferences("policy_history", 0)
     private val gate = Mutex()
     private var detailJob: Job? = null
@@ -39,10 +39,35 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
     private var monitorVisible = false
     private var detailRevision = 0
     private var refreshAgain = false
-    private val mutableState = MutableStateFlow(UiState(changes = ChangeHistory.decode(preferences.getString("changes", null))))
+    private val mutableState = MutableStateFlow(UiState(changes = ChangeHistory.decode(preferences.getString("changes", null), Process.myUid() / 100000)))
     val state = mutableState.asStateFlow()
 
+    private val profileReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            detailRevision++
+            detailJob?.cancel(); diagnosticsJob?.cancel()
+            mutableState.update { it.copy(policy = null, diagnostics = null) }
+            refresh()
+        }
+    }
+    private val packageCallback = object : android.content.pm.LauncherApps.Callback() {
+        override fun onPackageRemoved(packageName: String, user: android.os.UserHandle) { refresh() }
+        override fun onPackageAdded(packageName: String, user: android.os.UserHandle) { refresh() }
+        override fun onPackageChanged(packageName: String, user: android.os.UserHandle) { refresh() }
+        override fun onPackagesAvailable(packageNames: Array<out String>, user: android.os.UserHandle, replacing: Boolean) { refresh() }
+        override fun onPackagesUnavailable(packageNames: Array<out String>, user: android.os.UserHandle, replacing: Boolean) { refresh() }
+    }
+
     init {
+        androidx.core.content.ContextCompat.registerReceiver(application, profileReceiver, android.content.IntentFilter().apply {
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_ADDED)
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_REMOVED)
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_AVAILABLE)
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_UNAVAILABLE)
+            addAction(android.content.Intent.ACTION_MANAGED_PROFILE_UNLOCKED)
+        }, androidx.core.content.ContextCompat.RECEIVER_EXPORTED)
+        application.getSystemService(android.content.pm.LauncherApps::class.java)
+            .registerCallback(packageCallback, android.os.Handler(android.os.Looper.getMainLooper()))
         viewModelScope.launch {
             bridge.access.collectLatest { access ->
                 mutableState.update { old ->
@@ -153,21 +178,27 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             try {
                 gate.withLock {
-                    val (apps, uninstalledApps) = inventory.load().partition { it.installed }
+                    val result = inventory.read()
+                    val (apps, uninstalledApps) = result.apps.partition { it.installed }
                     val battery = inventory.battery()
-                    val snapshot = if (bridge.access.value == AccessState.READY) engine.snapshot() else null
+                    val snapshots = if (bridge.access.value == AccessState.READY)
+                        result.profiles.filter { it.available }.associate { it.userId to engine(it.userId).snapshot() }
+                        else emptyMap()
                     val connected = bridge.access.value == AccessState.READY
-                    val merged = apps.map { app ->
-                        if (snapshot == null || !connected) app else app.copy(
-                            processState = snapshot.processes[app.packageName]
-                                ?: if (snapshot.processesKnown) ProcessState.NOT_RUNNING else ProcessState.UNKNOWN,
-                            standbyBucket = snapshot.buckets[app.packageName],
-                            dozeExempt = if (snapshot.exemptionsKnown) app.packageName in snapshot.exemptPackages || app.uid % 100000 in snapshot.exemptAppIds else null,
-                        )
+                    val merged = ProfileSupport.merge(apps, snapshots.takeIf { connected }.orEmpty())
+                    mutableState.update { old ->
+                        val selected = old.selected?.let { prior -> (merged + uninstalledApps).firstOrNull {
+                            it.key == prior.key && it.uid == prior.uid && it.profile.serialNumber == prior.profile.serialNumber
+                        } }
+                        old.copy(apps = merged, uninstalledApps = uninstalledApps, profiles = result.profiles,
+                            battery = battery, loading = false,
+                            capturedAt = snapshots.values.maxOfOrNull { it.capturedAt }.takeIf { connected },
+                            warnings = result.warnings + snapshots.flatMap { (id, snapshot) -> snapshot.warnings.map {
+                                "${result.profiles.firstOrNull { p -> p.userId == id }?.name ?: "User $id"}: $it"
+                            } }, selected = selected,
+                            policy = old.policy.takeIf { selected != null && selected.profile.available },
+                            diagnostics = old.diagnostics.takeIf { selected != null && selected.profile.available })
                     }
-                    mutableState.update { old -> old.copy(apps = merged, uninstalledApps = uninstalledApps, battery = battery, loading = false,
-                        capturedAt = snapshot?.capturedAt.takeIf { connected }, warnings = snapshot?.warnings.orEmpty(),
-                        selected = old.selected?.let { selected -> (merged + uninstalledApps).firstOrNull { it.packageName == selected.packageName } }) }
                 }
                 if (foreground) {
                     state.value.selected?.let { loadDetail(it) }
@@ -194,25 +225,25 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         val revision = ++detailRevision
         detailJob?.cancel()
         diagnosticsJob?.cancel()
-        if (!app.installed || !foreground || bridge.access.value != AccessState.READY) {
+        if (!app.installed || !app.profile.available || !foreground || bridge.access.value != AccessState.READY) {
             mutableState.update { it.copy(detailLoading = false, diagnosticsLoading = false, policy = null, diagnostics = null) }
             return
         }
         mutableState.update { it.copy(detailLoading = true) }
         detailJob = viewModelScope.launch {
             try {
-                val policy = gate.withLock { engine.read(app) }
+                val policy = gate.withLock { engine(app.userId).read(app) }
                 if (bridge.access.value == AccessState.READY) mutableState.update {
-                    if (detailRevision == revision && it.selected?.packageName == app.packageName) it.copy(policy = policy) else it
+                    if (detailRevision == revision && it.selected?.key == app.key) it.copy(policy = policy) else it
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 mutableState.update {
-                    if (detailRevision == revision && it.selected?.packageName == app.packageName)
+                    if (detailRevision == revision && it.selected?.key == app.key)
                         it.copy(policy = null, message = e.message ?: "Couldn't read this app's policy.") else it
                 }
             } finally {
-                mutableState.update { if (detailRevision == revision && it.selected?.packageName == app.packageName) it.copy(detailLoading = false) else it }
+                mutableState.update { if (detailRevision == revision && it.selected?.key == app.key) it.copy(detailLoading = false) else it }
             }
         }
         mutableState.update { it.copy(diagnosticsLoading = true) }
@@ -220,13 +251,13 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
             try {
                 val diagnostics = gate.withLock { monitor.diagnostics(app) }
                 if (bridge.access.value == AccessState.READY) mutableState.update {
-                    if (detailRevision == revision && it.selected?.packageName == app.packageName) it.copy(diagnostics = diagnostics) else it
+                    if (detailRevision == revision && it.selected?.key == app.key) it.copy(diagnostics = diagnostics) else it
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 mutableState.update {
-                    if (detailRevision == revision && it.selected?.packageName == app.packageName)
-                        it.copy(diagnostics = AppDiagnostics(app.packageName, warnings = listOf(e.message ?: "App diagnostics unavailable."))) else it
+                    if (detailRevision == revision && it.selected?.key == app.key)
+                        it.copy(diagnostics = AppDiagnostics(app.packageName, userId = app.userId, warnings = listOf(e.message ?: "App diagnostics unavailable."))) else it
                 }
             } finally {
                 mutableState.update { if (detailRevision == revision) it.copy(diagnosticsLoading = false) else it }
@@ -247,7 +278,7 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         mutableState.update { it.copy(busy = true, message = null) }
         viewModelScope.launch {
             try {
-                val result = gate.withLock { processManager.forceStop(app) }
+                val result = gate.withLock { ProcessManager(bridge::execute, app.userId).forceStop(verifiedApp(app)) }
                 mutableState.update { it.copy(message = result.message) }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -270,13 +301,13 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                     val description = when(action) {
                         ControlAction.ALLOW_BACKGROUND -> "Background activity allowed"
                         ControlAction.RESTRICT_BACKGROUND -> "Background activity restricted"
-                        ControlAction.EXEMPT_DOZE -> "Doze exemption added"
-                        ControlAction.OPTIMIZE_DOZE -> "Doze exemption removed"
+                        ControlAction.EXEMPT_DOZE -> "Doze exemption added across profiles"
+                        ControlAction.OPTIMIZE_DOZE -> "Doze exemption removed across profiles"
                     }
                     lateinit var pending: ChangeRecord
-                    val after = engine.apply(app, before, action) { verifiedBefore, intended ->
+                    val after = engine(app.userId).apply(verifiedApp(app), before, action) { verifiedBefore, intended ->
                         pending = ChangeRecord(UUID.randomUUID().toString(), app.packageName, app.label, description,
-                            System.currentTimeMillis(), verifiedBefore, intended, recovery = true)
+                            System.currentTimeMillis(), verifiedBefore, intended, recovery = true, profileName = app.profile.name)
                         val pendingRecords = (listOf(pending) + state.value.changes).take(50)
                         check(saveHistory(pendingRecords)) { "Couldn't save the previous policy. No settings were changed." }
                         mutableState.update { it.copy(changes = pendingRecords) }
@@ -285,9 +316,10 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                     val records = state.value.changes.map { if (it.id == pending.id) record else it }
                     val persisted = saveHistory(records)
                     mutableState.update { old -> old.copy(changes = records,
-                        policy = if (old.selected?.packageName == app.packageName) after else old.policy,
+                        policy = if (old.selected?.key == app.key) after else old.policy,
                         message = if (persisted) "$description. Verified on device." else "$description. Verified, but history could not be saved. Undo is available until you close the app.",
-                        apps = old.apps.map { if(it.packageName == app.packageName) it.copy(dozeExempt = after.dozeExempt, standbyBucket = after.standbyBucket) else it }) }
+                        apps = old.apps.map { if (it.packageName == app.packageName) it.copy(dozeExempt = after.dozeExempt,
+                            standbyBucket = if (it.key == app.key) after.standbyBucket else it.standbyBucket) else it }) }
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -299,15 +331,17 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
 
     fun undo(record: ChangeRecord) {
         if (state.value.busy || record.undone || bridge.access.value != AccessState.READY) return
-        val app = state.value.apps.firstOrNull { it.packageName == record.packageName } ?: run {
-            mutableState.update { it.copy(message = "This app is no longer installed.") }; return
+        val app = state.value.apps.firstOrNull { it.packageName == record.packageName && it.userId == record.userId &&
+            (record.userSerial == null || record.userSerial == it.profile.serialNumber) } ?: run {
+            mutableState.update { it.copy(message = "This app or its original profile is no longer available.") }; return
         }
         mutableState.update { it.copy(busy = true) }
         viewModelScope.launch {
             try {
                 gate.withLock {
-                    val restored = if (record.recovery) engine.recover(app, record.before, record.after)
-                        else engine.restore(app, record.before, record.after) {
+                    val verified = verifiedApp(app)
+                    val restored = if (record.recovery) engine(app.userId).recover(verified, record.before, record.after)
+                        else engine(app.userId).restore(verified, record.before, record.after) {
                             val pendingRecords = state.value.changes.map { if (it.id == record.id) it.copy(recovery = true) else it }
                             check(saveHistory(pendingRecords)) { "Couldn't save the recovery checkpoint. No settings were changed." }
                             mutableState.update { it.copy(changes = pendingRecords) }
@@ -315,7 +349,7 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                     val records = state.value.changes.map { if(it.id == record.id) it.copy(undone = true, recovery = false) else it }
                     val persisted = saveHistory(records)
                     mutableState.update { old -> old.copy(changes = records,
-                        policy = if (old.selected?.packageName == app.packageName) restored else old.policy,
+                        policy = if (old.selected?.key == app.key) restored else old.policy,
                         apps = old.apps.map { if(it.packageName == app.packageName) it.copy(dozeExempt = restored.dozeExempt) else it },
                         message = if (persisted) "Previous policy restored and verified for ${app.label}." else "Previous policy restored. History could not be saved.") }
                 }
@@ -326,8 +360,40 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    /** Re-read profile incarnation and protected defaults immediately before changing anything. */
+    private suspend fun verifiedApp(app: AppEntry): AppEntry {
+        val fresh = inventory.read()
+        ProfileSupport.requireAvailable(app, fresh.profiles)
+        val target = fresh.apps.singleOrNull { it.key == app.key && it.installed }
+            ?: error("This app is no longer installed in the selected profile.")
+        check(target.uid == app.uid) { "This app was reinstalled. Refresh before changing it." }
+        check(target.protectedReason == null) { target.protectedReason ?: "This app is protected." }
+        return target
+    }
+
+    fun openAppSettings(app: AppEntry) {
+        viewModelScope.launch {
+            try {
+                gate.withLock {
+                    ProfileSupport.requireAvailable(app, inventory.profiles())
+                    val output = bridge.execute(listOf("am", "start", "--user", app.userId.toString(), "-a",
+                        "android.settings.APPLICATION_DETAILS_SETTINGS", "-d", "package:${app.packageName}"))
+                    check(!output.contains("Error:", true) && !output.contains("Exception", true)) { output.take(300) }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                mutableState.update { it.copy(message = "Couldn't open ${app.profile.name} app settings: ${e.message}") }
+            }
+        }
+    }
+
     private suspend fun saveHistory(records: List<ChangeRecord>): Boolean = withContext(Dispatchers.IO) {
         preferences.edit().putString("changes", ChangeHistory.encode(records)).commit()
     }
-    override fun onCleared() { bridge.close(); super.onCleared() }
+    override fun onCleared() {
+        getApplication<Application>().unregisterReceiver(profileReceiver)
+        getApplication<Application>().getSystemService(android.content.pm.LauncherApps::class.java).unregisterCallback(packageCallback)
+        bridge.close()
+        super.onCleared()
+    }
 }

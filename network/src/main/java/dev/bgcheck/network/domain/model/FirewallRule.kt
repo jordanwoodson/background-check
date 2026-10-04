@@ -17,7 +17,8 @@ data class FirewallRule(
     val isSystemApp: Boolean = false,
     val hasInternetPermission: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val userSerial: Long? = null
 ) {
     fun isFullyBlocked(): Boolean = wifiBlocked && mobileBlocked
 

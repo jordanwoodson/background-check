@@ -1,6 +1,8 @@
 package dev.bgcheck.app.ui
 
 import android.graphics.Bitmap
+import android.os.UserHandle
+import dev.bgcheck.network.utils.PackageUtils
 import androidx.collection.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -51,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -68,13 +71,16 @@ import java.util.Date
 private val appIconCache = LruCache<String, Bitmap>(140)
 
 @Composable
-internal fun AppIcon(packageName: String, size: Dp = 46.dp) {
+internal fun AppIcon(packageName: String, size: Dp = 46.dp, userId: Int = android.os.Process.myUid() / 100000, userSerial: Long? = null) {
     val context = LocalContext.current
-    val bitmap by produceState<Bitmap?>(appIconCache[packageName], packageName) {
+    val iconKey = "$userId:$userSerial:$packageName"
+    val bitmap by produceState<Bitmap?>(appIconCache[iconKey], iconKey) {
         value = withContext(Dispatchers.IO) {
-            appIconCache[packageName] ?: runCatching {
-                context.packageManager.getApplicationIcon(packageName).toBitmap(128, 128)
-            }.getOrNull()?.also { appIconCache.put(packageName, it) }
+            appIconCache[iconKey] ?: runCatching {
+                PackageUtils.getPackageIcon(context, packageName, userId)?.let { icon ->
+                    context.packageManager.getUserBadgedIcon(icon, UserHandle.getUserHandleForUid(userId * 100000)).toBitmap(128, 128)
+                }
+            }.getOrNull()?.also { appIconCache.put(iconKey, it) }
         }
     }
     Box(
@@ -122,11 +128,12 @@ internal fun InfoCard(title: String, message: String, icon: ImageVector, modifie
 
 @Composable
 internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort = AppSort.NAME, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier, color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+    Surface(onClick = onClick, modifier = modifier.testTag("app-row-${app.key}"), color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            AppIcon(app.packageName)
+            AppIcon(app.packageName, userId = app.userId, userSerial = app.profile.serialNumber)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(app.label, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                ProfileLabel(app.profile)
                 Text(app.description.text, style = MaterialTheme.typography.bodySmall, color = Foreground,
                     maxLines = 3, overflow = TextOverflow.Ellipsis)
                 Text("Cana: ${app.debloatRecommendation.rating.label}",

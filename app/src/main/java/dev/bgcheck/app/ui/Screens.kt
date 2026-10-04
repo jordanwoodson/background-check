@@ -57,6 +57,7 @@ import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -137,7 +138,7 @@ fun BackgroundCheckApp(
     onDismissDetail: () -> Unit,
     onAction: (ControlAction) -> Unit,
     onUndo: (ChangeRecord) -> Unit,
-    onOpenAppSettings: (String) -> Unit,
+    onOpenAppSettings: (AppEntry) -> Unit,
     onOpenShizuku: () -> Unit,
     onOpenWirelessSettings: () -> Unit,
     onClearMessage: () -> Unit,
@@ -147,7 +148,7 @@ fun BackgroundCheckApp(
     onSetMonitorInterval: (Long) -> Unit,
     onMonitorVisible: (Boolean) -> Unit,
     onForceStop: () -> Unit,
-    onOpenNetwork: (String?) -> Unit = {},
+    onOpenNetwork: (AppEntry?) -> Unit = {},
 ) {
     var page by rememberSaveable { mutableStateOf(Page.OVERVIEW) }
     val pageState = rememberSaveableStateHolder()
@@ -224,11 +225,11 @@ fun BackgroundCheckApp(
         }
     }
     state.selected?.let { app ->
-        detailState.SaveableStateProvider(app.packageName) {
+        detailState.SaveableStateProvider("${app.key}:${app.profile.serialNumber}") {
             AppDetailSheet(state, app, onDismissDetail, onAction, onOpenAppSettings,
                 onConnect = { onDismissDetail(); page = Page.ACCESS }, onForceStop = onForceStop,
                 onRetry = { onClearMessage(); onRefresh() }, onSelectPackage = onSelect,
-                onOpenNetwork = { onOpenNetwork(app.packageName) })
+                onOpenNetwork = { onOpenNetwork(app) })
         }
     }
 }
@@ -260,21 +261,24 @@ private fun AppHeader(state: UiState, onRefresh: () -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> Unit, onSelect: (AppEntry) -> Unit, onUndo: (ChangeRecord) -> Unit) {
+    var profileId by rememberSaveable { mutableStateOf(ALL_PROFILES) }
+    val profiles = state.visibleProfiles()
+    val scopedApps = state.apps.filter { profileId == ALL_PROFILES || it.userId == profileId }
     var showAllChanges by rememberSaveable { mutableStateOf(false) }
     var activeSort by rememberSaveable { mutableStateOf(AppSort.NAME) }
     var activeDirection by rememberSaveable { mutableStateOf(SortDirection.ASCENDING) }
     var historySort by rememberSaveable { mutableStateOf(HistorySort.TIME) }
     var historyDirection by rememberSaveable { mutableStateOf(SortDirection.DESCENDING) }
-    val known = state.access == AccessState.READY && state.apps.any { it.processState != ProcessState.UNKNOWN }
-    val foreground = state.apps.count { it.processState == ProcessState.FOREGROUND }
-    val services = state.apps.count { it.processState == ProcessState.SERVICE }
-    val background = state.apps.count { it.processState == ProcessState.BACKGROUND }
-    val cached = state.apps.count { it.processState == ProcessState.CACHED }
-    val activeApps = remember(state.apps, activeSort, activeDirection) {
-        ListSorting.apps(state.apps.filter { it.processState in setOf(ProcessState.FOREGROUND, ProcessState.SERVICE, ProcessState.BACKGROUND) }, activeSort, activeDirection).take(4)
+    val known = state.access == AccessState.READY && scopedApps.any { it.processState != ProcessState.UNKNOWN }
+    val foreground = scopedApps.count { it.processState == ProcessState.FOREGROUND }
+    val services = scopedApps.count { it.processState == ProcessState.SERVICE }
+    val background = scopedApps.count { it.processState == ProcessState.BACKGROUND }
+    val cached = scopedApps.count { it.processState == ProcessState.CACHED }
+    val activeApps = remember(scopedApps, activeSort, activeDirection) {
+        ListSorting.apps(scopedApps.filter { it.processState in setOf(ProcessState.FOREGROUND, ProcessState.SERVICE, ProcessState.BACKGROUND) }, activeSort, activeDirection).take(4)
     }
-    val changes = remember(state.changes, historySort, historyDirection) {
-        ListSorting.history(state.changes, historySort, historyDirection)
+    val changes = remember(state.changes, profileId, historySort, historyDirection) {
+        ListSorting.history(state.changes.filter { profileId == ALL_PROFILES || it.userId == profileId }, historySort, historyDirection)
     }
     LazyColumn(modifier = Modifier.testTag("overview-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
@@ -290,6 +294,7 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
                 Text("System overview", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
             }
         }
+        item { ProfileFilters("overview", profiles, profileId) { profileId = it } }
         item { BatteryCard(state.battery) }
         if (state.access in setOf(AccessState.NOT_RUNNING, AccessState.NEEDS_PERMISSION, AccessState.ERROR)) {
             item { AccessPrompt(state.access, onAccess) }
@@ -332,9 +337,9 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
                 SortControls("active-apps", AppSort.entries, activeSort, activeDirection,
                     onSort = { activeSort = it }, onDirection = { activeDirection = it })
             }
-            items(activeApps, key = { "active-${it.packageName}" }) { AppRow(it, sort = activeSort, modifier = Modifier.animateItem(), onClick = { onSelect(it) }) }
+            items(activeApps, key = { "active-${it.key}" }) { AppRow(it, sort = activeSort, modifier = Modifier.animateItem(), onClick = { onSelect(it) }) }
         }
-        item { SectionHeading("Your changes", "${state.changes.size} recorded") }
+        item { SectionHeading("Your changes", "${changes.size} recorded") }
         if (changes.isEmpty()) {
             item { InfoCard("No changes recorded", "Changes you make here will appear here, with a way to restore the previous setting.", Icons.Rounded.History) }
         } else {
@@ -343,7 +348,9 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
                     onSort = { historySort = it }, onDirection = { historyDirection = it })
             }
             items(if (showAllChanges) changes else changes.take(5), key = { "history-${it.id}" }) { record ->
-                HistoryCard(record, state.access == AccessState.READY && !state.busy, onUndo, connected = state.access == AccessState.READY)
+                val profile = profiles.firstOrNull { it.userId == record.userId }
+                val sameProfile = profile?.available == true && (record.userSerial == null || profile.serialNumber == null || record.userSerial == profile.serialNumber)
+                HistoryCard(record, state.access == AccessState.READY && !state.busy && sameProfile, onUndo, connected = state.access == AccessState.READY)
             }
             if (changes.size > 5) {
                 item {
@@ -362,7 +369,7 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
 private fun BatteryCard(battery: BatteryInfo) {
     Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel, contentColor = Foreground), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Eyebrow("battery")
+            Eyebrow("battery · whole device")
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(battery.percent?.let { "$it%" } ?: "—", style = MaterialTheme.typography.displayMedium, color = Green)
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -420,27 +427,39 @@ private fun AccessPrompt(access: AccessState, onAccess: () -> Unit) {
 
 @Composable
 private fun HistoryCard(record: ChangeRecord, canUndo: Boolean, onUndo: (ChangeRecord) -> Unit, connected: Boolean) {
+    val affectsAllProfiles = record.before.userExempt != record.after.userExempt || record.before.dozeExempt != record.after.dozeExempt
+    var confirmUndo by remember(record.id) { mutableStateOf(false) }
     Card(modifier = Modifier.testTag("history-record-${record.id}"), colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AppIcon(record.packageName, 34.dp)
+                AppIcon(record.packageName, 34.dp, userId = record.userId, userSerial = record.userSerial)
                 Column(Modifier.weight(1f)) {
                     Text(record.label, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text("${record.profileName} · User ${record.userId}", style = MaterialTheme.typography.labelSmall, color = Cyan)
                     Text(dateTimeLabel(record.timestamp), style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
                 if (record.undone) {
                     Text("Restored", style = MaterialTheme.typography.labelMedium, color = Muted)
                 } else {
-                    TextButton(onClick = { onUndo(record) }, enabled = canUndo) { Text(if (record.recovery) "Restore" else "Undo") }
+                    TextButton(onClick = { if (affectsAllProfiles) confirmUndo = true else onUndo(record) }, enabled = canUndo) { Text(if (record.recovery) "Restore" else "Undo") }
                 }
             }
             Text(record.description, style = MaterialTheme.typography.bodyMedium, color = Muted)
+            if (affectsAllProfiles) Text("Doze exemption · applies across all Android profiles", style = MaterialTheme.typography.bodySmall, color = Orange)
             if (record.recovery && !record.undone) Text(
                 if (connected) "This change could not be verified. Restore the previous policy; conflicting changes will be left untouched." else "Connect to restore the previous policy. Conflicting changes will be left untouched.",
                 style = MaterialTheme.typography.bodySmall, color = Orange,
             )
         }
     }
+    if (confirmUndo) AlertDialog(
+        onDismissRequest = { confirmUndo = false },
+        title = { Text("Restore Doze setting across profiles?") },
+        text = { Text("Restore the previous Doze exemption for ${record.label}. This affects every copy of this app, including personal and work profiles. The original change was made from ${record.profileName} (User ${record.userId}).") },
+        confirmButton = { TextButton(onClick = { confirmUndo = false; onUndo(record) }, enabled = canUndo) { Text("Restore across profiles") } },
+        dismissButton = { TextButton(onClick = { confirmUndo = false }) { Text("Cancel") } },
+        containerColor = Panel,
+    )
 }
 
 private enum class ProcessFilter(val label: String) { ALL("Any state"), ACTIVE("Active"), CACHED("Cached"), NOT_OBSERVED("Not observed") }
@@ -448,15 +467,17 @@ private enum class ProcessFilter(val label: String) { ALL("Any state"), ACTIVE("
 @Composable
 private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: () -> Unit) {
     val focusManager = LocalFocusManager.current
+    var profileId by rememberSaveable { mutableStateOf(ALL_PROFILES) }
+    val profiles = state.visibleProfiles()
     var query by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf(PackageType.USER) }
     var process by rememberSaveable { mutableStateOf(ProcessFilter.ALL) }
     var sort by rememberSaveable { mutableStateOf(AppSort.NAME) }
     var direction by rememberSaveable { mutableStateOf(SortDirection.ASCENDING) }
     val effectiveProcess = if (state.access == AccessState.READY && type != PackageType.UNINSTALLED) process else ProcessFilter.ALL
-    val apps = remember(state.apps, state.uninstalledApps, query, type, effectiveProcess, sort, direction) {
+    val apps = remember(state.apps, state.uninstalledApps, profileId, query, type, effectiveProcess, sort, direction) {
         ListSorting.apps((state.apps + state.uninstalledApps).filter { app ->
-            matchesPackage(app, type, query) &&
+            (profileId == ALL_PROFILES || app.userId == profileId) && matchesPackage(app, type, query) &&
                 when (effectiveProcess) {
                     ProcessFilter.ALL -> true
                     ProcessFilter.ACTIVE -> app.processState in setOf(ProcessState.FOREGROUND, ProcessState.SERVICE, ProcessState.BACKGROUND)
@@ -473,6 +494,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 Text("See what each package does, then inspect its activity and background settings.", style = MaterialTheme.typography.bodyMedium, color = Muted)
             }
         }
+        item { ProfileFilters("apps", profiles, profileId) { profileId = it } }
         item {
             OutlinedTextField(
                 value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
@@ -492,7 +514,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             }
         }
         if (type == PackageType.UNINSTALLED) {
-            item { Text("Not installed for this Android user. Only packages Android still has a record of are shown; this is not a complete uninstall history.", style = MaterialTheme.typography.bodySmall, color = Muted) }
+            item { Text("Not installed for the shown profile. Only packages Android still has a record of are shown; this is not a complete uninstall history.", style = MaterialTheme.typography.bodySmall, color = Muted) }
         } else if (state.access == AccessState.READY) {
             item {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -518,7 +540,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 type == PackageType.UNINSTALLED -> "Retained by Android"
                 type == PackageType.ALL -> "Installed and retained packages"
                 state.capturedAt != null && state.access == AccessState.READY -> "Snapshot ${timeLabel(state.capturedAt)}"
-                else -> "Installed for this Android user"
+                else -> "Installed in the selected profiles"
             }
             Text("${apps.size} ${if (apps.size == 1) "app" else "apps"} · $scope", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(vertical = 6.dp))
         }
@@ -528,11 +550,11 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoCard("No matching apps", "Try another app name or reset your search and filters.", Icons.Rounded.Search)
-                    TextButton(onClick = { query = ""; type = PackageType.ALL; process = ProcessFilter.ALL; focusManager.clearFocus() }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Reset filters") }
+                    TextButton(onClick = { query = ""; type = PackageType.ALL; process = ProcessFilter.ALL; profileId = ALL_PROFILES; focusManager.clearFocus() }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Reset filters") }
                 }
             }
         } else {
-            items(apps, key = { it.packageName }) { app -> AppRow(app, sort = sort, modifier = Modifier.animateItem(), onClick = { focusManager.clearFocus(); onSelect(app) }) }
+            items(apps, key = { it.key }) { app -> AppRow(app, sort = sort, modifier = Modifier.animateItem(), onClick = { focusManager.clearFocus(); onSelect(app) }) }
         }
     }
 }

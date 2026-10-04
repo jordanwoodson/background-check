@@ -1,5 +1,6 @@
 package dev.bgcheck.network.data.datasource
 
+import dev.bgcheck.network.domain.model.PackageIdentity
 import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -57,6 +58,8 @@ class AndroidPackageDataSource(
 ) : PackageDataSource {
 
     private val packageManager = context.packageManager
+    private val _profileWarnings = kotlinx.coroutines.flow.MutableStateFlow<List<String>>(emptyList())
+    override val profileWarnings: kotlinx.coroutines.flow.StateFlow<List<String>> = _profileWarnings
 
     private val packagesFlow = MutableSharedFlow<List<PackageEntity>>(replay = 1)
 
@@ -197,6 +200,7 @@ class AndroidPackageDataSource(
             )
 
             val allPackages = mutableListOf<PackageEntity>()
+            val warnings = mutableListOf<String>()
 
             AppLogger.i(TAG, "📱 MULTI-USER SUMMARY: ${userProfiles.size} profiles detected:")
             for (profile in userProfiles) {
@@ -204,12 +208,12 @@ class AndroidPackageDataSource(
             }
 
             for (profile in userProfiles) {
+                if (!profile.available) warnings += "${profile.displayName} (user ${profile.userId}): ${profile.unavailableReason ?: "Profile unavailable"}"
                 val profileStart = System.currentTimeMillis()
-                val installedPackages = HiddenApiHelper.getInstalledApplicationsAsUser(
-                    context,
-                    PackageManager.GET_META_DATA,
-                    profile.userId
-                )
+                val installedPackages = try {
+                    HiddenApiHelper.getInstalledApplicationsAsUser(context, PackageManager.GET_META_DATA, profile.userId)
+                } catch (e: CancellationException) { throw e }
+                catch (e: Exception) { emptyList() }
                 val profileEnd = System.currentTimeMillis()
 
                 AppLogger.i(TAG, "⏱️ TIMING: Profile ${profile.userId} (${profile.displayName}): getInstalledApplicationsAsUser took ${profileEnd - profileStart}ms, returned ${installedPackages.size} packages")
@@ -224,7 +228,8 @@ class AndroidPackageDataSource(
                 // list of apps" for all of those users, permanently. The filter it was protecting is
                 // protected where the damage actually was - the reset is no longer persisted.
                 if (installedPackages.isEmpty()) {
-                    AppLogger.w(TAG, "⚠️ Profile ${profile.userId} (${profile.displayName}) returned NO packages - enumeration for that profile may have failed")
+                    warnings += "${profile.displayName} (user ${profile.userId}) could not be read. Start Shizuku or resume this profile, then refresh."
+                    continue
                 }
 
                 if (profile.userId != 0 && installedPackages.isNotEmpty()) {
@@ -328,6 +333,7 @@ class AndroidPackageDataSource(
                                 category = category,
                                 affects = affects,
                                 isWorkProfile = profile.isWorkProfile,
+                                userSerial = profile.serialNumber,
                                 isCloneProfile = profile.isCloneProfile
                             )
                         }
@@ -371,6 +377,7 @@ class AndroidPackageDataSource(
                 )
             }
 
+            _profileWarnings.value = warnings
             allPackages.sortedBy { it.name.lowercase() }
         } catch (e: CancellationException) {
             // Straight through. This is loadJob.cancel() replacing its own load, not a failure, and
@@ -495,6 +502,7 @@ class AndroidPackageDataSource(
                     category = category,
                     affects = affects,
                     isWorkProfile = isWorkProfile,
+                    userSerial = HiddenApiHelper.currentProfile(context, userId)?.serialNumber,
                     isCloneProfile = isCloneProfile
                 )
             } catch (e: Exception) {
@@ -503,29 +511,14 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean): Boolean {
+    override suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         if (Constants.App.isOwnApp(packageName)) {
             return false
         }
 
         return withContext(Dispatchers.IO) {
-            try {
-                val newState = if (enabled) {
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                } else {
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER
-                }
-
-                packageManager.setApplicationEnabledSetting(
-                    packageName,
-                    newState,
-                    PackageManager.DONT_KILL_APP
-                )
-                return@withContext true
-            } catch (e: SecurityException) {
-            } catch (e: Exception) {
-            }
-
             if (shizukuManager.isShizukuAvailable()) {
                 if (!shizukuManager.hasShizukuPermission) {
                     shizukuManager.requestShizukuPermission()
@@ -542,6 +535,7 @@ class AndroidPackageDataSource(
                     // No catch: executeShellCommand reports every process failure as exitCode -1
                     // rather than throwing. The `catch (e: Exception) {}` that used to sit here
                     // swallowed coroutine cancellation, which must reach the caller.
+                    validateTarget(packageName, userId, identity, retained = false)
                     val (exitCode, _) = shizukuManager.executeShellCommand(command)
                     if (exitCode == 0) {
                         HiddenApiHelper.clearDisabledPackagesCache()
@@ -559,6 +553,7 @@ class AndroidPackageDataSource(
             // ShellRunner bounds the wait, drains both pipes together, and reports a failed start
             // as exitCode -1 instead of throwing - so there is nothing left here to catch. The
             // `catch (e: Exception) {}` this replaces also swallowed coroutine cancellation.
+            validateTarget(packageName, userId, identity, retained = false)
             val rootResult = ShellRunner.run("root: $rootCommand") {
                 Runtime.getRuntime().exec(arrayOf("su", "-c", rootCommand))
             }
@@ -572,70 +567,46 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun getUninstalledSystemPackages(): List<PackageEntity> {
-        return withContext(Dispatchers.IO) {
-            try {
-                HiddenApiHelper.getUsers(context).flatMap { profile ->
-                    // --user on both reads: without it pm answers for user 0, whichever profile the row is for.
-                    val installed = listSystemPackages("-s --user ${profile.userId}")
-                    // A failed read is empty, and empty would list every system app as uninstalled.
-                    if (installed.isEmpty()) return@flatMap emptyList()
-                    (listSystemPackages("-u -s --user ${profile.userId}") - installed)
-                    .filter { !Constants.App.isOwnApp(it) }
-                    .map { packageName ->
-                        PackageEntity(
-                            packageName = packageName,
-                            isInstalled = false,
-                            userId = profile.userId,
-                            uid = 0,
-                            name = packageName,
-                            icon = "⚙️",
-                            isEnabled = false,
-                            type = Constants.Packages.TYPE_SYSTEM,
-                            versionName = null,
-                            versionCode = null,
-                            installTime = null,
-                            updateTime = null,
-                            permissions = emptyList(),
-                            hasNetworkAccess = false,
-                            isNetworkBlocked = false,
-                            wifiBlocked = false,
-                            mobileBlocked = false,
-                            roamingBlocked = false,
-                            backgroundBlocked = false,
-                            isVpnApp = false,
-                            hasExplicitRule = false,
-                            criticality = PackageSafetyLoader.getCriticality(context, packageName),
-                            category = PackageSafetyLoader.getCategory(context, packageName),
-                            affects = PackageSafetyLoader.getAffects(context, packageName),
-                            isWorkProfile = profile.isWorkProfile,
-                            isCloneProfile = profile.isCloneProfile
-                        )
-                    }
-                }.sortedBy { it.name.lowercase() }
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to get uninstalled system packages: ${e.message}")
-                emptyList()
+    override suspend fun getUninstalledSystemPackages(): List<PackageEntity> = withContext(Dispatchers.IO) {
+        HiddenApiHelper.awaitCrossUserPermission(context)
+        val warnings = mutableListOf<String>()
+        val result = HiddenApiHelper.getUsers(context).flatMap { profile ->
+            if (!profile.available) warnings += "${profile.displayName} (user ${profile.userId}): ${profile.unavailableReason ?: "Profile unavailable"}"
+            val apps = try { HiddenApiHelper.getInstalledApplicationsAsUser(context, PackageManager.MATCH_UNINSTALLED_PACKAGES, profile.userId) }
+                catch (e: CancellationException) { throw e }
+                catch (e: Exception) { emptyList() }
+            if (apps.isEmpty()) {
+                warnings += "Retained apps in ${profile.displayName} (user ${profile.userId}) could not be read. Start Shizuku or resume this profile."
+                return@flatMap emptyList()
             }
-        }
+            apps.filter { it.flags and ApplicationInfo.FLAG_INSTALLED == 0 && !Constants.App.isOwnApp(it.packageName) }
+                .map { info ->
+                    val metadata = HiddenApiHelper.getPackageInfoAsUser(context, info.packageName,
+                        PackageManager.MATCH_UNINSTALLED_PACKAGES or PackageManager.GET_PERMISSIONS, profile.userId)
+                    PackageEntity(
+                        packageName = info.packageName, userId = profile.userId, uid = info.uid,
+                        name = runCatching { packageManager.getApplicationLabel(info).toString() }.getOrDefault(info.packageName),
+                        icon = "⚙️", isEnabled = false, isInstalled = false,
+                        type = if (info.flags and ApplicationInfo.FLAG_SYSTEM != 0) Constants.Packages.TYPE_SYSTEM else Constants.Packages.TYPE_USER,
+                        versionName = metadata?.versionName, versionCode = metadata?.longVersionCode,
+                        permissions = metadata?.requestedPermissions?.toList().orEmpty(),
+                        hasNetworkAccess = metadata?.requestedPermissions?.contains(android.Manifest.permission.INTERNET) == true,
+                        permissionsKnown = metadata != null,
+                        criticality = PackageSafetyLoader.getCriticality(context, info.packageName),
+                        category = PackageSafetyLoader.getCategory(context, info.packageName),
+                        affects = PackageSafetyLoader.getAffects(context, info.packageName),
+                        isWorkProfile = profile.isWorkProfile, userSerial = profile.serialNumber,
+                                isCloneProfile = profile.isCloneProfile
+                    )
+                }
+        }.sortedBy { it.name.lowercase() }
+        _profileWarnings.value = warnings
+        result
     }
 
-    private suspend fun listSystemPackages(args: String): Set<String> {
-        val output = if (shizukuManager.isShizukuAvailable() && shizukuManager.hasShizukuPermission) {
-            val (exitCode, stdout) = shizukuManager.executeShellCommand("pm list packages $args")
-            if (exitCode == 0) stdout else ""
-        } else {
-            ShellRunner.run("root: pm list packages $args") {
-                Runtime.getRuntime().exec(arrayOf("su", "-c", "pm list packages $args"))
-            }.stdout
-        }
-        return output.lines()
-            .filter { it.startsWith("package:") }
-            .map { it.removePrefix("package:").trim() }
-            .toSet()
-    }
+    override suspend fun uninstallPackage(packageName: String, userId: Int, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
 
-    override suspend fun uninstallPackage(packageName: String, userId: Int): Boolean {
         if (Constants.App.isOwnApp(packageName)) {
             return false
         }
@@ -649,6 +620,7 @@ class AndroidPackageDataSource(
 
                 if (shizukuManager.hasShizukuPermission) {
                     val command = "pm uninstall --user $userId $packageName"
+                    validateTarget(packageName, userId, identity, retained = false)
                     val (exitCode, _) = shizukuManager.executeShellCommand(command)
                     if (exitCode == 0) {
                         return@withContext true
@@ -657,6 +629,7 @@ class AndroidPackageDataSource(
             }
 
             val rootCommand = "pm uninstall --user $userId $packageName"
+            validateTarget(packageName, userId, identity, retained = false)
             val rootResult = ShellRunner.run("root: $rootCommand") {
                 Runtime.getRuntime().exec(arrayOf("su", "-c", rootCommand))
             }
@@ -669,7 +642,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun reinstallPackage(packageName: String, userId: Int): Boolean {
+    override suspend fun reinstallPackage(packageName: String, userId: Int, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = true)
+
         if (Constants.App.isOwnApp(packageName)) {
             return false
         }
@@ -683,6 +658,7 @@ class AndroidPackageDataSource(
 
                 if (shizukuManager.hasShizukuPermission) {
                     val command = "cmd package install-existing --user $userId $packageName"
+                    validateTarget(packageName, userId, identity, retained = true)
                     val (exitCode, _) = shizukuManager.executeShellCommand(command)
                     if (exitCode == 0) {
                         return@withContext true
@@ -691,6 +667,7 @@ class AndroidPackageDataSource(
             }
 
             val rootCommand = "cmd package install-existing --user $userId $packageName"
+            validateTarget(packageName, userId, identity, retained = true)
             val rootResult = ShellRunner.run("root: $rootCommand") {
                 Runtime.getRuntime().exec(arrayOf("su", "-c", rootCommand))
             }
@@ -703,7 +680,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun forceStopPackage(packageName: String, userId: Int): Boolean {
+    override suspend fun forceStopPackage(packageName: String, userId: Int, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         if (Constants.App.isOwnApp(packageName)) {
             return false
         }
@@ -717,6 +696,7 @@ class AndroidPackageDataSource(
 
                 if (shizukuManager.hasShizukuPermission) {
                     val command = "am force-stop --user $userId $packageName"
+                    validateTarget(packageName, userId, identity, retained = false)
                     val (exitCode, _) = shizukuManager.executeShellCommand(command)
                     if (exitCode == 0) {
                         return@withContext true
@@ -725,6 +705,7 @@ class AndroidPackageDataSource(
             }
 
             val rootCommand = "am force-stop --user $userId $packageName"
+            validateTarget(packageName, userId, identity, retained = false)
             val rootResult = ShellRunner.run("root: $rootCommand") {
                 Runtime.getRuntime().exec(arrayOf("su", "-c", rootCommand))
             }
@@ -733,14 +714,19 @@ class AndroidPackageDataSource(
                 return@withContext true
             }
 
-            try {
-                val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-                activityManager.killBackgroundProcesses(packageName)
-            } catch (e: Exception) {
-            }
-
             false
         }
+    }
+
+    private suspend fun validateTarget(packageName: String, userId: Int, expected: PackageIdentity?, retained: Boolean): PackageIdentity = withContext(Dispatchers.IO) {
+        require(Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*").matches(packageName)) { "Invalid package identity" }
+        val profile = HiddenApiHelper.currentProfile(context, userId) ?: error("Profile no longer exists")
+        val info = HiddenApiHelper.getApplicationInfoAsUser(context, packageName,
+            if (retained) PackageManager.MATCH_UNINSTALLED_PACKAGES else 0, userId)
+            ?: error("App is unavailable in the selected profile")
+        val identity = expected ?: PackageIdentity(info.uid, profile.serialNumber)
+        identity.requireCurrent(userId, info.uid, profile.serialNumber, profile.available)
+        identity
     }
 
     private fun getAppName(appInfo: ApplicationInfo): String {
@@ -898,7 +884,9 @@ class AndroidPackageDataSource(
         return permissions.any { Constants.Firewall.NETWORK_PERMISSIONS.contains(it) }
     }
 
-    override suspend fun setNetworkAccess(packageName: String, userId: Int, allowed: Boolean, stampDefaultOnUntouched: Boolean): Boolean {
+    override suspend fun setNetworkAccess(packageName: String, userId: Int, allowed: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val allowCritical = prefs.getBoolean(
             Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
@@ -943,7 +931,8 @@ class AndroidPackageDataSource(
                     newRule
                 }
 
-                firewallRepository.insertRule(rule)
+                validateTarget(packageName, userId, identity, retained = false)
+                firewallRepository.insertRule(rule.copy(uid = identity.uid, userSerial = identity.userSerial))
                 true
             } catch (e: Exception) {
                 false
@@ -951,7 +940,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun setWifiBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Boolean {
+    override suspend fun setWifiBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val allowCritical = prefs.getBoolean(
             Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
@@ -974,6 +965,7 @@ class AndroidPackageDataSource(
                 val existingRule = firewallRepository.getRuleByPackage(packageName, userId).first()
 
                 if (existingRule != null) {
+                    validateTarget(packageName, userId, identity, retained = false)
                     firewallRepository.updateWifiBlocking(packageName, userId, blocked)
                 } else {
                     val defaultPolicy = prefs.getString(
@@ -999,7 +991,8 @@ class AndroidPackageDataSource(
                         isSystemApp = isSystemApp(appInfo),
                         hasInternetPermission = hasNetworkPermissions(packageName, userId)
                     )
-                    firewallRepository.insertRule(rule)
+                    validateTarget(packageName, userId, identity, retained = false)
+                    firewallRepository.insertRule(rule.copy(uid = identity.uid, userSerial = identity.userSerial))
                 }
 
                 true
@@ -1009,7 +1002,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun setMobileBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Boolean {
+    override suspend fun setMobileBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val allowCritical = prefs.getBoolean(
             Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
@@ -1032,6 +1027,7 @@ class AndroidPackageDataSource(
                 val existingRule = firewallRepository.getRuleByPackage(packageName, userId).first()
 
                 if (existingRule != null) {
+                    validateTarget(packageName, userId, identity, retained = false)
                     firewallRepository.updateMobileBlocking(packageName, userId, blocked)
                 } else {
                     val defaultPolicy = prefs.getString(
@@ -1057,7 +1053,8 @@ class AndroidPackageDataSource(
                         isSystemApp = isSystemApp(appInfo),
                         hasInternetPermission = hasNetworkPermissions(packageName, userId)
                     )
-                    firewallRepository.insertRule(rule)
+                    validateTarget(packageName, userId, identity, retained = false)
+                    firewallRepository.insertRule(rule.copy(uid = identity.uid, userSerial = identity.userSerial))
                 }
 
                 true
@@ -1067,7 +1064,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun setRoamingBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Boolean {
+    override suspend fun setRoamingBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val allowCritical = prefs.getBoolean(
             Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
@@ -1090,6 +1089,7 @@ class AndroidPackageDataSource(
                 val existingRule = firewallRepository.getRuleByPackage(packageName, userId).first()
 
                 if (existingRule != null) {
+                    validateTarget(packageName, userId, identity, retained = false)
                     firewallRepository.updateRoamingBlocking(packageName, userId, blocked)
                 } else {
                     val defaultPolicy = prefs.getString(
@@ -1115,7 +1115,8 @@ class AndroidPackageDataSource(
                         isSystemApp = isSystemApp(appInfo),
                         hasInternetPermission = hasNetworkPermissions(packageName, userId)
                     )
-                    firewallRepository.insertRule(rule)
+                    validateTarget(packageName, userId, identity, retained = false)
+                    firewallRepository.insertRule(rule.copy(uid = identity.uid, userSerial = identity.userSerial))
                 }
 
                 true
@@ -1125,7 +1126,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun setBackgroundBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Boolean {
+    override suspend fun setBackgroundBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val allowCritical = prefs.getBoolean(
             Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
@@ -1148,6 +1151,7 @@ class AndroidPackageDataSource(
                 val existingRule = firewallRepository.getRuleByPackage(packageName, userId).first()
 
                 if (existingRule != null) {
+                    validateTarget(packageName, userId, identity, retained = false)
                     firewallRepository.updateBackgroundBlocking(packageName, userId, blocked)
                 } else {
                     val defaultPolicy = prefs.getString(
@@ -1179,7 +1183,8 @@ class AndroidPackageDataSource(
                         isSystemApp = isSystemApp(appInfo),
                         hasInternetPermission = hasNetworkPermissions(packageName, userId)
                     )
-                    firewallRepository.insertRule(rule)
+                    validateTarget(packageName, userId, identity, retained = false)
+                    firewallRepository.insertRule(rule.copy(uid = identity.uid, userSerial = identity.userSerial))
                 }
 
                 true
@@ -1189,7 +1194,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun setLanBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Boolean {
+    override suspend fun setLanBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val allowCritical = prefs.getBoolean(
             Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
@@ -1212,6 +1219,7 @@ class AndroidPackageDataSource(
                 val existingRule = firewallRepository.getRuleByPackage(packageName, userId).first()
 
                 if (existingRule != null) {
+                    validateTarget(packageName, userId, identity, retained = false)
                     firewallRepository.updateLanBlocking(packageName, userId, blocked)
                 } else {
                     val defaultPolicy = prefs.getString(
@@ -1238,7 +1246,8 @@ class AndroidPackageDataSource(
                         isSystemApp = isSystemApp(appInfo),
                         hasInternetPermission = hasNetworkPermissions(packageName, userId)
                     )
-                    firewallRepository.insertRule(rule)
+                    validateTarget(packageName, userId, identity, retained = false)
+                    firewallRepository.insertRule(rule.copy(uid = identity.uid, userSerial = identity.userSerial))
                 }
 
                 true
@@ -1248,7 +1257,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun setAllNetworkBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Boolean {
+    override suspend fun setAllNetworkBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val allowCritical = prefs.getBoolean(
             Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
@@ -1271,6 +1282,7 @@ class AndroidPackageDataSource(
                 val existingRule = firewallRepository.getRuleByPackage(packageName, userId).first()
 
                 if (existingRule != null) {
+                    validateTarget(packageName, userId, identity, retained = false)
                     firewallRepository.updateAllNetworkBlocking(packageName, userId, blocked)
                 } else {
                     // Create new rule with the three internet transports set to the same state.
@@ -1287,7 +1299,8 @@ class AndroidPackageDataSource(
                         isSystemApp = isSystemApp(appInfo),
                         hasInternetPermission = hasNetworkPermissions(packageName, userId)
                     )
-                    firewallRepository.insertRule(rule)
+                    validateTarget(packageName, userId, identity, retained = false)
+                    firewallRepository.insertRule(rule.copy(uid = identity.uid, userSerial = identity.userSerial))
                 }
 
                 true
@@ -1297,7 +1310,9 @@ class AndroidPackageDataSource(
         }
     }
 
-    override suspend fun setMobileAndRoaming(packageName: String, userId: Int, mobileBlocked: Boolean, roamingBlocked: Boolean, stampDefaultOnUntouched: Boolean): Boolean {
+    override suspend fun setMobileAndRoaming(packageName: String, userId: Int, mobileBlocked: Boolean, roamingBlocked: Boolean, stampDefaultOnUntouched: Boolean, expected: PackageIdentity?): Boolean {
+        val identity = validateTarget(packageName, userId, expected, retained = false)
+
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val allowCritical = prefs.getBoolean(
             Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
@@ -1320,6 +1335,7 @@ class AndroidPackageDataSource(
                 val existingRule = firewallRepository.getRuleByPackage(packageName, userId).first()
 
                 if (existingRule != null) {
+                    validateTarget(packageName, userId, identity, retained = false)
                     firewallRepository.updateMobileAndRoaming(packageName, userId, mobileBlocked, roamingBlocked)
                 } else {
                     val defaultPolicy = prefs.getString(
@@ -1345,7 +1361,8 @@ class AndroidPackageDataSource(
                         isSystemApp = isSystemApp(appInfo),
                         hasInternetPermission = hasNetworkPermissions(packageName, userId)
                     )
-                    firewallRepository.insertRule(rule)
+                    validateTarget(packageName, userId, identity, retained = false)
+                    firewallRepository.insertRule(rule.copy(uid = identity.uid, userSerial = identity.userSerial))
                 }
 
                 true

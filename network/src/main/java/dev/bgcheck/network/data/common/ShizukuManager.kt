@@ -55,7 +55,8 @@ class ShizukuManager(private val context: Context) {
     }
 
     val hasShizukuPermission: Boolean
-        get() = _shizukuStatus.value == ShizukuStatus.RUNNING_WITH_PERMISSION
+        // The host can grant the shared permission before this manager receives its UI callback.
+        get() = isShizukuRunning() && checkShizukuPermissionSync()
 
     // Track if user explicitly denied permission to avoid prompt spam (Issue #68)
     // This is reset when Shizuku restarts (binder received) to allow retry

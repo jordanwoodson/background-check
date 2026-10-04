@@ -33,7 +33,9 @@ class ConnectivityManagerFirewallBackend(
         private const val TAG = "ConnectivityManagerFirewall"
         private const val SERVICE_NAME = "connectivity"
         private const val MIN_API_LEVEL = Build.VERSION_CODES.TIRAMISU // Android 13
-        private const val FIREWALL_CHAIN_OEM_DENY_3 = 3 // OEM-specific deny chain
+        private const val UID_JOURNAL = "cm_uid_original_rules"
+        private const val UID_MODE = "cm_independent_uid_mode"
+        private const val ORIGINAL_CHAIN = "cm_uid_original_chain_enabled"
 
         /**
          * How long the WHOLE restore may take, not one command of it.
@@ -85,29 +87,25 @@ class ConnectivityManagerFirewallBackend(
     }
 
     suspend fun startInternal(): Result<Unit> = mutex.withLock {
-        return try {
-            AppLogger.d(TAG, "startInternal: Enabling firewall chain")
-
-            val (exitCode, output) = shizukuManager.executeShellCommand("cmd connectivity set-chain3-enabled true")
-            if (exitCode != 0) {
-                val error = "Failed to enable firewall chain: $output"
-                AppLogger.e(TAG, error)
-                return Result.failure(Exception(error))
+        runCatching {
+            val controller = ConnectivityUidFirewall.connect(shizukuManager)
+            // An upgrade can still have denials from the package-based backend. Lift those before
+            // the first UID rule; otherwise the old personal verdict continues blocking work apps.
+            check(restoreBlockedPackages().isEmpty()) { "Could not restore legacy package rules" }
+            check(context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
+                .edit().putBoolean(UID_MODE, true).commit()) { "Cannot record firewall mode" }
+            val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
+            val wasEnabled = controller.isEnabled()
+            if (!wasEnabled) {
+                check(readDeniedUids().isEmpty()) {
+                    "OEM deny chain contains another controller's inactive rules. Choose root or a VPN in the target profile."
+                }
             }
-
-            // Recorded durably so a fresh process after a crash knows this backend ran and has
-            // something to undo. It records "De1984 asked for this chain", NOT "De1984 was first":
-            // set-chain3-enabled reports success whether or not the chain was already on, and the
-            // connectivity shell offers no getter, so a chain an OEM had already enabled cannot be
-            // told apart from one we enabled. Undoing it on stop is what the app has always done.
-            setChain3EnabledByUs(true)
-
-            AppLogger.d(TAG, "✅ Firewall chain enabled (FIREWALL_CHAIN_OEM_DENY_3)")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to enable firewall chain", e)
-            Result.failure(errorHandler.handleError(e, "enable ConnectivityManager firewall chain"))
-        }
+            if (!prefs.contains(ORIGINAL_CHAIN)) {
+                check(prefs.edit().putBoolean(ORIGINAL_CHAIN, wasEnabled).commit()) { "Cannot record original chain state" }
+            }
+            controller.setEnabled(true)
+        }.map { Unit }
     }
 
     override suspend fun stop(): Result<Unit> = mutex.withLock {
@@ -133,231 +131,92 @@ class ConnectivityManagerFirewallBackend(
     }
 
     suspend fun stopInternal(): Result<Unit> = mutex.withLock {
-        return try {
-            AppLogger.d(TAG, "stopInternal: Disabling firewall chain")
-
-            // Re-enable networking for every package we denied, BEFORE the chain goes down.
-            // Disabling the chain alone only masks those denials; they stay recorded in the system
-            // and come back the moment anything turns the chain on again.
-            val notRestored = restoreBlockedPackages()
-
-            val (exitCode, output) = shizukuManager.executeShellCommand("cmd connectivity set-chain3-enabled false")
-            var chainStillEnabled = false
-            if (exitCode != 0) {
-                AppLogger.e(TAG, "Failed to disable firewall chain: $output")
-                // This used to say "Don't fail on stop - just log the warning" and swallow it. That
-                // is the same hole the iptables backend had: the command that switches enforcement
-                // off can fail and the teardown still reports success. OEM_DENY_3 stays enabled
-                // system-wide, ready to re-arm any denial still recorded in the system, while the
-                // app shows the firewall as off.
-                chainStillEnabled = chain3EnabledByUs()
-            } else {
-                setChain3EnabledByUs(false)
-            }
-
+        runCatching {
+            restoreUidPolicies()
+            check(restoreBlockedPackages().isEmpty()) { "Could not restore legacy package rules" }
             appliedPolicies.clear()
-            AppLogger.d(TAG, "Cleared applied policies cache")
-
-            if (notRestored.isNotEmpty()) {
-                AppLogger.e(TAG, "❌ ${notRestored.size} packages still denied networking after stop")
-                return Result.failure(
-                    errorHandler.handleError(
-                        Exception("${notRestored.size} packages could not have networking restored"),
-                        "restore ConnectivityManager package networking"
-                    )
-                )
-            }
-
-            // Only OUR chain counts. If we never turned OEM_DENY_3 on, a failed disable leaves it
-            // exactly as we found it and is not ours to report.
-            if (chainStillEnabled) {
-                return Result.failure(
-                    errorHandler.handleError(
-                        Exception("the OEM_DENY_3 firewall chain we enabled could not be disabled"),
-                        "disable ConnectivityManager firewall chain"
-                    )
-                )
-            }
-
-            AppLogger.d(TAG, "Firewall chain disabled")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to disable firewall chain", e)
-            Result.failure(errorHandler.handleError(e, "disable ConnectivityManager firewall chain"))
+            restoreChainState()
+            setChain3EnabledByUs(false)
         }
     }
 
-    /**
-     * Apply firewall rules using ConnectivityManager shell commands.
-     *
-     * CRITICAL: This runs in NonCancellable context to prevent shell commands from being
-     * interrupted mid-execution when the parent coroutine is cancelled (e.g., by debouncing).
-     * Interrupted commands could leave the firewall in an inconsistent state where some
-     * apps are blocked and others aren't.
-     */
     override suspend fun applyRules(
         rules: List<FirewallRule>,
         networkType: NetworkType,
         screenOn: Boolean
-    ): Result<Unit> = withContext(NonCancellable) {
+    ): Result<Unit> = withContext(NonCancellable + Dispatchers.IO) {
         mutex.withLock {
-            return@withContext try {
-                AppLogger.d(TAG, "=== ConnectivityManagerFirewallBackend.applyRules() ===")
-            AppLogger.d(TAG, "Rules count: ${rules.size}, networkType: $networkType, screenOn: $screenOn")
-
-            val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
-            val defaultPolicy = prefs.getString(
-                Constants.Settings.KEY_DEFAULT_FIREWALL_POLICY,
-                Constants.Settings.DEFAULT_FIREWALL_POLICY
-            ) ?: Constants.Settings.DEFAULT_FIREWALL_POLICY
-            val isBlockAllDefault = defaultPolicy == Constants.Settings.POLICY_BLOCK_ALL
-
-            AppLogger.d(TAG, "Default policy: $defaultPolicy (isBlockAllDefault=$isBlockAllDefault)")
-
-            var appliedCount = 0
-            var errorCount = 0
-            var skippedCount = 0
-            var systemUidCount = 0
-            var untouchedCount = 0
-
-            val enabledRules = rules.filter { it.enabled }
-            val rulesByUid = rulesByCurrentUid(rules, dev.bgcheck.network.data.multiuser.HiddenApiHelper.getInstalledUids(context))
-            val ruledPackages = enabledRules.mapTo(HashSet()) { it.packageName }
-
-            val userProfiles = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getUsers(context)
-            val allPackages = dev.bgcheck.network.data.multiuser.HiddenApiHelper
-                .getPackagesWithNetworkPermissions(context)
-
-            AppLogger.d(TAG, "Found ${allPackages.size} packages with network permissions across ${userProfiles.size} profiles")
-
-            // The loop below walks packages, so a failed read would apply nothing and still report success.
-            if (allPackages.isEmpty()) {
-                AppLogger.e(TAG, "Network package read failed - refusing to apply, policies keep their last write")
-                return@withContext Result.failure(Exception("Network package read failed"))
-            }
-
-            // One verdict per package name: a command acts on that app in every profile, so decide the own copy.
-            val ownUserId = Constants.Firewall.ownUserId()
-            val ownPackages = allPackages.filter {
-                FirewallBackendType.CONNECTIVITY_MANAGER.reachesUser(it.uid / 100000, ownUserId)
-            }
-
-            val desiredPolicies = mutableMapOf<String, Boolean>()
-
-            val allowCritical = prefs.getBoolean(
-                Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
-                Constants.Settings.DEFAULT_ALLOW_CRITICAL_FIREWALL
-            )
-
-            val criticalOrVpnUids = ownPackages
-                .filter { Constants.Firewall.isSystemCritical(it.packageName) || hasVpnService(it.packageName, it.uid / 100000) }
-                .map { it.uid }
-                .toSet()
-
-            // Android applies each command to the package's whole uid, so a uid gets one verdict.
-            ownPackages.groupBy { it.uid }.forEach { (uid, packagesInUid) ->
-                if (!Constants.Firewall.isFirewallableAppUid(uid)) {
-                    systemUidCount += packagesInUid.size
-                    return@forEach
+            runCatching {
+                val controller = ConnectivityUidFirewall.connect(shizukuManager)
+                check(controller.isEnabled()) { "UID firewall chain is disabled" }
+                val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
+                val blockAll = prefs.getString(Constants.Settings.KEY_DEFAULT_FIREWALL_POLICY,
+                    Constants.Settings.DEFAULT_FIREWALL_POLICY) == Constants.Settings.POLICY_BLOCK_ALL
+                val allowCritical = prefs.getBoolean(Constants.Settings.KEY_ALLOW_CRITICAL_FIREWALL,
+                    Constants.Settings.DEFAULT_ALLOW_CRITICAL_FIREWALL)
+                val installed = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getInstalledUids(context)
+                check(installed.isNotEmpty() && installed.values.none { it.isEmpty() }) {
+                    "Cannot verify every profile; UID firewall rules were not changed"
                 }
-
-                val protectedUid = uid in criticalOrVpnUids
-                // Not per network: this backend shows one switch per app, so a rule left over from
-                // iptables or VPN with one network blocked must block every network, as the switch says.
-                val shouldBlock = !(protectedUid && !allowCritical) && uidBlockedNow(
-                    rulesByUid[uid], isBlockAllDefault, protectedUid,
-                    perNetwork = false, networkType = networkType, screenOn = screenOn,
-                )
-                AppLogger.d(TAG, "🔍 [RULE DEBUG] UID $uid ${packagesInUid.map { it.packageName }}: " +
-                        "${rulesByUid[uid]?.size ?: 0} rule(s), protected=$protectedUid → shouldBlock=$shouldBlock")
-
-                packagesInUid.forEach { desiredPolicies[it.packageName] = shouldBlock }
+                val byUid = rulesByCurrentUid(rules, installed)
+                val packages = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getPackagesWithNetworkPermissions(context)
+                check(packages.isNotEmpty()) { "Cannot read network apps" }
+                val critical = packages.filter {
+                    Constants.Firewall.isSystemCritical(it.packageName) || hasVpnService(it.packageName, it.uid / 100000)
+                }.mapTo(hashSetOf()) { it.uid }
+                val denied = packages.groupBy { it.uid }.mapNotNull { (uid, _) ->
+                    if (!Constants.Firewall.isFirewallableAppUid(uid)) return@mapNotNull null
+                    val protected = uid in critical
+                    if (protected && !allowCritical) return@mapNotNull null
+                    uid.takeIf { uidBlockedNow(byUid[uid], blockAll, protected, false, networkType, screenOn) }
+                }.toSet()
+                uidSession(controller).apply(denied)
             }
+        }
+    }
 
-            AppLogger.d(TAG, "🔍 [CACHE DEBUG] appliedPolicies cache size: ${appliedPolicies.size}, desiredPolicies size: ${desiredPolicies.size}")
-
-            // Record what we are ABOUT to deny, durably, before the first command runs. If the
-            // process dies mid-loop the record still covers everything that was denied. It
-            // deliberately over-records: a package whose command later failed is listed anyway, and
-            // re-enabling an already-enabled package is a harmless no-op. The other direction -
-            // denying a package we never recorded - strands it with no network and nothing to
-            // point at. One synchronous write per apply, not one per package.
-            // Union, not overwrite. After a process restart appliedPolicies is empty, so this loop
-            // also re-enables packages that were denied by the previous process. Overwriting the
-            // record first would drop them from it, and a death before the loop reached them would
-            // strand them with no network and no record to undo it.
-            val intendedBlocked = desiredPolicies.filterValues { it }.keys.toSet()
-            val existingRecord = loadBlockedPackages()
-            // Only pay for the synchronous commit when the record would actually change. Under the
-            // Block All default intendedBlocked is close to every network-capable package, and this
-            // runs on every network change, screen toggle and rule edit.
-            if (!existingRecord.containsAll(intendedBlocked)) {
-                saveBlockedPackages(existingRecord + intendedBlocked, durable = true)
-            }
-
-            desiredPolicies.forEach { (packageName, shouldBlock) ->
-                // Nothing to lift: we have never denied this package, so there is no denial to
-                // undo and no command to send. Without this every untouched package cost one
-                // Shizuku process per pass, rejected with "sUidOwnerMap does not have entry".
-                //
-                // One-directional on purpose. existingRecord says what we INTENDED to deny, not
-                // what is denied now - it is written before the commands run and survives a reboot
-                // that clears the denials themselves - so it must never short-circuit a BLOCK.
-                // See issue #93.
-                if (!shouldBlock && appliedPolicies[packageName] != true && packageName !in existingRecord) {
-                    untouchedCount++
-                    return@forEach
+    private fun uidSession(controller: ConnectivityUidFirewall) = dev.bgcheck.network.domain.firewall.UidFirewallSession(
+        controller,
+        load = {
+            context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
+                .getStringSet(UID_JOURNAL, emptySet()).orEmpty().associate { record ->
+                    val parts = record.split(":")
+                    require(parts.size == 2) { "Invalid UID firewall recovery record" }
+                    val uid = parts[0].toInt()
+                    val rule = parts[1].toInt()
+                    require(uid >= 0 && rule in 0..1) { "Invalid UID firewall recovery identity" }
+                    uid to rule
                 }
-
-                val currentPolicy = appliedPolicies[packageName]
-
-                if (currentPolicy == shouldBlock) {
-                    skippedCount++
-                    if (packageName in ruledPackages) {
-                        AppLogger.d(TAG, "🔍 [CACHE DEBUG] SKIPPED $packageName: currentPolicy=$currentPolicy, shouldBlock=$shouldBlock (has rule)")
-                    }
-                    return@forEach
-                }
-
-                AppLogger.d(TAG, "🔍 [CACHE DEBUG] APPLYING $packageName: currentPolicy=$currentPolicy → shouldBlock=$shouldBlock")
-
-                try {
-                    val (done, output) = setPackageNetworking(packageName, enabled = !shouldBlock)
-
-                    if (done) {
-                        appliedCount++
-                        appliedPolicies[packageName] = shouldBlock
-                        val ruleStatus = if (packageName in ruledPackages) "has rule" else "no rule (default policy)"
-                        AppLogger.d(TAG, "Applied policy for $packageName ($ruleStatus): " +
-                                "policy=${if (shouldBlock) "BLOCK (all networks)" else "ALLOW"}")
-                    } else {
-                        errorCount++
-                        AppLogger.e(TAG, "Failed to apply policy for $packageName: $output")
-                    }
-                } catch (e: Exception) {
-                    errorCount++
-                    AppLogger.e(TAG, "Failed to apply policy for $packageName", e)
-                }
+        },
+        save = { journal ->
+            check(context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE).edit()
+                .putStringSet(UID_JOURNAL, journal.map { "${it.key}:${it.value}" }.toSet()).commit()) {
+                "Cannot save UID firewall recovery record"
             }
+        }
+    )
 
-            // Update the record from what this pass actually did, rather than overwriting it with
-            // appliedPolicies. A package can be denied and absent from desiredPolicies - it was
-            // uninstalled, disabled, or moved out of the enumeration - and after a cache clear it is
-            // in neither map. Overwriting dropped it from the record while the system denial stood,
-            // leaving it offline with nothing left to undo it. Only an explicit re-enable removes a
-            // package from the record.
-            val record = loadBlockedPackages().toMutableSet()
-            appliedPolicies.forEach { (pkg, isBlocked) ->
-                if (isBlocked) record.add(pkg) else record.remove(pkg)
-            }
-            saveBlockedPackages(record)
+    private suspend fun readDeniedUids(): Set<Int> {
+        val (code, output) = shizukuManager.executeShellCommand("dumpsys connectivity trafficcontroller")
+        check(code == 0) { "Cannot inspect Android OEM firewall rules" }
+        return dev.bgcheck.network.domain.firewall.OemDenyChainRules.parse(output)
+    }
 
-                AppLogger.d(TAG, "✅ Applied $appliedCount policies, skipped $skippedCount unchanged, $untouchedCount never ours, $systemUidCount packages on system UIDs Android will not firewall, $errorCount errors")
-                if (errorCount > 0) Result.failure(PartialApplyException(errorCount)) else Result.success(Unit)
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to apply rules", e)
-                Result.failure(errorHandler.handleError(e, "apply connectivity manager rules"))
-            }
+    private suspend fun restoreChainState() {
+        val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
+        if (!prefs.contains(ORIGINAL_CHAIN)) return
+        if (!prefs.getBoolean(ORIGINAL_CHAIN, true)) {
+            // A complete owner-map snapshot includes isolated UIDs absent from PackageManager.
+            // If an OEM added a denial meanwhile, leave its chain running and preserve that rule.
+            if (readDeniedUids().isEmpty()) ConnectivityUidFirewall.connect(shizukuManager).setEnabled(false)
+        }
+        check(prefs.edit().remove(ORIGINAL_CHAIN).commit()) { "Cannot save restored chain state" }
+    }
+
+    private suspend fun restoreUidPolicies() {
+        val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getStringSet(UID_JOURNAL, emptySet()).orEmpty().isNotEmpty()) {
+            uidSession(ConnectivityUidFirewall.connect(shizukuManager)).restore()
         }
     }
 
@@ -416,17 +275,14 @@ class ConnectivityManagerFirewallBackend(
                 return Result.failure(Exception(error))
             }
 
-            val (_, output) = shizukuManager.executeShellCommand("cmd connectivity help")
-
-            if (!output.contains("set-chain3-enabled")) {
-                val error = "ConnectivityManager firewall chain API not available"
-                return Result.failure(Exception(error))
+            val controller = ConnectivityUidFirewall.connect(shizukuManager)
+            if (!controller.isEnabled()) check(readDeniedUids().isEmpty()) {
+                "Another controller has inactive OEM firewall rules"
             }
-
             Result.success(Unit)
         } catch (e: Exception) {
             AppLogger.e(TAG, "ConnectivityManager firewall not available", e)
-            Result.failure(errorHandler.handleError(e, "check ConnectivityManager availability"))
+            Result.failure(IllegalStateException("Independent profile firewall APIs are unavailable on this device. Use root, or run the VPN in the profile you want to protect.", e))
         }
     }
 
@@ -451,6 +307,12 @@ class ConnectivityManagerFirewallBackend(
      * clobber an OEM that uses it for its own purposes.
      */
     suspend fun clearOrphanedPolicies(): Result<Unit> = mutex.withLock {
+        try {
+            restoreUidPolicies()
+            restoreChainState()
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
         val blocked = loadBlockedPackages()
         val weEnabledChain3 = chain3EnabledByUs()
 
@@ -467,7 +329,8 @@ class ConnectivityManagerFirewallBackend(
         // A non-empty package record is equally good evidence that this backend ran, and covers an
         // upgrade from a build that never wrote the flag.
         var chainStillEnabled = false
-        if (weEnabledChain3 || blocked.isNotEmpty()) {
+        val independent = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE).getBoolean(UID_MODE, false)
+        if (!independent && (weEnabledChain3 || blocked.isNotEmpty())) {
             val (exitCode, output) = shizukuManager.executeShellCommand("cmd connectivity set-chain3-enabled false")
             if (exitCode == 0) {
                 setChain3EnabledByUs(false)

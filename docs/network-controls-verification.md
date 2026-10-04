@@ -1,5 +1,7 @@
 # Network controls: feature coverage and verification
 
+The original integration evidence below predates the full work-profile update. See [work-profile support and verification](work-profile-verification.md) for current profile scope, independent ConnectivityManager enforcement and managed-profile tests on Android 15 and 16.
+
 Implemented 2026-10-03 from [De1984](https://github.com/dorumrr/de1984/tree/deff1691a1ee9a57baab8047885464b7d3a20209), pinned at `deff1691a1ee9a57baab8047885464b7d3a20209`. All 87 upstream Kotlin files are retained in the `network` library, together with resources, package-safety data, seven languages, and the MIT license. The host remains Android 11+; this does not extend Background Check to upstream’s Android 8 minimum.
 
 ## Features and evidence

@@ -1,5 +1,14 @@
 package dev.bgcheck.app.data
 
+data class AndroidProfile(
+    val userId: Int,
+    val name: String = if (userId == 0) "Personal" else "User $userId",
+    val isWork: Boolean = false,
+    val serialNumber: Long? = null,
+    val available: Boolean = true,
+    val unavailableReason: String? = null,
+)
+
 enum class ProcessState(val label: String) {
     FOREGROUND("Foreground"), SERVICE("Service"), BACKGROUND("Background"), CACHED("Cached"), NOT_RUNNING("Not observed"), UNKNOWN("Unknown")
 }
@@ -17,7 +26,11 @@ data class AppEntry(
     val installed: Boolean = true,
     val description: PackageDescription = PackageDescriptions.describe(packageName),
     val associations: List<PackageAssociation> = PackageDescriptions.associations(packageName),
-)
+    val profile: AndroidProfile = AndroidProfile(uid / 100000),
+) {
+    val userId: Int get() = uid / 100000
+    val key: String get() = "$userId:$packageName"
+}
 enum class BatteryPowerState(val label: String) {
     CHARGING("Charging"), FULL("Full"), PLUGGED_IDLE("Plugged in · not charging"),
     DISCHARGING("Discharging"), UNKNOWN("Unavailable")
@@ -45,6 +58,9 @@ data class PolicyState(
     val standbyBucket: Int? = null,
     val capturedAt: Long = System.currentTimeMillis(),
     val error: String? = null,
+    val userId: Int = 0,
+    val uid: Int? = null,
+    val userSerial: Long? = null,
 )
 enum class ControlAction { ALLOW_BACKGROUND, RESTRICT_BACKGROUND, EXEMPT_DOZE, OPTIMIZE_DOZE }
 data class ChangeRecord(
@@ -57,6 +73,9 @@ data class ChangeRecord(
     val after: PolicyState,
     val undone: Boolean = false,
     val recovery: Boolean = false,
+    val userId: Int = before.userId,
+    val userSerial: Long? = before.userSerial,
+    val profileName: String = if (userId == 0) "Personal" else "User $userId",
 )
 data class Snapshot(
     val processes: Map<String, ProcessState> = emptyMap(),
@@ -94,6 +113,7 @@ data class UiState(
     val resourceHistory: List<ResourceHistoryPoint> = emptyList(),
     val diagnostics: AppDiagnostics? = null,
     val diagnosticsLoading: Boolean = false,
+    val profiles: List<AndroidProfile> = emptyList(),
 )
 fun bucketLabel(bucket: Int?): String = when (bucket) {
     5 -> "Exempt"; 10 -> "Active"; 20 -> "Working set"; 30 -> "Frequent"

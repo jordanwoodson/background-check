@@ -148,6 +148,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
 
     private var isSelectionMode = false
     private val selectedPackages = mutableSetOf<PackageId>()
+    private val selectionIdentities = mutableMapOf<PackageId, dev.bgcheck.network.domain.model.PackageIdentity>()
     private var backPressedCallback: OnBackPressedCallback? = null
 
     override fun getViewBinding(
@@ -188,7 +189,11 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
             viewModel.setInternetOnlyFilter(false)
             viewModel.setProfileFilter("all")
             binding.searchInput.setText(packageName)
+            val userId = activity?.intent?.getIntExtra("dev.bgcheck.network.USER_ID", Constants.Firewall.ownUserId())
+                ?: Constants.Firewall.ownUserId()
+            binding.root.post { if (isAdded) openAppDialog(packageName, userId) }
             activity?.intent?.removeExtra("dev.bgcheck.network.PACKAGE")
+            activity?.intent?.removeExtra("dev.bgcheck.network.USER_ID")
         }
         setupSelectionToolbar()
         setupBackPressHandler()
@@ -279,6 +284,12 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         adapter.setOnSelectionChangedListener { selected ->
             selectedPackages.clear()
             selectedPackages.addAll(selected)
+            selectionIdentities.keys.retainAll(selected)
+            selected.forEach { id ->
+                if (id !in selectionIdentities) viewModel.enforcedPackage(id)?.let {
+                    selectionIdentities[id] = it.identity
+                }
+            }
             updateSelectionToolbar()
         }
 
@@ -324,18 +335,8 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
             getString(dev.bgcheck.network.R.string.firewall_state_internet)
         )
 
-        val profileFilters = mutableListOf<String>()
-        if (hasWorkProfile || hasCloneProfile) {
-            profileFilters.add(getString(dev.bgcheck.network.R.string.filter_profile_all))
-            profileFilters.add(getString(dev.bgcheck.network.R.string.filter_profile_personal))
-        }
-        if (hasWorkProfile) {
-            profileFilters.add(getString(dev.bgcheck.network.R.string.filter_profile_work))
-        }
-        if (hasCloneProfile) {
-            profileFilters.add(getString(dev.bgcheck.network.R.string.filter_profile_clone))
-        }
-
+        val profileFilters = (listOf(getString(R.string.filter_profile_all)) +
+            currentProfileChoices().map { it.second }).toMutableList()
         // KEEP the chip for a saved filter whose profile produced no rows this scan, rather than
         // reassigning it. setProfileFilter PERSISTS, so this was a second copy of the reset the
         // ViewModel used to do - and it destroyed the same saved setting from the UI layer, one chip
@@ -640,6 +641,12 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
                     adapter.setOnSelectionChangedListener { selected ->
                         selectedPackages.clear()
                         selectedPackages.addAll(selected)
+            selectionIdentities.keys.retainAll(selected)
+            selected.forEach { id ->
+                if (id !in selectionIdentities) viewModel.enforcedPackage(id)?.let {
+                    selectionIdentities[id] = it.identity
+                }
+            }
                         updateSelectionToolbar()
                     }
 
@@ -680,6 +687,9 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
     }
 
     private fun updateUI(state: dev.bgcheck.network.presentation.viewmodel.FirewallUiState) {
+        binding.profileWarningBanner.text = state.profileWarnings.joinToString("\n")
+        binding.profileWarningBanner.visibility = if (state.profileWarnings.isEmpty()) View.GONE else View.VISIBLE
+
         // Twelve places set this and nothing ever read it, so a rule write that failed set an error
         // the user was never shown - the row simply stayed as it was with no explanation. Shown once,
         // then cleared, so a state emit that changes nothing else cannot repeat it.
@@ -891,7 +901,9 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
 
         binding.actionSheetAppIcon.setImageResource(R.drawable.de1984_icon)
         binding.actionSheetAppName.text = pkg.name
-        binding.actionSheetPackageName.text = pkg.packageName
+        val profileName = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getUsers(requireContext())
+            .firstOrNull { it.userId == pkg.userId }?.displayName ?: "Profile"
+        binding.actionSheetPackageName.text = "$profileName (user ${pkg.userId}) · ${pkg.packageName}"
         dev.bgcheck.network.ui.common.InternetRecommendationView.bind(binding.internetRecommendation, pkg)
 
         // Load icon asynchronously to prevent blocking main thread
@@ -924,7 +936,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         }
 
         binding.actionSheetSettingsIcon.setOnClickListener {
-            requireContext().openAppSettings(pkg.packageName)
+            requireContext().openAppSettings(pkg.packageName, pkg.userId)
             dialog.dismiss()
         }
 
@@ -1205,7 +1217,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
             onToggle = { blocked ->
                 if (isUpdatingProgrammatically) return@setupNetworkToggle
                 AppLogger.d(TAG, "🔘 USER ACTION: WiFi toggle changed for ${pkg.packageName} - blocked: $blocked")
-                viewModel.setWifiBlocking(pkg.packageName, pkg.userId, blocked)
+                viewModel.setWifiBlocking(pkg.packageName, pkg.userId, blocked, expected = pkg.identity)
             }
         )
 
@@ -1218,7 +1230,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
                 if (isUpdatingProgrammatically) return@setupNetworkToggle
                 AppLogger.d(TAG, "🔘 USER ACTION: Mobile toggle changed for ${pkg.packageName} - blocked: $blocked")
 
-                viewModel.setMobileBlocking(pkg.packageName, pkg.userId, blocked)
+                viewModel.setMobileBlocking(pkg.packageName, pkg.userId, blocked, expected = pkg.identity)
             }
         )
 
@@ -1232,7 +1244,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
                     if (isUpdatingProgrammatically) return@setupNetworkToggle
                     AppLogger.d(TAG, "🔘 USER ACTION: Roaming toggle changed for ${pkg.packageName} - blocked: $blocked")
 
-                    viewModel.setRoamingBlocking(pkg.packageName, pkg.userId, blocked)
+                    viewModel.setRoamingBlocking(pkg.packageName, pkg.userId, blocked, expected = pkg.identity)
                 }
             )
         }
@@ -1252,7 +1264,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
                 (!pkg.isSystemCritical || allowCritical) && (!pkg.isVpnApp || allowCritical),
             onToggle = { blocked ->
                 if (isUpdatingProgrammatically) return@setupNetworkToggle
-                viewModel.setLanBlocking(pkg.packageName, pkg.userId, blocked)
+                viewModel.setLanBlocking(pkg.packageName, pkg.userId, blocked, expected = pkg.identity)
             }
         )
 
@@ -1319,7 +1331,9 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
 
         binding.actionSheetAppIcon.setImageResource(R.drawable.de1984_icon)
         binding.actionSheetAppName.text = pkg.name
-        binding.actionSheetPackageName.text = pkg.packageName
+        val profileName = dev.bgcheck.network.data.multiuser.HiddenApiHelper.getUsers(requireContext())
+            .firstOrNull { it.userId == pkg.userId }?.displayName ?: "Profile"
+        binding.actionSheetPackageName.text = "$profileName (user ${pkg.userId}) · ${pkg.packageName}"
         dev.bgcheck.network.ui.common.InternetRecommendationView.bind(binding.internetRecommendation, pkg)
 
         // Load icon asynchronously to prevent blocking main thread
@@ -1357,7 +1371,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         // DO NOT REMOVE THIS FUNCTIONALITY - it's a core feature!
         // ============================================================================
         binding.actionSheetSettingsIcon.setOnClickListener {
-            requireContext().openAppSettings(pkg.packageName)
+            requireContext().openAppSettings(pkg.packageName, pkg.userId)
             dialog.dismiss()
         }
 
@@ -1522,7 +1536,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
             onToggle = { blocked ->
                 if (isUpdatingProgrammatically) return@setupNetworkToggle
 
-                viewModel.setAllNetworkBlocking(pkg.packageName, pkg.userId, blocked)
+                viewModel.setAllNetworkBlocking(pkg.packageName, pkg.userId, blocked, expected = pkg.identity)
             }
         )
         // After setupNetworkToggle, never before: these one-time calls run AFTER the collector is
@@ -1585,7 +1599,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
             invertLabels = true,
             onToggle = { allowed ->
                 if (isUpdating()) return@setupNetworkToggle
-                viewModel.setBackgroundBlocking(saved.packageName, saved.userId, !allowed)
+                viewModel.setBackgroundBlocking(saved.packageName, saved.userId, !allowed, expected = saved.identity)
             }
         )
     }
@@ -1696,7 +1710,15 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         }
     }
 
+    private fun currentProfileChoices(): List<Pair<String, String>> =
+        dev.bgcheck.network.data.multiuser.HiddenApiHelper.getUsers(requireContext()).map {
+            dev.bgcheck.network.domain.model.ProfileFilter.key(it.userId, it.serialNumber) to
+                "${it.displayName} (user ${it.userId})"
+        }
+
     private fun mapProfileFilterToInternal(translatedFilter: String): String {
+        currentProfileChoices().firstOrNull { it.second == translatedFilter }?.let { return it.first }
+
         return when (translatedFilter) {
             getString(dev.bgcheck.network.R.string.filter_profile_all) -> "All"
             getString(dev.bgcheck.network.R.string.filter_profile_personal) -> "Personal"
@@ -1707,6 +1729,9 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
     }
 
     private fun mapInternalToProfileFilter(internalFilter: String): String {
+        currentProfileChoices().firstOrNull { it.first == internalFilter }?.let { return it.second }
+        if (internalFilter.startsWith("user:")) return "Unavailable profile (${internalFilter.substringAfter("user:").substringBefore(':')})"
+
         return when (internalFilter) {
             "All" -> getString(dev.bgcheck.network.R.string.filter_profile_all)
             "Personal" -> getString(dev.bgcheck.network.R.string.filter_profile_personal)
@@ -1791,7 +1816,8 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
      * language switcher - as does a dark-mode change. Selecting 40 apps for a batch action and
      * losing all of it to one of those is a real thing to lose.
      *
-     * Stored as "packageName|userId" strings rather than making PackageId Parcelable: two fields,
+     * Stored with package name, user ID, UID and profile serial so a restored selection cannot
+     * attach to a recreated profile. Plain strings avoid making PackageId Parcelable,
      * and a Bundle of strings cannot drift out of step with a data class definition.
      */
     override fun onSaveInstanceState(outState: Bundle) {
@@ -1800,7 +1826,9 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         outState.putBoolean(KEY_SELECTION_MODE, true)
         outState.putStringArrayList(
             KEY_SELECTED_PACKAGES,
-            ArrayList(selectedPackages.map { "${it.packageName}|${it.userId}" })
+            ArrayList(selectedPackages.mapNotNull { id -> selectionIdentities[id]?.let {
+                "${id.packageName}|${id.userId}|${it.uid}|${it.userSerial}"
+            } })
         )
     }
 
@@ -1813,11 +1841,15 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
             .mapNotNull { entry ->
                 val parts = entry.split("|")
                 val userId = parts.getOrNull(1)?.toIntOrNull()
-                if (parts.size == 2 && parts[0].isNotEmpty() && userId != null) {
-                    PackageId(parts[0], userId)
-                } else {
-                    null
-                }
+                val uid = parts.getOrNull(2)?.toIntOrNull()
+                val serial = parts.getOrNull(3)?.toLongOrNull()
+                val current = userId?.let { dev.bgcheck.network.data.multiuser.HiddenApiHelper.currentProfile(requireContext(), it) }
+                if (parts.size == 4 && parts[0].isNotEmpty() && userId != null && uid != null &&
+                    uid / 100000 == userId && serial != null && current?.serialNumber == serial && current.available) {
+                    PackageId(parts[0], userId).also {
+                        selectionIdentities[it] = dev.bgcheck.network.domain.model.PackageIdentity(uid, serial)
+                    }
+                } else null
             }
             .toSet()
 
@@ -1861,6 +1893,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         AppLogger.d(TAG, "🔘 Exiting selection mode")
         isSelectionMode = false
         selectedPackages.clear()
+        selectionIdentities.clear()
         adapter.setSelectionMode(false)
         binding.selectionToolbar.visibility = View.GONE
         backPressedCallback?.isEnabled = false
@@ -1939,7 +1972,9 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         }
 
         // Every batch action below reads THIS, never the raw selection.
-        val actionableIds = selectedPackages.filterNot { it in unreachableIds }
+        val actionableIds = selectedPackages.filterNot { it in unreachableIds }.filter { id ->
+            selectionIdentities[id] != null && selectionIdentities[id] == viewModel.enforcedPackage(id)?.identity
+        }
 
         // Summarised over the set the taps actually WRITE to, from the unfiltered cache. The type,
         // profile and internet-only chips do not leave selection mode, so a selection made under
@@ -1951,6 +1986,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         // and the batch guards then skipped those very rows - the sheet could neither block nor
         // unblock them.
         val selectedPkgs = actionableIds.mapNotNull { viewModel.enforcedPackage(it)?.asSaved() }
+        val selectedIdentities = selectedPkgs.associate { it.id to it.identity }
 
         if (selectedPkgs.isEmpty() || actionableIds.isEmpty()) {
             dialog.dismiss()
@@ -2020,13 +2056,13 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         }
 
         sheetBinding.allowAllButton.setOnClickListener {
-            viewModel.batchAllowPackages(actionableIds)
+            viewModel.batchAllowPackages(actionableIds, selectedIdentities)
             dialog.dismiss()
             exitSelectionMode()
         }
 
         sheetBinding.blockAllButton.setOnClickListener {
-            viewModel.batchBlockPackages(actionableIds)
+            viewModel.batchBlockPackages(actionableIds, selectedIdentities)
             dialog.dismiss()
             exitSelectionMode()
         }
@@ -2072,9 +2108,9 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
             sheetBinding.wifiToggle.networkTypeSubtitle.visibility = View.GONE
             updateSwitchColors(sheetBinding.wifiToggle.toggleSwitch, isChecked)
             if (granular) {
-                viewModel.batchSetWifiBlocking(getSelectedPackagePairs(), isChecked)
+                viewModel.batchSetWifiBlocking(getSelectedPackagePairs(), isChecked, selectedIdentities)
             } else {
-                viewModel.batchSetAllNetworkBlocking(getSelectedPackagePairs(), isChecked)
+                viewModel.batchSetAllNetworkBlocking(getSelectedPackagePairs(), isChecked, selectedIdentities)
             }
         }
 
@@ -2083,7 +2119,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
                 if (isUpdatingProgrammatically) return@setOnCheckedChangeListener
                 sheetBinding.mobileToggle.networkTypeSubtitle.visibility = View.GONE
                 updateSwitchColors(sheetBinding.mobileToggle.toggleSwitch, isChecked)
-                viewModel.batchSetMobileBlocking(getSelectedPackagePairs(), isChecked)
+                viewModel.batchSetMobileBlocking(getSelectedPackagePairs(), isChecked, selectedIdentities)
             }
         }
 
@@ -2092,7 +2128,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
                 if (isUpdatingProgrammatically) return@setOnCheckedChangeListener
                 sheetBinding.roamingToggle.networkTypeSubtitle.visibility = View.GONE
                 updateSwitchColors(sheetBinding.roamingToggle.toggleSwitch, isChecked)
-                viewModel.batchSetRoamingBlocking(getSelectedPackagePairs(), isChecked)
+                viewModel.batchSetRoamingBlocking(getSelectedPackagePairs(), isChecked, selectedIdentities)
             }
         }
 
@@ -2101,7 +2137,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
                 if (isUpdatingProgrammatically) return@setOnCheckedChangeListener
                 sheetBinding.lanToggle.networkTypeSubtitle.visibility = View.GONE
                 updateSwitchColors(sheetBinding.lanToggle.toggleSwitch, isChecked)
-                viewModel.batchSetLanBlocking(getSelectedPackagePairs(), isChecked)
+                viewModel.batchSetLanBlocking(getSelectedPackagePairs(), isChecked, selectedIdentities)
             }
         }
 
@@ -2346,11 +2382,11 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         AppLogger.d(TAG, "🔘 QUICK TOGGLE: ${networkType.name} for ${pkg.packageName} - willBlock: $willBlock")
 
         if (!granular) {
-            viewModel.setAllNetworkBlocking(pkg.packageName, pkg.userId, willBlock)
+            viewModel.setAllNetworkBlocking(pkg.packageName, pkg.userId, willBlock, expected = pkg.identity)
         } else when (networkType) {
-            NetworkType.WIFI -> viewModel.setWifiBlocking(pkg.packageName, pkg.userId, willBlock)
-            NetworkType.MOBILE -> viewModel.setMobileBlocking(pkg.packageName, pkg.userId, willBlock)
-            NetworkType.ROAMING -> viewModel.setRoamingBlocking(pkg.packageName, pkg.userId, willBlock)
+            NetworkType.WIFI -> viewModel.setWifiBlocking(pkg.packageName, pkg.userId, willBlock, expected = pkg.identity)
+            NetworkType.MOBILE -> viewModel.setMobileBlocking(pkg.packageName, pkg.userId, willBlock, expected = pkg.identity)
+            NetworkType.ROAMING -> viewModel.setRoamingBlocking(pkg.packageName, pkg.userId, willBlock, expected = pkg.identity)
         }
 
         if (showSnackbar) {
@@ -2392,11 +2428,11 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
             .setAction(getString(R.string.snackbar_undo)) {
                 AppLogger.d(TAG, "🔄 UNDO QUICK TOGGLE: ${networkType.name} for ${pkg.packageName}")
                 if (!granular) {
-                    viewModel.setAllNetworkBlocking(pkg.packageName, pkg.userId, !wasBlocked)
+                    viewModel.setAllNetworkBlocking(pkg.packageName, pkg.userId, !wasBlocked, expected = pkg.identity)
                 } else when (networkType) {
-                    NetworkType.WIFI -> viewModel.setWifiBlocking(pkg.packageName, pkg.userId, !wasBlocked)
-                    NetworkType.MOBILE -> viewModel.setMobileBlocking(pkg.packageName, pkg.userId, !wasBlocked)
-                    NetworkType.ROAMING -> viewModel.setRoamingBlocking(pkg.packageName, pkg.userId, !wasBlocked)
+                    NetworkType.WIFI -> viewModel.setWifiBlocking(pkg.packageName, pkg.userId, !wasBlocked, expected = pkg.identity)
+                    NetworkType.MOBILE -> viewModel.setMobileBlocking(pkg.packageName, pkg.userId, !wasBlocked, expected = pkg.identity)
+                    NetworkType.ROAMING -> viewModel.setRoamingBlocking(pkg.packageName, pkg.userId, !wasBlocked, expected = pkg.identity)
                 }
             }
             .show()

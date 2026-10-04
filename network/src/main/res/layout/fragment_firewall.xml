@@ -8,6 +8,16 @@
     android:clickable="true"
     android:focusable="true"
     android:focusableInTouchMode="true">
+    <TextView
+        android:id="@+id/profile_warning_banner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:textColor="#FFB86C"
+        android:textSize="13sp"
+        android:accessibilityLiveRegion="polite"
+        android:visibility="gone" />
+
 
     <TextView
         android:id="@+id/limited_protection_banner"

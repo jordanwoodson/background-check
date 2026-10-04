@@ -22,7 +22,7 @@ class ProcessManagerTest {
 
     @Test fun profileUsesExplicitUserForEveryPackageAndStopCommand() = runBlocking {
         val device = Device(userId = 10, uid = 1010101)
-        val result = ProcessManager(device::exec, 10).forceStop(app.copy(uid = 1010101))
+        val result = ProcessManager(device::exec, 10).forceStop(app.copy(uid = 1010101, profile = AndroidProfile(10, "Work", true, 42)))
         assertTrue(result.message, result.stopped)
         assertEquals(listOf(listOf("am", "force-stop", "--user", "10", "com.example.app")), device.writes)
     }

@@ -65,7 +65,9 @@ class NewAppNotificationManager(
             }
 
             val appInfo = getAppInfo(packageName, userId) ?: return
-            val appName = appInfo.name
+            val profile = HiddenApiHelper.currentProfile(context, userId) ?: return
+            val serial = profile.serialNumber ?: return
+            val appName = "${appInfo.name} · ${profile.displayName}"
 
             val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
             val defaultPolicy = prefs.getString(
@@ -85,21 +87,21 @@ class NewAppNotificationManager(
                     .bigText(context.getString(R.string.new_app_notification_text, appName)))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)
-                .setContentIntent(createOpenFirewallIntent(packageName, userId))
+                .setContentIntent(createOpenFirewallIntent(packageName, userId, appInfo.uid, serial))
 
             // No button the running firewall cannot honour; with the firewall off it stays, as the firewall screen does.
             val backend = activeBackend()
             if (backend == null || backend.reachesUser(userId, Constants.Firewall.ownUserId())) {
                 if (isBlockAllDefault) {
-                    notificationBuilder.addAction(createAllowAllAction(packageName, userId))
+                    notificationBuilder.addAction(createAllowAllAction(packageName, userId, appInfo.uid, serial))
                 } else {
-                    notificationBuilder.addAction(createBlockAllAction(packageName, userId))
+                    notificationBuilder.addAction(createBlockAllAction(packageName, userId, appInfo.uid, serial))
                 }
             }
 
             val notification = notificationBuilder.build()
 
-            notificationManager.notify(notificationId(packageName, userId), notification)
+            notificationManager.notify("$userId:$packageName", notificationId(packageName, userId), notification)
 
         } catch (e: Exception) {
         }
@@ -120,7 +122,7 @@ class NewAppNotificationManager(
             val appName = packageManager.getApplicationLabel(applicationInfo).toString()
             val appIcon = packageManager.getApplicationIcon(applicationInfo)
 
-            AppInfo(appName, appIcon)
+            AppInfo(appName, appIcon, applicationInfo.uid)
         } catch (e: PackageManager.NameNotFoundException) {
             null
         } catch (e: Exception) {
@@ -128,11 +130,14 @@ class NewAppNotificationManager(
         }
     }
 
-    private fun createOpenFirewallIntent(packageName: String, userId: Int): PendingIntent {
+    private fun createOpenFirewallIntent(packageName: String, userId: Int, uid: Int, serial: Long): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             action = Constants.Notifications.ACTION_OPEN_FIREWALL
             putExtra(Constants.Notifications.EXTRA_PACKAGE_NAME, packageName)
             putExtra(Constants.Notifications.EXTRA_USER_ID, userId)
+            putExtra(Intent.EXTRA_UID, uid)
+            putExtra("user_serial", serial)
+            data = android.net.Uri.parse("bgcheck://network/$userId/$packageName/${action}/${getBooleanExtra(Constants.Notifications.EXTRA_BLOCKED, false)}")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -144,12 +149,15 @@ class NewAppNotificationManager(
         )
     }
 
-    private fun createBlockAllAction(packageName: String, userId: Int): NotificationCompat.Action {
+    private fun createBlockAllAction(packageName: String, userId: Int, uid: Int, serial: Long): NotificationCompat.Action {
         val intent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = Constants.Notifications.ACTION_TOGGLE_NETWORK_ACCESS
             putExtra(Constants.Notifications.EXTRA_PACKAGE_NAME, packageName)
             putExtra(Constants.Notifications.EXTRA_BLOCKED, true)
             putExtra(Constants.Notifications.EXTRA_USER_ID, userId)
+            putExtra(Intent.EXTRA_UID, uid)
+            putExtra("user_serial", serial)
+            data = android.net.Uri.parse("bgcheck://network/$userId/$packageName/${action}/${getBooleanExtra(Constants.Notifications.EXTRA_BLOCKED, false)}")
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -166,12 +174,15 @@ class NewAppNotificationManager(
         ).build()
     }
 
-    private fun createAllowAllAction(packageName: String, userId: Int): NotificationCompat.Action {
+    private fun createAllowAllAction(packageName: String, userId: Int, uid: Int, serial: Long): NotificationCompat.Action {
         val intent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = Constants.Notifications.ACTION_TOGGLE_NETWORK_ACCESS
             putExtra(Constants.Notifications.EXTRA_PACKAGE_NAME, packageName)
             putExtra(Constants.Notifications.EXTRA_BLOCKED, false)
             putExtra(Constants.Notifications.EXTRA_USER_ID, userId)
+            putExtra(Intent.EXTRA_UID, uid)
+            putExtra("user_serial", serial)
+            data = android.net.Uri.parse("bgcheck://network/$userId/$packageName/${action}/${getBooleanExtra(Constants.Notifications.EXTRA_BLOCKED, false)}")
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -206,6 +217,7 @@ class NewAppNotificationManager(
 
     private data class AppInfo(
         val name: String,
-        val icon: android.graphics.drawable.Drawable
+        val icon: android.graphics.drawable.Drawable,
+        val uid: Int
     )
 }

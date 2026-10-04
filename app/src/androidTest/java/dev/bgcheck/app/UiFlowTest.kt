@@ -1,5 +1,7 @@
 package dev.bgcheck.app
 
+import android.os.ParcelFileDescriptor
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.ViewModelProvider
@@ -25,6 +27,8 @@ class UiFlowTest {
                 state.apps.any { it.packageName == fixturePackage }
         }
         compose.onNodeWithText("Apps", useUnmergedTree = false).performClick()
+        compose.onNodeWithTag("apps-list").performScrollToNode(hasTestTag("apps-profile-0"))
+        compose.onNodeWithTag("apps-profile-0").performClick()
         compose.onNode(hasSetTextAction()).performTextInput(fixturePackage)
         compose.onNode(hasSetTextAction()).performImeAction()
         compose.waitUntil(20_000) {
@@ -80,6 +84,33 @@ class UiFlowTest {
         }
         compose.onNode(hasText("Restored") and hasAnyAncestor(hasTestTag(recordTag))).assertIsDisplayed()
     }
+
+    @Test fun workSettingsShortcutOpensAndroidSettingsAsTheManagedUser() {
+        lateinit var model: BackgroundViewModel
+        compose.runOnUiThread { model = ViewModelProvider(compose.activity)[BackgroundViewModel::class.java] }
+        compose.waitUntil(30_000) {
+            model.state.value.let { it.access == AccessState.READY && !it.loading && !it.refreshing && it.apps.isNotEmpty() }
+        }
+        val work = model.state.value.apps.firstOrNull { it.packageName == "dev.bgcheck.fixture" && it.userId == 10 }
+        org.junit.Assume.assumeTrue("Requires the disposable emulator's user 10 fixture", work != null)
+        compose.runOnUiThread { model.select(requireNotNull(work)) }
+        compose.onNodeWithText("Open Android app settings").performScrollTo().performClick()
+        try {
+            compose.waitUntil(20_000) {
+                val activities = shell("dumpsys activity activities")
+                activities.lineSequence().any { line ->
+                    (line.contains("ResumedActivity") || line.contains("mResumed")) &&
+                        line.contains("u10 com.android.settings/")
+                }
+            }
+        } finally {
+            shell("input keyevent KEYCODE_BACK")
+        }
+    }
+
+    private fun shell(command: String): String =
+        ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command))
+            .bufferedReader().use { it.readText() }
 
     private fun confirmPolicyChange(title: String, action: String) {
         compose.onNodeWithText(title).assertIsDisplayed()

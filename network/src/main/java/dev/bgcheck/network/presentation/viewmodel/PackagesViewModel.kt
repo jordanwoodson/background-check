@@ -1,5 +1,7 @@
 package dev.bgcheck.network.presentation.viewmodel
 
+import dev.bgcheck.network.domain.model.PackageId
+import dev.bgcheck.network.domain.model.PackageIdentity
 import dev.bgcheck.network.utils.AppLogger
 import android.net.Uri
 import dev.bgcheck.network.R
@@ -178,6 +180,8 @@ class PackagesViewModel(
             }
             .onEach { packages ->
                 cachedPackages = packages
+                _uiState.value = _uiState.value.copy(profileWarnings =
+                    (getApplication<Application>() as dev.bgcheck.network.De1984Application).dependencies.packageDataSource.profileWarnings.value)
                 // Read the filter LIVE, not the `filterState` captured when this collection started.
                 // The packages flow is a shared replay flow and emits again long after that - the
                 // firewall screen invalidating and rescanning is enough - so the captured value goes
@@ -215,11 +219,17 @@ class PackagesViewModel(
         // Emptied first: the rows on screen belong to the previous read, and the spinner only shows over an empty list.
         _uiState.value = _uiState.value.copy(packages = emptyList(), isLoadingData = true)
         uninstalledJob = viewModelScope.launch {
-            val uninstalled = getPackagesUseCase.uninstalledSystemPackages()
+            val uninstalled = try { getPackagesUseCase.uninstalledSystemPackages() }
+            catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoadingData = false, error = e.message)
+                return@launch
+            }
             // A cancelled read still gets here, as an empty list: the data source and repository catch the cancel.
             if (!isActive || _uiState.value.filterState != filterState) return@launch
             _uiState.value = _uiState.value.copy(
                 packages = filterPackages(uninstalled, filterState),
+                profileWarnings = (getApplication<Application>() as dev.bgcheck.network.De1984Application).dependencies.packageDataSource.profileWarnings.value,
                 isLoadingData = false,
                 isRenderingUI = true,
                 error = null
@@ -255,11 +265,9 @@ class PackagesViewModel(
         // saying the filter had been ignored. The two real defects were never the empty list. They
         // were that the saved filter got overwritten, and that the chip could vanish leaving no way
         // out - and both are fixed where they happen.
-        result = when (filterState.profileFilter.lowercase()) {
-            "personal" -> result.filter { !it.isWorkProfile && !it.isCloneProfile }
-            "work" -> result.filter { it.isWorkProfile }
-            "clone" -> result.filter { it.isCloneProfile }
-            else -> result
+        result = result.filter {
+            dev.bgcheck.network.domain.model.ProfileFilter.matches(
+                filterState.profileFilter, it.userId, it.userSerial, it.isWorkProfile, it.isCloneProfile)
         }
 
         if (filterState.packageState != null) {
@@ -269,7 +277,7 @@ class PackagesViewModel(
                 dev.bgcheck.network.utils.Constants.Packages.STATE_DISABLED.lowercase() ->
                     result.filter { !it.isEnabled }
                 dev.bgcheck.network.utils.Constants.Packages.STATE_UNINSTALLED.lowercase() ->
-                    result.filter { it.versionName == null && !it.isEnabled && it.type == dev.bgcheck.network.domain.model.PackageType.SYSTEM }
+                    result.filter { !it.isInstalled }
                 else -> result
             }
         }
@@ -278,14 +286,14 @@ class PackagesViewModel(
     }
 
     /**
-     * Writes the package names currently ON SCREEN to [uri] (issue #96).
+     * Exports the visible installations with profile IDs and serials for safe import.
      *
      * The list is passed in rather than read from state on purpose: the search box is applied by
      * the fragment, not by filterPackages, so `uiState.packages` is filter-only and would export
      * more than the user can see. The fragment hands over exactly what it gave the adapter.
      *
-     * Same format as SettingsViewModel's uninstalled-apps export - a short comment header and one
-     * package name per line - so a file exported here can be fed straight back into that importer.
+     * Uses the same versioned, profile-bound format as Settings so each selected installation
+     * can be validated against its original profile when the file is imported.
      */
     fun exportVisiblePackages(uri: Uri, visible: List<Package>) {
         viewModelScope.launch {
@@ -295,29 +303,21 @@ class PackagesViewModel(
                 )
                 return@launch
             }
-            // One line per NAME, not per row. The list holds a row per package PER PROFILE, so a
-            // phone with a work profile lists com.android.egg twice - and a file of package names
-            // that repeats itself tells the reader nothing and makes the importer do the work
-            // twice. Order is kept, so the file still reads in the order that was on screen.
-            val names = visible.map { it.packageName }.distinct()
-
             try {
-                val content = buildString {
-                    appendLine("# Background Check Packages Export")
-                    appendLine("# Date: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}")
-                    appendLine("# Count: ${names.size}")
-                    appendLine()
-                    names.forEach { appendLine(it) }
-                }
+                val entries = visible.map { pkg ->
+                    dev.bgcheck.network.domain.model.PackageListEntry(pkg.packageName, pkg.userId,
+                        requireNotNull(pkg.userSerial) { "Refresh the package list to verify profile ${pkg.userId} before exporting." })
+                }.distinct()
+                val content = dev.bgcheck.network.domain.model.PackageListCodec.encode(entries)
                 withContext(Dispatchers.IO) {
                     getApplication<Application>().contentResolver.openOutputStream(uri)?.use { out ->
                         out.write(content.toByteArray())
                     } ?: throw java.io.IOException("Could not open the chosen file for writing")
                 }
-                AppLogger.d(TAG, "Exported ${names.size} package names from ${visible.size} rows")
+                AppLogger.d(TAG, "Exported ${entries.size} profile-bound packages from ${visible.size} rows")
                 _uiState.value = _uiState.value.copy(
                     exportSuccess = getApplication<Application>()
-                        .getString(R.string.packages_export_success, names.size)
+                        .getString(R.string.packages_export_success, entries.size)
                 )
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Package export failed", e)
@@ -355,13 +355,13 @@ class PackagesViewModel(
         applyFilters(newFilterState)
     }
 
-    fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean) {
+    fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity? = null) {
         viewModelScope.launch {
             val snapshot = updatePackageInList(packageName, userId) { pkg ->
                 pkg.copy(isEnabled = enabled)
             }
 
-            managePackageUseCase.setPackageEnabled(packageName, userId, enabled)
+            managePackageUseCase.setPackageEnabled(packageName, userId, enabled, expected = expected)
                                 .onFailure { error ->
                     restoreRow(snapshot)
                     if (superuserBannerState.shouldShowBannerForError(error)) {
@@ -372,14 +372,14 @@ class PackagesViewModel(
         }
     }
 
-    fun uninstallPackage(packageName: String, userId: Int, appName: String) {
+    fun uninstallPackage(packageName: String, userId: Int, appName: String, expected: PackageIdentity? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingData = true,
                 isRenderingUI = false
             )
 
-            managePackageUseCase.uninstallPackage(packageName, userId)
+            managePackageUseCase.uninstallPackage(packageName, userId, expected = expected)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(
                         uninstallSuccess = "$appName uninstalled"
@@ -400,14 +400,14 @@ class PackagesViewModel(
         }
     }
 
-    fun uninstallMultiplePackages(packages: List<Pair<String, Int>>): Job {
+    fun uninstallMultiplePackages(packages: List<Pair<String, Int>>, expected: Map<PackageId, PackageIdentity> = emptyMap()): Job {
         return viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingData = true,
                 isRenderingUI = false
             )
 
-            managePackageUseCase.uninstallMultiplePackages(packages)
+            managePackageUseCase.uninstallMultiplePackages(packages, expected)
                 .onSuccess { result ->
                     loadPackages(forceRefresh = true)
 
@@ -435,14 +435,14 @@ class PackagesViewModel(
         _uiState.value = _uiState.value.copy(batchUninstallResult = null)
     }
 
-    fun reinstallPackage(packageName: String, userId: Int, appName: String) {
+    fun reinstallPackage(packageName: String, userId: Int, appName: String, expected: PackageIdentity? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingData = true,
                 isRenderingUI = false
             )
 
-            managePackageUseCase.reinstallPackage(packageName, userId)
+            managePackageUseCase.reinstallPackage(packageName, userId, expected = expected)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(
                         reinstallSuccess = "$appName reinstalled"
@@ -463,14 +463,14 @@ class PackagesViewModel(
         }
     }
 
-    fun reinstallMultiplePackages(packages: List<Pair<String, Int>>): Job {
+    fun reinstallMultiplePackages(packages: List<Pair<String, Int>>, expected: Map<PackageId, PackageIdentity> = emptyMap()): Job {
         return viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingData = true,
                 isRenderingUI = false
             )
 
-            managePackageUseCase.reinstallMultiplePackages(packages)
+            managePackageUseCase.reinstallMultiplePackages(packages, expected)
                 .onSuccess { result ->
                     _uiState.value = _uiState.value.copy(
                         batchReinstallResult = result
@@ -503,9 +503,9 @@ class PackagesViewModel(
         _uiState.value = _uiState.value.copy(reinstallSuccess = null)
     }
 
-    fun forceStopPackage(packageName: String, userId: Int) {
+    fun forceStopPackage(packageName: String, userId: Int, expected: PackageIdentity? = null) {
         viewModelScope.launch {
-            managePackageUseCase.forceStopPackage(packageName, userId)
+            managePackageUseCase.forceStopPackage(packageName, userId, expected = expected)
                 .onSuccess {
                 }
                 .onFailure { error ->
@@ -612,6 +612,7 @@ data class PackageFilterState(
 )
 
 data class PackagesUiState(
+    val profileWarnings: List<String> = emptyList(),
     val packages: List<Package> = emptyList(),
     val filterState: PackageFilterState = PackageFilterState(),
     val searchQuery: String = "",

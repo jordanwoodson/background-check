@@ -41,7 +41,7 @@ object ListSorting {
             AppSort.STATE -> by(direction) { it.processState.takeUnless { state -> state == ProcessState.UNKNOWN }?.ordinal }
             AppSort.STANDBY -> by(direction) { it.standbyBucket }
         }
-        return items.sortedWith(comparator.thenBy { it.packageName })
+        return items.sortedWith(comparator.thenBy { it.packageName }.thenBy { it.userId })
     }
 
     fun history(items: List<ChangeRecord>, key: HistorySort, direction: SortDirection): List<ChangeRecord> {

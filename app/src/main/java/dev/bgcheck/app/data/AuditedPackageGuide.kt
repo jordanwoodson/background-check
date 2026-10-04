@@ -58,8 +58,8 @@ internal object AuditedPackageGuide {
 object PackageAssociations {
     /** Reverse declared links, then add current installed UID peers. Removed UIDs are never live peers. */
     fun enrich(apps: List<AppEntry>): List<AppEntry> {
-        val byPackage = apps.associateBy { it.packageName }
-        val links = apps.associate { it.packageName to it.associations.toMutableSet() }
+        val byPackage = apps.associateBy { it.key }
+        val links = apps.associate { it.key to it.associations.toMutableSet() }
         apps.forEach { app ->
             app.associations.forEach { association ->
                 val reverse = when (association.kind) {
@@ -69,20 +69,20 @@ object PackageAssociations {
                     AssociationKind.COMPANION -> AssociationKind.COMPANION
                     else -> null
                 }
-                if (reverse != null) links[association.packageName]?.add(PackageAssociation(app.packageName, reverse))
+                if (reverse != null) links["${app.userId}:${association.packageName}"]?.add(PackageAssociation(app.packageName, reverse))
             }
         }
         apps.filter { it.installed && it.uid >= 0 }.groupBy { it.uid }.values.forEach { peers ->
             if (peers.size > 1) peers.forEach { app ->
                 peers.filter { it.packageName != app.packageName }.forEach {
-                    links.getValue(app.packageName).add(PackageAssociation(it.packageName, AssociationKind.SHARED_UID))
+                    links.getValue(app.key).add(PackageAssociation(it.packageName, AssociationKind.SHARED_UID))
                 }
             }
         }
         return apps.map { app ->
-            app.copy(associations = links.getValue(app.packageName)
+            app.copy(associations = links.getValue(app.key)
                 .filter { it.packageName != app.packageName }
-                .sortedWith(compareBy({ it.kind.ordinal }, { byPackage[it.packageName]?.label ?: it.packageName })))
+                .sortedWith(compareBy({ it.kind.ordinal }, { byPackage["${app.userId}:${it.packageName}"]?.label ?: it.packageName })))
         }
     }
 }

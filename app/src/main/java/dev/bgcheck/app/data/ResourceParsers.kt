@@ -142,6 +142,22 @@ object ResourceParsers {
         }
     }
 
+    fun processIdentities(output: String): Map<Int, Pair<Int, String>> {
+        val lines = output.lineSequence().filter(String::isNotBlank).toList()
+        require(lines.firstOrNull()?.trim()?.split(space) == listOf("PID", "UID", "NAME")) { "Android did not provide process identities" }
+        val result = linkedMapOf<Int, Pair<Int, String>>()
+        lines.drop(1).forEach { line ->
+            val values = line.trim().split(space, limit = 3)
+            require(values.size == 3) { "Incomplete process identity" }
+            val pid = values[0].toIntOrNull()
+            val uid = values[1].toIntOrNull()
+            require(pid != null && pid > 0 && uid != null && uid >= 0 && values[2].isNotBlank()) { "Invalid process identity" }
+            require(result.put(pid, uid to values[2]) == null) { "Duplicate process identity" }
+        }
+        require(result.isNotEmpty()) { "Android returned no process identities" }
+        return result
+    }
+
     fun appMemory(output: String): AppMemory {
         require(output.lineSequence().any { it.startsWith("Applications Memory Usage (in Kilobytes):") }) {
             "Android did not provide package memory details; the app may not be running"

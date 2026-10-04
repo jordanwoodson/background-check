@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 /** Mutations affect only the selected mechanism; snapshots never infer policy from process state. */
 class PolicyEngine(private val execute: suspend (List<String>) -> String, private val userId: Int) {
     private val mutations = Mutex()
+    private val identities = PackageIdentityGuard(execute, userId)
 
     suspend fun snapshot(): Snapshot {
         val warnings = mutableListOf<String>()
@@ -43,6 +44,7 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
             userExempt = exemptions?.let { app.packageName in it.user },
             uidOverride = background?.uidOverride == true || legacy?.uidOverride == true,
             standbyBucket = bucket, error = errors.takeIf { it.isNotEmpty() }?.joinToString("\n"),
+            userId = userId, uid = app.uid, userSerial = app.profile.serialNumber,
         )
     }
 
@@ -53,6 +55,7 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
         beforeWrite: suspend (PolicyState, PolicyState) -> Unit = { _, _ -> },
     ): PolicyState = mutations.withLock {
         validateMutable(app, before)
+        identities.validate(app)
         val current = read(app)
         validateMutable(app, current)
         check(samePolicy(before, current)) { "Policy changed since it was read. Refresh and try again." }
@@ -75,14 +78,17 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
 
     /** Recovery accepts only the original state, intended state, or a partial application of it. */
     suspend fun recover(app: AppEntry, before: PolicyState, intended: PolicyState): PolicyState = mutations.withLock {
-        validateMutable(app, before)
-        validateMutable(app, intended)
+        val original = bindLegacyHistory(app, before)
+        val target = bindLegacyHistory(app, intended)
+        validateMutable(app, original)
+        validateMutable(app, target)
+        identities.validate(app)
         val actual = read(app)
         validateMutable(app, actual)
-        check(compatiblePartial(actual, before, intended)) {
+        check(compatiblePartial(actual, original, target)) {
             "Policy changed independently of the interrupted action. Refresh instead of overwriting that change."
         }
-        change(app, actual, before)
+        change(app, actual, original)
     }
 
     suspend fun restore(
@@ -91,20 +97,27 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
         expectedCurrent: PolicyState,
         beforeWrite: suspend () -> Unit = {},
     ): PolicyState = mutations.withLock {
-        validateMutable(app, before)
-        validateMutable(app, expectedCurrent)
+        val original = bindLegacyHistory(app, before)
+        val expected = bindLegacyHistory(app, expectedCurrent)
+        validateMutable(app, original)
+        validateMutable(app, expected)
+        identities.validate(app)
         val current = read(app)
         validateMutable(app, current)
-        check(samePolicy(current, expectedCurrent)) { "Policy changed after this action. Refresh instead of undoing an outdated change." }
-        check(current.systemExempt == before.systemExempt) { "Android's system exemption changed; this action cannot be undone safely." }
+        check(samePolicy(current, expected)) { "Policy changed after this action. Refresh instead of undoing an outdated change." }
+        check(current.systemExempt == original.systemExempt) { "Android's system exemption changed; this action cannot be undone safely." }
         beforeWrite()
-        change(app, current, before)
+        change(app, current, original)
     }
 
     private suspend fun change(app: AppEntry, before: PolicyState, desired: PolicyState): PolicyState {
-        if (samePolicy(before, desired)) return before
+        if (samePolicy(before, desired)) {
+            identities.validate(app)
+            return before
+        }
         try {
             writeDifferences(app, before, desired)
+            identities.validate(app)
             val actual = read(app)
             validateMutable(app, actual)
             check(samePolicy(actual, desired)) { "Android did not report the requested policy after the command." }
@@ -117,10 +130,12 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
     }
 
     private suspend fun rollback(app: AppEntry, before: PolicyState, desired: PolicyState): String = try {
+        identities.validate(app)
         val actual = read(app)
         validateMutable(app, actual)
         check(compatiblePartial(actual, before, desired)) { "Policy changed independently" }
         writeDifferences(app, actual, before)
+        identities.validate(app)
         val restored = read(app)
         check(restored.error == null && samePolicy(restored, before)) { "Restore could not be verified" }
         "Previous policy is restored and verified."
@@ -133,6 +148,7 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
         if (app.targetSdk < 26 && from.legacyMode != to.legacyMode) writeOp(app, legacyOp, requireNotNull(to.legacyMode))
         if (from.userExempt != to.userExempt) {
             check(!(to.userExempt == false && from.systemExempt && to.dozeExempt == false)) { "Cannot remove a system exemption" }
+            identities.validate(app)
             execute(allowlistCommand + "${if (to.userExempt == true) "+" else "-"}${app.packageName}")
         }
     }
@@ -142,6 +158,7 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
 
     private suspend fun writeOp(app: AppEntry, op: String, mode: String) {
         check(mode in writableModes) { "This Android app-op mode cannot be changed safely" }
+        identities.validate(app)
         execute(listOf("cmd", "appops", "set", "--user", userId.toString(), app.packageName, op, mode))
     }
 
@@ -149,11 +166,15 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
         check(app.installed) { "This package is not installed for this Android user" }
         require(userId >= 0 && ShellParsers.validPackage(app.packageName)) { "Invalid package or Android user" }
         require(app.uid >= 0 && app.uid / 100000 == userId) { "The app belongs to another Android user" }
+        check(app.profile.userId == userId) { "The profile does not match this app's Android user" }
+        check(app.profile.available) { app.profile.unavailableReason ?: "This Android profile is unavailable" }
     }
 
     private fun validateMutable(app: AppEntry, state: PolicyState) {
         validateIdentity(app)
         check(state.packageName == app.packageName) { "Policy belongs to another app" }
+        check(state.userId == userId && state.uid == app.uid) { "Policy belongs to another Android user or app installation. Refresh the policy." }
+        check(state.userSerial == app.profile.serialNumber) { "This Android profile was replaced. Refresh the app list." }
         check(app.protectedReason == null) { app.protectedReason ?: "This app is protected" }
         check(app.uid % 100000 >= 10000 && app.packageName !in protectedPackages) { "This essential app is protected" }
         check(!state.uidOverride) { "A shared UID app-op override controls this app. Manage it in Android settings." }
@@ -161,12 +182,19 @@ class PolicyEngine(private val execute: suspend (List<String>) -> String, privat
             (app.targetSdk >= 26 || state.legacyMode in writableModes)) { "Read the complete current policy before making changes." }
     }
 
+    /** Only old saved Undo/recovery records may lack UID and serial; new actions require both bindings. */
+    private fun bindLegacyHistory(app: AppEntry, state: PolicyState): PolicyState =
+        if (state.uid == null && state.userSerial == null) state.copy(uid = app.uid, userSerial = app.profile.serialNumber) else state
+
+    private fun sameIdentity(a: PolicyState, b: PolicyState): Boolean =
+        a.packageName == b.packageName && a.userId == b.userId && a.uid == b.uid && a.userSerial == b.userSerial
+
     private fun samePolicy(a: PolicyState, b: PolicyState): Boolean =
-        a.packageName == b.packageName && a.backgroundMode == b.backgroundMode && a.legacyMode == b.legacyMode &&
+        sameIdentity(a, b) && a.backgroundMode == b.backgroundMode && a.legacyMode == b.legacyMode &&
             a.dozeExempt == b.dozeExempt && a.userExempt == b.userExempt && a.systemExempt == b.systemExempt && a.uidOverride == b.uidOverride
 
     private fun compatiblePartial(actual: PolicyState, before: PolicyState, desired: PolicyState): Boolean =
-        actual.packageName == before.packageName && actual.systemExempt == before.systemExempt && actual.uidOverride == before.uidOverride &&
+        sameIdentity(actual, before) && sameIdentity(actual, desired) && actual.systemExempt == before.systemExempt && actual.uidOverride == before.uidOverride &&
             actual.backgroundMode in setOf(before.backgroundMode, desired.backgroundMode) &&
             actual.legacyMode in setOf(before.legacyMode, desired.legacyMode) &&
             actual.userExempt in setOf(before.userExempt, desired.userExempt) &&

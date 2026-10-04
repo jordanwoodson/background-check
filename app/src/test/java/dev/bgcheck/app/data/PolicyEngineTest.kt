@@ -189,6 +189,10 @@ class PolicyEngineTest {
         suspend fun exec(args: List<String>): String {
             check(!disconnected) { "Simulated connection loss" }
             return when {
+            args.take(6) == listOf("pm", "list", "packages", "-U", "--user", "0") -> {
+                check(args.size == 6 || args == listOf("pm", "list", "packages", "-U", "--user", "0", "com.example.app"))
+                "package:com.example.app uid:10101"
+            }
             args.take(3) == listOf("cmd", "appops", "get") -> {
                 check(args.subList(3, 6) == listOf("--user", "0", "com.example.app"))
                 if (malformedAppOp) "Unsupported operation" else {

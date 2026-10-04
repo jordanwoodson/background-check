@@ -4,6 +4,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PackageAssociationsTest {
+    @Test fun samePackageCopiesKeepTheirOwnReverseLinks() {
+        val result = PackageAssociations.enrich(listOf(
+            app("dev.target", uid = 10001), app("dev.target", uid = 1010001),
+            app("dev.personal", uid = 10002, links = arrayOf(PackageAssociation("dev.target", AssociationKind.PACKAGE_QUERY))),
+            app("dev.work", uid = 1010002, links = arrayOf(PackageAssociation("dev.target", AssociationKind.PACKAGE_QUERY))),
+        ))
+        assertEquals(listOf(PackageAssociation("dev.personal", AssociationKind.QUERIED_BY)), result[0].associations)
+        assertEquals(listOf(PackageAssociation("dev.work", AssociationKind.QUERIED_BY)), result[1].associations)
+    }
+
+    @Test fun equalPackageSortsHaveStableProfileTieBreaker() {
+        val personal = app("dev.example", uid = 10001)
+        val work = app("dev.example", uid = 1010001)
+        assertEquals(listOf(10001, 1010001), ListSorting.apps(listOf(work, personal), AppSort.NAME, SortDirection.ASCENDING).map { it.uid })
+    }
+
     private fun app(id: String, uid: Int = 12345, installed: Boolean = true, vararg links: PackageAssociation) =
         AppEntry(id, id, uid, false, installed = installed, associations = links.toList())
 

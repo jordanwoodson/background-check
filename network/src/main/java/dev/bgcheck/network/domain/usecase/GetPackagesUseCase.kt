@@ -14,5 +14,5 @@ class GetPackagesUseCase constructor(
 
     // Empty when root or Shizuku cannot read it; the installed scan behind invoke() never holds these apps.
     suspend fun uninstalledSystemPackages(): List<Package> =
-        packageRepository.getUninstalledSystemPackages().getOrElse { emptyList() }
+        packageRepository.getUninstalledSystemPackages().getOrThrow()
 }

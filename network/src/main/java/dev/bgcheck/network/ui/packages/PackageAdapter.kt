@@ -308,11 +308,11 @@ class PackageAdapter(
             }
 
             when {
-                pkg.userId >= 10 && pkg.userId < 100 -> {
+                pkg.isWorkProfile -> {
                     binding.profileBadge.text = binding.root.context.getString(R.string.badge_work_profile)
                     binding.profileBadge.visibility = View.VISIBLE
                 }
-                pkg.userId >= 100 -> {
+                pkg.isCloneProfile -> {
                     binding.profileBadge.text = binding.root.context.getString(R.string.badge_clone_profile)
                     binding.profileBadge.visibility = View.VISIBLE
                 }

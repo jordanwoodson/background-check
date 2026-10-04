@@ -14,9 +14,87 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class AppInventory(private val context: Context) {
-    suspend fun load(): List<AppEntry> = withContext(Dispatchers.IO) {
+    suspend fun load(): List<AppEntry> = read().apps
+
+    suspend fun profiles(): List<AndroidProfile> = withContext(Dispatchers.IO) {
+        val manager = context.getSystemService(android.os.UserManager::class.java)
+        dev.bgcheck.network.data.multiuser.HiddenApiHelper.clearUserCache()
+        dev.bgcheck.network.data.multiuser.HiddenApiHelper.getUsers(context).map { profile ->
+            val handle = android.os.UserHandle.getUserHandleForUid(profile.userId * 100000)
+            val quiet = runCatching { manager.isQuietModeEnabled(handle) }.getOrNull()
+            val unlocked = runCatching { manager.isUserUnlocked(handle) }.getOrNull()
+            val serial = runCatching { manager.getSerialNumberForUser(handle) }.getOrNull()?.takeIf { it >= 0 }
+            val reason = when {
+                quiet == true -> "Work profile is paused. Resume it in Android Settings."
+                unlocked == false -> "Profile is locked or stopped. Unlock or resume it first."
+                quiet == null || unlocked == null || serial == null -> "Profile availability could not be verified. Reconnect Shizuku and refresh."
+                else -> null
+            }
+            AndroidProfile(profile.userId, profile.displayName, profile.isWorkProfile, serial,
+                available = reason == null, unavailableReason = reason)
+        }
+    }
+
+    suspend fun read(): AppInventoryResult = withContext(Dispatchers.IO) {
         CanaDebloatGuide.preload()
-        val pm = context.packageManager
+        val helper = dev.bgcheck.network.data.multiuser.HiddenApiHelper
+        // The host grants permission through its own bridge; refresh Network's separate status
+        // before asking its package service to read another profile.
+        dev.bgcheck.network.De1984Dependencies.getInstance(context).shizukuManager.checkShizukuStatus()
+        helper.awaitCrossUserPermission(context)
+        val profiles = profiles()
+        helper.clearInstalledAppsCache()
+        val warnings = mutableListOf<String>()
+        val entries = profiles.flatMap { profile ->
+            profile.unavailableReason?.let { warnings += "${profile.name}: $it" }
+            try {
+                @Suppress("DEPRECATION")
+                val applications = helper.getInstalledApplicationsAsUser(context,
+                    PackageManager.MATCH_UNINSTALLED_PACKAGES, profile.userId)
+                check(applications.isNotEmpty()) { "Android did not return this profile's app inventory." }
+                check(applications.all { it.uid >= 0 && it.uid / 100000 == profile.userId }) {
+                    "Android returned app identities from another profile."
+                }
+                val profileContext = runCatching {
+                    if (profile.userId == android.os.Process.myUid() / 100000) context else
+                        Context::class.java.getMethod("createContextAsUser", android.os.UserHandle::class.java,
+                            Int::class.javaPrimitiveType).invoke(context,
+                            android.os.UserHandle.getUserHandleForUid(profile.userId * 100000), 0) as Context
+                }.getOrNull()
+                val protected = protectedPackages(profileContext)
+                val installedPeers = applications.filter { it.flags and ApplicationInfo.FLAG_INSTALLED != 0 }.groupBy { it.uid }
+                applications.distinctBy { it.packageName }.map { info ->
+                    val pm = profileContext?.packageManager ?: context.packageManager
+                    val installed = info.flags and ApplicationInfo.FLAG_INSTALLED != 0
+                    AppEntry(
+                        packageName = info.packageName,
+                        label = PackageDescriptions.label(info.packageName,
+                            runCatching { info.loadLabel(pm).toString() }.getOrDefault(info.packageName)),
+                        uid = info.uid, system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0,
+                        enabled = info.enabled, targetSdk = info.targetSdkVersion,
+                        installed = installed, profile = profile,
+                        description = PackageDescriptions.describe(info.packageName,
+                            runCatching { info.loadDescription(pm)?.toString() }.getOrNull(), info.category),
+                        protectedReason = when {
+                            info.uid % 100000 < 10000 -> "Core Android component. Use Android Settings for this app."
+                            protected[info.packageName] != null -> protected[info.packageName]
+                            installed && installedPeers[info.uid].orEmpty().size > 1 -> "This app shares an Android identity with other apps in this profile. Use Android Settings."
+                            profileContext == null -> "This profile's default apps could not be verified. Reconnect Shizuku and refresh."
+                            else -> null
+                        },
+                    )
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                warnings += "${profile.name} apps unavailable: ${e.message ?: "Android denied profile access"}"
+                emptyList()
+            }
+        }
+        AppInventoryResult(PackageAssociations.enrich(entries).sortedWith(compareBy({ it.label.lowercase() }, { it.key })),
+            profiles, warnings)
+    }
+
+    private fun protectedPackages(profileContext: Context?): Map<String, String> {
         val protected = mutableMapOf(
             context.packageName to "This app needs background access to manage your settings.",
             "moe.shizuku.privileged.api" to "Shizuku provides access to your device controls.",
@@ -27,37 +105,17 @@ class AppInventory(private val context: Context) {
             "com.android.settings" to "Android needs Settings to manage the device.",
             "com.google.android.gms" to "Google Play services delivers notifications and essential device services.",
         )
-        runCatching { pm.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName }
-            .getOrNull()?.let { protected[it] = "This is your current home screen." }
-        Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-            ?.substringBefore('/')?.let { protected[it] = "This is your current keyboard." }
-        listOfNotNull(
-            runCatching { context.getSystemService(TelecomManager::class.java).defaultDialerPackage }.getOrNull(),
-            runCatching { Telephony.Sms.getDefaultSmsPackage(context) }.getOrNull(),
-        ).forEach {
-            protected[it] = "This app handles your calls or messages. Manage it in Android Settings."
+        profileContext?.let { target ->
+            runCatching { target.packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName }
+                .getOrNull()?.let { protected[it] = "This is this profile's current home screen." }
+            runCatching { Settings.Secure.getString(target.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD) }
+                .getOrNull()?.substringBefore('/')?.let { protected[it] = "This is this profile's current keyboard." }
+            listOfNotNull(
+                runCatching { target.getSystemService(TelecomManager::class.java).defaultDialerPackage }.getOrNull(),
+                runCatching { Telephony.Sms.getDefaultSmsPackage(target) }.getOrNull(),
+            ).forEach { protected[it] = "This app handles your calls or messages. Manage it in Android Settings." }
         }
-        @Suppress("DEPRECATION")
-        // The broad query may have less metadata; prefer the normal query for installed apps.
-        val applications = (pm.getInstalledApplications(0) +
-            pm.getInstalledApplications(PackageManager.MATCH_UNINSTALLED_PACKAGES)).distinctBy { it.packageName }
-        PackageAssociations.enrich(applications.map { info ->
-            AppEntry(
-                packageName = info.packageName, label = PackageDescriptions.label(info.packageName,
-                    runCatching { info.loadLabel(pm).toString() }.getOrDefault(info.packageName)),
-                uid = info.uid, system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0,
-                enabled = info.enabled, targetSdk = info.targetSdkVersion,
-                installed = info.flags and ApplicationInfo.FLAG_INSTALLED != 0,
-                description = PackageDescriptions.describe(info.packageName,
-                    runCatching { info.loadDescription(pm)?.toString() }.getOrNull(), info.category),
-                protectedReason = when {
-                    info.uid % 100000 < 10000 -> "Core Android component. Use Android Settings for this app."
-                    protected[info.packageName] != null -> protected[info.packageName]
-                    (pm.getPackagesForUid(info.uid)?.size ?: 0) > 1 -> "This app shares an Android identity with other apps. Changes could affect them; use Android Settings."
-                    else -> null
-                },
-            )
-        }).sortedBy { it.label.lowercase() }
+        return protected
     }
 
     fun battery(): BatteryInfo {
@@ -83,3 +141,5 @@ class AppInventory(private val context: Context) {
         )
     }
 }
+
+data class AppInventoryResult(val apps: List<AppEntry>, val profiles: List<AndroidProfile>, val warnings: List<String>)

@@ -50,7 +50,18 @@ fun Boolean.toEnabledString(): String {
     return if (this) Constants.Packages.STATE_ENABLED else Constants.Packages.STATE_DISABLED
 }
 
-fun Context.openAppSettings(packageName: String) {
+fun Context.openAppSettings(packageName: String, userId: Int = Constants.Firewall.ownUserId()) {
+    if (userId != Constants.Firewall.ownUserId()) {
+        try {
+            getSystemService(android.content.pm.LauncherApps::class.java).startAppDetailsActivity(
+                android.content.ComponentName(packageName, ""),
+                android.os.UserHandle.getUserHandleForUid(userId * 100000), null, null
+            )
+        } catch (e: Exception) {
+            Toast.makeText(this, "Cannot open settings for profile $userId: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+        return
+    }
     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
         data = Uri.fromParts("package", packageName, null)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK

@@ -55,6 +55,7 @@ data class PackageEntity(
     val isCloneProfile: Boolean = false,
     val isInstalled: Boolean = true,
     val permissionsKnown: Boolean = false,
+    val userSerial: Long? = null,
 )
 
 fun PackageEntity.toDomain(): Package {
@@ -83,6 +84,7 @@ fun PackageEntity.toDomain(): Package {
         isCloneProfile = isCloneProfile,
         isInstalled = isInstalled,
         permissionsKnown = permissionsKnown,
+        userSerial = userSerial,
     )
 }
 
@@ -111,5 +113,6 @@ fun Package.toEntity(): PackageEntity {
         isCloneProfile = isCloneProfile,
         isInstalled = isInstalled,
         permissionsKnown = permissionsKnown,
+        userSerial = userSerial,
     )
 }

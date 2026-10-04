@@ -68,7 +68,7 @@ object HiddenApiHelper {
      */
     private val installedAppsLock = Any()
 
-    private var installedAppsCache: MutableMap<Int, List<ApplicationInfo>> = mutableMapOf()
+    private var installedAppsCache: MutableMap<Pair<Int, Int>, List<ApplicationInfo>> = mutableMapOf()
     private var installedAppsCacheTime: Long = 0
     // Deliberately short, and NOT raised despite the cost of what it guards.
     //
@@ -130,12 +130,16 @@ object HiddenApiHelper {
     @Volatile
     private var networkPackagesCacheTime: Long = 0
     private val networkPackagesLock = Any()
+    private val packageGeneration = java.util.concurrent.atomic.AtomicLong()
 
     data class UserProfile(
         val userId: Int,
         val name: String?,
         val isWorkProfile: Boolean,
-        val isCloneProfile: Boolean
+        val isCloneProfile: Boolean,
+        val serialNumber: Long? = null,
+        val available: Boolean = true,
+        val unavailableReason: String? = null
     ) {
         val displayName: String
             get() = when {
@@ -351,7 +355,7 @@ object HiddenApiHelper {
                             else -> "User $userId"
                         }
 
-                        val profile = UserProfile(userId, name, isWorkProfile, isCloneProfile)
+                        val profile = describeProfile(context, UserProfile(userId, name, isWorkProfile, isCloneProfile))
                         AppLogger.d(TAG, "🔍 MULTI-USER: Detected profile: userId=$userId, name=$name, isWork=$isWorkProfile, isClone=$isCloneProfile")
                         profile
                     } catch (e: Exception) {
@@ -395,7 +399,7 @@ object HiddenApiHelper {
                             val isCloneProfile = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                                                  (flags and 0x40000000) != 0
 
-                            UserProfile(id, name, isWorkProfile, isCloneProfile)
+                            describeProfile(context, UserProfile(id, name, isWorkProfile, isCloneProfile))
                         } catch (e: Exception) {
                             AppLogger.w(TAG, "Failed to parse UserInfo: ${e.message}")
                             null
@@ -414,7 +418,25 @@ object HiddenApiHelper {
 
         val ownUserId = Constants.Firewall.ownUserId()
         AppLogger.d(TAG, "All user enumeration methods failed, returning only De1984's own user $ownUserId")
-        return cacheAndReturn(listOf(UserProfile(ownUserId, null, isWorkProfile = false, isCloneProfile = false)))
+        return cacheAndReturn(listOf(describeProfile(context, UserProfile(ownUserId, null, isWorkProfile = false, isCloneProfile = false))))
+    }
+
+    private fun describeProfile(context: Context, profile: UserProfile): UserProfile {
+        val manager = context.getSystemService(android.os.UserManager::class.java)
+        val handle = android.os.UserHandle.getUserHandleForUid(profile.userId * 100000)
+        val serial = manager.getSerialNumberForUser(handle).takeIf { it >= 0 }
+        val paused = runCatching { manager.isQuietModeEnabled(handle) }.getOrDefault(false)
+        val unlocked = runCatching { manager.isUserUnlocked(handle) }.getOrDefault(false)
+        return profile.copy(serialNumber = serial, available = !paused && unlocked,
+            unavailableReason = if (paused) "Profile paused" else if (!unlocked) "Profile locked or unavailable" else null)
+    }
+
+    /** Read directly for mutation/restore validation; cached profile IDs may have been reused. */
+    fun currentProfile(context: Context, userId: Int): UserProfile? {
+        val manager = context.getSystemService(android.os.UserManager::class.java)
+        val handle = manager.userProfiles.firstOrNull { it == android.os.UserHandle.getUserHandleForUid(userId * 100000) }
+            ?: return null
+        return describeProfile(context, UserProfile(userId, null, manager.isManagedProfile(userId), false))
     }
 
     private fun cacheAndReturn(users: List<UserProfile>): List<UserProfile> {
@@ -426,6 +448,8 @@ object HiddenApiHelper {
     fun clearUserCache() {
         cachedUsers = null
         usersCacheTime = 0
+        clearInstalledAppsCache()
+        clearDisabledPackagesCache()
         AppLogger.d(TAG, "User profile cache cleared")
     }
 
@@ -477,7 +501,7 @@ object HiddenApiHelper {
         val now = System.currentTimeMillis()
         synchronized(installedAppsLock) {
             if (now - installedAppsCacheTime < INSTALLED_APPS_CACHE_TTL) {
-                installedAppsCache[userId]?.let { cached ->
+                installedAppsCache[userId to flags]?.let { cached ->
                     AppLogger.d(TAG, "📦 Returning cached ${cached.size} apps for user $userId")
                     return cached
                 }
@@ -497,12 +521,25 @@ object HiddenApiHelper {
                 val apps = method.invoke(pm, flags, userId) as? List<ApplicationInfo>
                 if (!apps.isNullOrEmpty()) {
                     AppLogger.d(TAG, "✅ Found ${apps.size} apps for user $userId via hidden API")
-                    cacheInstalledApps(userId, apps)
+                    cacheInstalledApps(userId, flags, apps)
                     return apps
                 }
             } catch (e: Exception) {
                 AppLogger.d(TAG, "Hidden API getInstalledApplicationsAsUser failed for user $userId: ${describeReflectionFailure(e)}")
             }
+        }
+
+        privilegedPackageCall("getInstalledApplications", flags, userId)?.let { slice ->
+            @Suppress("UNCHECKED_CAST")
+            val apps = runCatching { slice.javaClass.getMethod("getList").invoke(slice) as List<ApplicationInfo> }.getOrNull()
+            if (apps != null) {
+                cacheInstalledApps(userId, flags, apps)
+                return apps
+            }
+        }
+        // A shell name list cannot supply reliable retained installation state or metadata.
+        if (flags and PackageManager.MATCH_UNINSTALLED_PACKAGES != 0) {
+            throw IllegalStateException("Cannot read retained apps in user $userId. Start Shizuku or grant cross-profile access.")
         }
 
         // Strategy 2: Use root shell to get package list
@@ -516,7 +553,7 @@ object HiddenApiHelper {
                 }
                 if (apps.isNotEmpty()) {
                     AppLogger.d(TAG, "✅ Found ${apps.size} apps for user $userId via root shell (synthetic)")
-                    cacheInstalledApps(userId, apps)
+                    cacheInstalledApps(userId, flags, apps)
                     return apps
                 }
             }
@@ -534,7 +571,7 @@ object HiddenApiHelper {
                 }
                 if (apps.isNotEmpty()) {
                     AppLogger.d(TAG, "✅ Found ${apps.size} apps for user $userId via Shizuku shell (synthetic)")
-                    cacheInstalledApps(userId, apps)
+                    cacheInstalledApps(userId, flags, apps)
                     return apps
                 }
             }
@@ -546,14 +583,31 @@ object HiddenApiHelper {
         return emptyList()
     }
 
-    private fun cacheInstalledApps(userId: Int, apps: List<ApplicationInfo>) {
+    private fun privilegedPackageCall(name: String, flags: Int, userId: Int, packageName: String? = null): Any? {
+        if (shizukuManager?.hasShizukuPermission != true) return null
+        return runCatching {
+            val binder = rikka.shizuku.SystemServiceHelper.getSystemService("package") ?: return null
+            val stub = Class.forName("android.content.pm.IPackageManager\$Stub")
+            val service = stub.getMethod("asInterface", android.os.IBinder::class.java)
+                .invoke(null, rikka.shizuku.ShizukuBinderWrapper(binder))
+            val count = if (packageName == null) 2 else 3
+            val method = service.javaClass.methods.first { it.name == name && it.parameterTypes.size == count }
+            val flagIndex = if (packageName == null) 0 else 1
+            val typedFlags: Any = if (method.parameterTypes[flagIndex] == Long::class.javaPrimitiveType) flags.toLong() else flags
+            if (packageName == null) method.invoke(service, typedFlags, userId)
+            else method.invoke(service, packageName, typedFlags, userId)
+        }.onFailure { AppLogger.d(TAG, "Privileged $name failed for user $userId: ${it.cause?.message ?: it.message}") }.getOrNull()
+    }
+
+    private fun cacheInstalledApps(userId: Int, flags: Int, apps: List<ApplicationInfo>) {
         synchronized(installedAppsLock) {
-            installedAppsCache[userId] = apps
+            installedAppsCache[userId to flags] = apps
             installedAppsCacheTime = System.currentTimeMillis()
         }
     }
 
     fun clearInstalledAppsCache() {
+        packageGeneration.incrementAndGet()
         synchronized(this) { packageUidsCache.clear() }
         synchronized(packageInfoLock) {
             packageInfoCache.clear()
@@ -588,19 +642,7 @@ object HiddenApiHelper {
         if (getUsers(context).any { it.userId != ownUserId }) awaitCrossUserPermission(context)
         return getUsers(context).mapNotNull { profile ->
             val apps = try {
-                if (profile.userId == ownUserId) {
-                    context.packageManager.getInstalledApplications(PackageManager.MATCH_UNINSTALLED_PACKAGES)
-                } else if (hiddenApiAvailable) {
-                    ensureCrossUserPermission(context)
-                    val method = context.packageManager.javaClass.getMethod(
-                        "getInstalledApplicationsAsUser", Int::class.javaPrimitiveType, Int::class.javaPrimitiveType
-                    )
-                    @Suppress("UNCHECKED_CAST")
-                    method.invoke(context.packageManager, PackageManager.MATCH_UNINSTALLED_PACKAGES, profile.userId)
-                        as? List<ApplicationInfo>
-                } else {
-                    null
-                }
+                getInstalledApplicationsAsUser(context, PackageManager.MATCH_UNINSTALLED_PACKAGES, profile.userId)
             } catch (e: Exception) {
                 AppLogger.d(TAG, "Installed uids unreadable for user ${profile.userId}: ${e.message}")
                 null
@@ -657,6 +699,7 @@ object HiddenApiHelper {
             }
 
         val startTime = System.currentTimeMillis()
+        val generation = packageGeneration.get()
         val appsByUser = getUsers(context).map { profile ->
             profile.userId to getInstalledApplicationsAsUser(context, PackageManager.GET_META_DATA, profile.userId)
         }
@@ -688,6 +731,9 @@ object HiddenApiHelper {
             }
         }.map { (appInfo, _) -> appInfo }
 
+            if (generation != packageGeneration.get()) {
+                throw IllegalStateException("Profiles changed during network inventory; retry the read.")
+            }
             networkPackagesCache = packages
             networkPackagesCacheTime = System.currentTimeMillis()
             val hits = synchronized(packageInfoLock) {
@@ -712,16 +758,17 @@ object HiddenApiHelper {
             // Query the enabled state for this specific user (not from personal profile!)
             val isEnabled = isPackageEnabledForUser(packageName, userId)
 
+            val realUid = getPackageUidsForUser(userId)[packageName]?.takeIf { it / 100000 == userId } ?: return null
             val personalInfo = try {
-                context.packageManager.getApplicationInfo(packageName, 0)
+                context.packageManager.getApplicationInfo(packageName, PackageManager.MATCH_UNINSTALLED_PACKAGES)
             } catch (e: PackageManager.NameNotFoundException) {
                 null
             }
 
             if (personalInfo != null) {
                 ApplicationInfo(personalInfo).apply {
-                    val appId = personalInfo.uid % 100000
-                    this.uid = userId * 100000 + appId
+                    this.uid = realUid
+                    this.flags = this.flags or ApplicationInfo.FLAG_INSTALLED
                     this.enabled = isEnabled
                 }
             } else {
@@ -744,7 +791,7 @@ object HiddenApiHelper {
                 ApplicationInfo().apply {
                     this.packageName = packageName
                     this.uid = realUid ?: UID_UNKNOWN
-                    this.flags = 0
+                    this.flags = ApplicationInfo.FLAG_INSTALLED
                     this.enabled = isEnabled
                 }
             }
@@ -1059,6 +1106,8 @@ object HiddenApiHelper {
             }
         }
 
+        (privilegedPackageCall("getApplicationInfo", flags, userId, packageName) as? ApplicationInfo)?.let { return it }
+        if (flags and PackageManager.MATCH_UNINSTALLED_PACKAGES != 0) return null
         return getApplicationInfoViaShell(context, packageName, userId)
     }
 
@@ -1067,62 +1116,9 @@ object HiddenApiHelper {
         packageName: String,
         userId: Int
     ): ApplicationInfo? {
-        return try {
-            val cachedShell = Shell.getCachedShell()
-            if (cachedShell == null || !cachedShell.isRoot) {
-                return null
-            }
-
-            val outputList = mutableListOf<String>()
-            val result = runBlocking {
-                ShellRunner.bounded(
-                    label = "root shell: pm dump $packageName --user $userId",
-                    timeoutMs = ShellRunner.READ_TIMEOUT_MS,
-                    onAbandon = RootManager::closeRootShellIfIdle
-                ) {
-                    cachedShell.newJob()
-                        .add("pm dump $packageName --user $userId")
-                        .to(outputList)
-                        .exec()
-                }
-            } ?: return null
-
-            val output = outputList.joinToString("\n")
-
-            if (!result.isSuccess || output.contains("Unable to find package") || output.isBlank()) {
-                return null
-            }
-
-            val uidMatch = Regex("""userId=(\d+)""").find(output)
-            val codePath = Regex("""codePath=([^\s]+)""").find(output)?.groupValues?.get(1)
-            val flagsMatch = Regex("""pkgFlags=\[\s*([^\]]*)\s*\]""").find(output)
-
-            val appId = uidMatch?.groupValues?.get(1)?.toIntOrNull() ?: return null
-            val absoluteUid = userId * 100000 + appId
-
-            val isSystem = flagsMatch?.groupValues?.get(1)?.contains("SYSTEM") == true
-
-            val isEnabled = isPackageEnabledForUser(packageName, userId)
-
-            ApplicationInfo().apply {
-                this.packageName = packageName
-                this.uid = absoluteUid
-                this.sourceDir = codePath ?: "/data/app/$packageName"
-                this.flags = if (isSystem) ApplicationInfo.FLAG_SYSTEM else 0
-                this.enabled = isEnabled
-
-                try {
-                    val personalInfo = context.packageManager.getApplicationInfo(packageName, 0)
-                    this.labelRes = personalInfo.labelRes
-                    this.nonLocalizedLabel = personalInfo.nonLocalizedLabel
-                    this.icon = personalInfo.icon
-                } catch (e: Exception) {
-                }
-            }
-        } catch (e: Exception) {
-            AppLogger.d(TAG, "Shell pm dump failed for $packageName user $userId: ${e.message}")
-            null
-        }
+        val names = getPackageListViaShell(userId).ifEmpty { getPackageListViaShizuku(userId) }
+        if (packageName !in names) return null
+        return createSyntheticApplicationInfo(context, packageName, userId)
     }
 
     /**
@@ -1219,6 +1215,8 @@ object HiddenApiHelper {
             }
         }
 
+        (privilegedPackageCall("getPackageInfo", flags, userId, packageName) as? PackageInfo)?.let { return it }
+        // Shared APK metadata is usable only after verifying this installation exists.
         // Strategy 2: Create synthetic PackageInfo based on personal profile data
         // Work profile apps are typically clones of personal profile apps with same permissions
         return createSyntheticPackageInfo(context, packageName, flags, userId)
@@ -1231,7 +1229,10 @@ object HiddenApiHelper {
         userId: Int
     ): PackageInfo? {
         return try {
-            val personalInfo = context.packageManager.getPackageInfo(packageName, flags)
+            val selectedInfo = getApplicationInfoAsUser(context, packageName, flags, userId) ?: return null
+            val personalInfo = runCatching { context.packageManager.getPackageInfo(packageName, flags) }.getOrNull()
+                ?: selectedInfo.sourceDir?.let { context.packageManager.getPackageArchiveInfo(it, flags) }
+                ?: return null
 
             PackageInfo().apply {
                 this.packageName = personalInfo.packageName
@@ -1252,12 +1253,7 @@ object HiddenApiHelper {
                 this.providers = personalInfo.providers
                 this.permissions = personalInfo.permissions
 
-                this.applicationInfo = personalInfo.applicationInfo?.let { appInfo ->
-                    ApplicationInfo(appInfo).apply {
-                        val appId = appInfo.uid % 100000
-                        this.uid = userId * 100000 + appId
-                    }
-                }
+                this.applicationInfo = selectedInfo
             }
         } catch (e: PackageManager.NameNotFoundException) {
             null
