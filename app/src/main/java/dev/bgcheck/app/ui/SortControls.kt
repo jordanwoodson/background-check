@@ -47,7 +47,7 @@ internal fun <T : SortKey> SortControls(
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box {
             OutlinedButton(
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(24.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 onClick = { expanded = true },
                 modifier = Modifier.heightIn(min = 48.dp).testTag("$id-sort")
@@ -74,7 +74,7 @@ internal fun <T : SortKey> SortControls(
             }
         }
         OutlinedButton(
-            shape = RoundedCornerShape(6.dp),
+            shape = RoundedCornerShape(24.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             onClick = { onDirection(direction.reversed()) },
             modifier = Modifier.heightIn(min = 48.dp).testTag("$id-direction")

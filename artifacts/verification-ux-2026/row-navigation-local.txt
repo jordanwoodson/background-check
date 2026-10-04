@@ -1,0 +1,4 @@
+Final debug app, production UI on isolated emulator-5590, API 36.
+Opened MainActivity, tapped Open Network, searched com.google.android.gms, submitted search, and tapped the package text at [176,671][664,704].
+Observed action_sheet_package_name: Personal (user 0) · com.google.android.gms.
+The tap opened the matching control sheet. No firewall rule or package policy was changed.

@@ -63,6 +63,31 @@ class UiPolishCaptureTest {
         protectedReason = "Required for system navigation and notifications.",
     )
 
+    @Test fun appsShowInventoryBeforeScrolling() {
+        requirePortrait()
+        show()
+        compose.onNodeWithText("Apps").performClick()
+        compose.onNodeWithText("Calculator").assertIsDisplayed()
+    }
+
+    @Test fun monitorShowsDeviceReadingsBeforeScrolling() {
+        requirePortrait()
+        show()
+        compose.onNodeWithText("Monitor").performClick()
+        compose.onNodeWithText("CPU · all cores").assertIsDisplayed()
+        compose.onNodeWithText("RAM available").assertIsDisplayed()
+        compose.onNodeWithText("18.6%").assertIsDisplayed()
+        compose.onNodeWithText("3.44 GiB").assertIsDisplayed()
+    }
+
+    @Test fun connectedDetailShowsBackgroundControlsBeforeScrolling() {
+        requirePortrait()
+        show()
+        openSignalDetail()
+        compose.onNodeWithText("Background access").assertIsDisplayed()
+        capture("28-detail-opening")
+    }
+
     @Test fun captureOverview() {
         show()
         compose.onNodeWithText("System overview").assertExists()
@@ -118,7 +143,7 @@ class UiPolishCaptureTest {
         compose.onNodeWithText("Access").performClick()
         capture("12-access-connected")
         val details = hasText(if (baseline) "Wireless debugging settings" else "Review settings, make changes and restore them.")
-        compose.onNode(hasScrollAction()).performScrollToNode(details)
+        compose.onNodeWithTag("access-list").performScrollToNode(details)
         compose.onNode(details).performScrollTo().assertIsDisplayed()
         capture("13-access-details")
     }
@@ -173,10 +198,10 @@ class UiPolishCaptureTest {
         compose.onNodeWithText("Access").performClick()
         capture("22-access-disconnected")
         if (!baseline) {
-            compose.onNode(hasScrollAction()).performScrollToNode(hasText("Connection help"))
+            compose.onNodeWithTag("access-list").performScrollToNode(hasText("Connection help"))
             compose.onNodeWithText("Connection help").performClick()
         }
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Wireless debugging settings"))
+        compose.onNodeWithTag("access-list").performScrollToNode(hasText("Wireless debugging settings"))
         compose.onNodeWithText("Wireless debugging settings").performScrollTo().assertIsDisplayed()
         capture("23-access-connection-help")
     }
@@ -187,6 +212,10 @@ class UiPolishCaptureTest {
         capture("24-monitor-disconnected")
         compose.onNodeWithText("Battery use").assertIsDisplayed().performClick()
         capture("25-battery-disconnected")
+    }
+
+    private fun requirePortrait() {
+        org.junit.Assume.assumeTrue(InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT)
     }
 
     private fun openSignalDetail() {

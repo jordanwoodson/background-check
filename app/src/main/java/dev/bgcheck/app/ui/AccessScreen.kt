@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -32,7 +33,7 @@ internal fun accessStatusLabel(access: AccessState): String = when (access) {
 internal fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: () -> Unit, onOpenWirelessSettings: () -> Unit) {
     val ready = state.access == AccessState.READY
     val connecting = state.access in setOf(AccessState.CHECKING, AccessState.CONNECTING)
-    LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    LazyColumn(modifier = Modifier.testTag("access-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Eyebrow("access / shizuku")
@@ -41,7 +42,7 @@ internal fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: 
             }
         }
         item {
-            Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = BorderStroke(1.dp, if (ready) Green.copy(alpha = 0.4f) else Outline)) {
+            Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = BorderStroke(1.dp, if (ready) Green.copy(alpha = 0.4f) else Outline)) {
                 Column(Modifier.fillMaxWidth().animateContentSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Icon(if (ready) Icons.Rounded.CheckCircle else Icons.Rounded.Key, null, tint = if (ready) Green else Purple, modifier = Modifier.size(28.dp))
@@ -64,7 +65,7 @@ internal fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: 
                     if (connecting) LinearProgressIndicator(Modifier.fillMaxWidth().semantics { contentDescription = "Checking Shizuku connection" })
                     if (!ready && !connecting) {
                         Button(onClick = if (state.access == AccessState.NOT_RUNNING) onOpenShizuku else onConnect,
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(8.dp)) {
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), shape = RoundedCornerShape(24.dp)) {
                             Text(when (state.access) {
                                 AccessState.NEEDS_PERMISSION -> "Grant access"
                                 AccessState.NOT_RUNNING -> "Open Shizuku"
@@ -98,7 +99,7 @@ internal fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: 
                 }
             }
         }
-        item { InfoCard("Local by design", "No internet permission, analytics or background monitoring. Your data stays on this device.", Icons.Rounded.Shield, accent = Green) }
+        item { InfoCard("Local by design", "No internet permission or analytics. Resource sampling runs while Monitor is open. Network firewall and package monitoring have their own controls. Your data stays on this device.", Icons.Rounded.Shield, accent = Green) }
     }
 }
 
@@ -115,14 +116,14 @@ private fun Capability(title: String, description: String) {
 
 @Composable
 private fun SetupStep(number: String, title: String, body: String, action: String, onClick: () -> Unit, enabled: Boolean = true) {
-    Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(8.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
                 Text(number, style = MaterialTheme.typography.labelLarge, color = Green)
                 Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
             }
             Text(body, style = MaterialTheme.typography.bodyMedium, color = Muted)
-            OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(8.dp)) {
+            OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(24.dp)) {
                 Text(action, modifier = Modifier.weight(1f))
                 Icon(Icons.Rounded.OpenInNew, null, modifier = Modifier.size(16.dp))
             }

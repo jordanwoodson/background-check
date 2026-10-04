@@ -1,6 +1,6 @@
 # Background Check
 
-A native Android app for inspecting running processes, CPU, memory and battery use, and managing background app activity. A Dracula terminal interface brings monospace typography, purple controls, cyan readings, green live status and dark bordered panels to every screen. Includes independent list sorting, resource monitoring, app diagnostics, confirmed force stop, background-access and Doze controls, plus a complete firewall and package-management workspace adapted from De1984. Designed for the Motorola Edge, with automatic signed updates through Obtainium.
+A native Android app for inspecting running processes, CPU, memory and battery use, and managing background app activity. A Dracula interface pairs readable Android typography with monospace measurements, purple controls, cyan readings, green live status and rounded tonal panels. Includes independent list sorting, resource monitoring, app diagnostics, confirmed force stop, background-access and Doze controls, plus a complete firewall and package-management workspace adapted from De1984. Designed for the Motorola Edge, with automatic signed updates through Obtainium.
 
 ## Use
 
@@ -11,7 +11,7 @@ A native Android app for inspecting running processes, CPU, memory and battery u
 5. Open **Monitor → Battery use** for current battery flow, component estimates and Android UID measurements, initially ranked by estimated mAh. Tap a UID for cumulative CPU time, traffic, partial wakelocks and related apps.
 6. Browse **Apps** or open a related app from Monitor. App controls appear first; expand **Resource diagnostics** for processes, UID battery estimates, package memory and running services. Background-policy changes require confirmation and Android readback. Undo is available in **Overview → Your changes**.
 
-7. Open **Network** for firewall rules, package management and network settings. An app’s **Network and internet access** button opens its matching firewall entry.
+7. Open the header’s shield shortcut for **Network** and firewall rules, package management and network settings. An app’s **Network and internet access** button opens its matching firewall entry.
 
 Use **All profiles**, **Personal**, or **Work** in Overview, Apps and Monitor to choose the Android profile to inspect. App rows, details and history identify the profile; two copies of one package remain separate. Work-only apps, retained-uninstalled packages, descriptions, recommendations, related apps, sorting and Android Settings shortcuts use the selected profile. Paused or locked profiles remain visible with an explanation; resume or unlock them before using controls.
 
@@ -19,7 +19,7 @@ Background-access changes, force stop and Undo target the selected installation.
 
 Shizuku may need to be started again after a reboot. Resource monitoring runs only while its screen is open. When enabled, the firewall runs a foreground service with a status notification and restores its saved configuration after reboot. Background Check does not upload data or require an internet permission. Tailscale is used only to deliver and test the APK from the development machine; normal use is local on the phone. Direct in-app ADB pairing is not implemented; Shizuku is the supported privilege backend.
 
-See the [Dracula terminal identity and screenshots](docs/dracula-theme.md), [Dracula verification](docs/dracula-verification.md), and [verified private GitHub / Obtainium setup](docs/release-setup-verification.md).
+See the [Dracula identity and screenshots](docs/dracula-theme.md), [Dracula verification](docs/dracula-verification.md), and [verified private GitHub / Obtainium setup](docs/release-setup-verification.md).
 
 ## Network and internet controls
 
@@ -33,9 +33,11 @@ VPN mode occupies Android’s single VPN slot. It drops traffic from blocked app
 
 Saved rules persist across restarts. Ordinary boot restoration happens after unlock; optional early-boot protection requires a supported root environment. Some AUTO privilege-change transitions retain upstream’s short stop-before-start gap. No gap-free protection is promised during those transitions.
 
+Overview, Apps, Monitor and Access share an adaptive navigation dock; landscape uses a side rail. Open the shield shortcut in the header for **Network**, or use an app’s **Network and internet access** action. App controls appear before **Package information**, which retains purpose, Cana guidance and related packages. Monitor brings whole-device CPU/RAM readings forward; expand **Profiles and scope** for profile selection and its limits. See the [2026 UI verification](docs/ux-2026-verification.md) for screenshots and checks.
+
 ## Sorting lists
 
-Use each list’s **Sort by** menu to choose a field, then its **Ascending / Descending** button to reverse the order. Lists keep separate choices when you move between pages; changing a sort does not clear the list’s search or filters.
+Open **Filters** in Apps to choose profile, package type, process state and sorting. Other lists show sorting beside their content. Use each list’s **Sort by** menu to choose a field, then its **Ascending / Descending** button to reverse the order. Lists keep separate choices when you move between pages; changing a sort does not clear the list’s search or filters.
 
 | List | Sort choices | Initial order |
 | --- | --- | --- |

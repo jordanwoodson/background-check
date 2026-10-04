@@ -13,7 +13,7 @@
     app:chipBackgroundColor="@color/chip_background_selector"
     app:chipStrokeColor="@color/chip_stroke_selector"
     app:chipStrokeWidth="1dp"
-    app:chipMinHeight="28dp"
+    app:chipMinHeight="36dp"
     app:chipStartPadding="10dp"
     app:chipEndPadding="10dp"
     app:textStartPadding="0dp"

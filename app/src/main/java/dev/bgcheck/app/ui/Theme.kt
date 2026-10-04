@@ -31,15 +31,15 @@ internal val Orange = Color(0xFFFFB86C)
 internal val Pink = Color(0xFFFF79C6)
 internal val Red = Color(0xFFFF5555)
 
-private val JetBrainsMono = FontFamily(
+internal val ReadingFont = FontFamily(
     Font(R.font.jetbrains_mono_regular, FontWeight.Normal),
     Font(R.font.jetbrains_mono_medium, FontWeight.Medium),
     Font(R.font.jetbrains_mono_semibold, FontWeight.SemiBold),
     Font(R.font.jetbrains_mono_bold, FontWeight.Bold),
 )
 
-private fun terminalStyle(size: Int, height: Int, weight: FontWeight = FontWeight.Normal) = TextStyle(
-    fontFamily = JetBrainsMono,
+private fun appStyle(size: Int, height: Int, weight: FontWeight = FontWeight.Normal) = TextStyle(
+    fontFamily = FontFamily.SansSerif,
     fontWeight = weight,
     fontSize = size.sp,
     lineHeight = height.sp,
@@ -52,7 +52,7 @@ fun BackgroundCheckTheme(content: @Composable () -> Unit) {
         colorScheme = darkColorScheme(
             primary = Purple,
             onPrimary = Ink,
-            primaryContainer = PanelRaised,
+            primaryContainer = Color(0xFF3D334F),
             onPrimaryContainer = Foreground,
             secondary = Cyan,
             onSecondary = Ink,
@@ -87,28 +87,28 @@ fun BackgroundCheckTheme(content: @Composable () -> Unit) {
             onErrorContainer = Color(0xFFFFB1C8),
         ),
         typography = Typography(
-            displayLarge = terminalStyle(60, 68, FontWeight.Medium),
-            displayMedium = terminalStyle(44, 52, FontWeight.Medium),
-            displaySmall = terminalStyle(36, 44, FontWeight.Medium),
-            headlineLarge = terminalStyle(28, 36, FontWeight.Medium),
-            headlineMedium = terminalStyle(23, 31, FontWeight.Medium),
-            headlineSmall = terminalStyle(21, 29, FontWeight.Medium),
-            titleLarge = terminalStyle(19, 27, FontWeight.Medium),
-            titleMedium = terminalStyle(15, 23, FontWeight.SemiBold),
-            titleSmall = terminalStyle(14, 22, FontWeight.Medium),
-            bodyLarge = terminalStyle(15, 24),
-            bodyMedium = terminalStyle(13, 21),
-            bodySmall = terminalStyle(12, 19),
-            labelLarge = terminalStyle(13, 21, FontWeight.SemiBold),
-            labelMedium = terminalStyle(12, 18, FontWeight.Medium),
-            labelSmall = terminalStyle(10, 16, FontWeight.Medium),
+            displayLarge = appStyle(60, 68, FontWeight.Medium).copy(fontFamily = ReadingFont),
+            displayMedium = appStyle(44, 52, FontWeight.Medium).copy(fontFamily = ReadingFont),
+            displaySmall = appStyle(36, 44, FontWeight.Medium).copy(fontFamily = ReadingFont),
+            headlineLarge = appStyle(28, 36, FontWeight.Medium),
+            headlineMedium = appStyle(24, 32, FontWeight.Medium),
+            headlineSmall = appStyle(21, 29, FontWeight.Medium),
+            titleLarge = appStyle(20, 28, FontWeight.Medium),
+            titleMedium = appStyle(16, 24, FontWeight.SemiBold),
+            titleSmall = appStyle(14, 22, FontWeight.Medium),
+            bodyLarge = appStyle(15, 24),
+            bodyMedium = appStyle(14, 22),
+            bodySmall = appStyle(12, 19),
+            labelLarge = appStyle(13, 21, FontWeight.SemiBold),
+            labelMedium = appStyle(12, 18, FontWeight.Medium),
+            labelSmall = appStyle(11, 16, FontWeight.Medium),
         ),
         shapes = Shapes(
-            extraSmall = RoundedCornerShape(4.dp),
-            small = RoundedCornerShape(6.dp),
-            medium = RoundedCornerShape(8.dp),
-            large = RoundedCornerShape(10.dp),
-            extraLarge = RoundedCornerShape(12.dp),
+            extraSmall = RoundedCornerShape(8.dp),
+            small = RoundedCornerShape(12.dp),
+            medium = RoundedCornerShape(20.dp),
+            large = RoundedCornerShape(24.dp),
+            extraLarge = RoundedCornerShape(28.dp),
         ),
         content = content,
     )

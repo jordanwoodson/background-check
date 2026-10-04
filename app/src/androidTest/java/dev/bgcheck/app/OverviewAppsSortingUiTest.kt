@@ -35,6 +35,7 @@ class OverviewAppsSortingUiTest {
         AppEntry("dev.sort.${name.lowercase().replace(' ', '_')}", name, uid, system, processState = state)
 
     private fun sort(list: String, id: String, key: String) {
+        if (id == "apps") compose.openAppFilters()
         compose.onNodeWithTag(list).performScrollToNode(hasTestTag("$id-sort"))
         compose.onNodeWithTag("$id-sort").performScrollTo().performClick()
         compose.onNodeWithText(key, useUnmergedTree = false).performClick()
@@ -78,6 +79,7 @@ class OverviewAppsSortingUiTest {
         compose.onNodeWithTag("apps-list").performScrollToNode(hasSetTextAction())
         compose.onNode(hasSetTextAction()).performTextInput("Needle")
         compose.onNode(hasSetTextAction()).performImeAction()
+        compose.openAppFilters()
         compose.onNodeWithText("System", substring = false).performScrollTo().performClick()
         compose.onNodeWithText("Active", substring = false).performScrollTo().performClick()
         sort("apps-list", "apps", "UID")
@@ -89,6 +91,7 @@ class OverviewAppsSortingUiTest {
         compose.onNode(hasSetTextAction()).assertTextContains("Needle")
         compose.onNodeWithText("System", substring = false).performScrollTo().assertIsSelected()
         compose.onNodeWithText("Active", substring = false).performScrollTo().assertIsSelected()
+        compose.openAppFilters()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasTestTag("apps-sort"))
         compose.onNodeWithTag("apps-sort").assertTextContains("UID", substring = true)
         compose.onNodeWithTag("apps-direction").assertTextContains("Descending", substring = true)
@@ -105,6 +108,7 @@ class OverviewAppsSortingUiTest {
         reverse("overview-list", "active-apps")
         assertOrder("overview-list", "Foxtrot", "Echo")
         compose.onNodeWithText("Apps").performClick()
+        compose.openAppFilters()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasTestTag("apps-sort"))
         compose.onNodeWithTag("apps-sort").assertTextContains("Name", substring = true)
         compose.onNodeWithTag("apps-direction").assertTextContains("Ascending", substring = true)

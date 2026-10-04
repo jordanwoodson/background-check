@@ -809,4 +809,5 @@
     <string name="error_package_scan_failed_title">无法读取应用列表</string>
     <string name="error_package_scan_failed_hint">如果再次出现，请关闭并重新打开 Background Check。</string>
     <string name="error_package_scan_failed">无法读取本设备上的应用列表。如果反复出现，请关闭并重新打开 Background Check。</string>
+    <string name="support_upstream">支持 De1984</string>
 </resources>

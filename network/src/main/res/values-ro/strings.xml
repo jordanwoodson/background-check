@@ -803,4 +803,5 @@
     <string name="error_package_scan_failed_title">Nu s-a putut citi lista de aplicații</string>
     <string name="error_package_scan_failed_hint">Dacă se întâmplă din nou, închide și redeschide Background Check.</string>
     <string name="error_package_scan_failed">Nu s-a putut citi lista de aplicații de pe acest dispozitiv. Dacă se repetă, închide și redeschide Background Check.</string>
+    <string name="support_upstream">Susține De1984</string>
 </resources>

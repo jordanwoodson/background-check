@@ -1,0 +1,29 @@
+{
+  "toolchain": {
+    "jdk": "21.0.12.1",
+    "androidSdk": 36
+  },
+  "unitTests": {
+    "tests": 176,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 311,
+    "Hint": 3
+  },
+  "deviceTests": {
+    "total": 83,
+    "passed": 82,
+    "skipped": 1,
+    "failures": 0
+  },
+  "largeTextRegressions": {
+    "fontScale": 2.0,
+    "passed": 2
+  },
+  "localApkSha256": "4db6f776b76702fb44369843e451a8b1201b14afc1f799cb38d95a74f0b1b98e",
+  "certificateSha256": "3d770ebfa7c2eacd7735adc9fadca193b62e59424659aed58afe2243c1879951"
+}

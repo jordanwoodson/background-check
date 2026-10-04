@@ -46,12 +46,14 @@ class WorkProfileUiTest {
         compose.onNodeWithTag("apps-list").performScrollToNode(hasTestTag("app-row-${workApp.key}"))
         compose.onNodeWithTag("app-row-${workApp.key}").performClick()
         compose.runOnIdle { assertEquals(workApp.key, selected?.key) }
+        compose.openAppFilters()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasTestTag("apps-profile-10"))
         compose.onNodeWithTag("apps-profile-10").performClick()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasTestTag("app-row-${workApp.key}"))
         compose.onNodeWithTag("app-row-${personalApp.key}").assertDoesNotExist()
         compose.onNodeWithText("Overview", substring = false).performClick()
         compose.onNodeWithText("Apps", substring = false).performClick()
+        compose.openAppFilters()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasTestTag("apps-profile-10"))
         compose.onNodeWithTag("apps-profile-10").assertIsSelected()
         capture("work-profile-apps.png")
@@ -76,6 +78,7 @@ class WorkProfileUiTest {
                 )
             }
         }
+        compose.onNodeWithTag("overview-list").performScrollToNode(hasTestTag("overview-profile-10"))
         compose.onNodeWithTag("overview-profile-10").performClick()
         compose.onNodeWithTag("overview-list").performScrollToNode(hasTestTag("history-record-change-10"))
         compose.onNodeWithTag("history-record-change-0").assertDoesNotExist()
@@ -140,6 +143,9 @@ class WorkProfileUiTest {
                     onSelectApp = {}, onAccess = {})
             }
         }
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText("Profiles and scope"))
+        compose.onNodeWithText("Profiles and scope").performClick()
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasTestTag("monitor-profile-10"))
         compose.onNodeWithTag("monitor-profile-10").performClick()
         compose.onNodeWithTag("monitor-list").performScrollToNode(hasTestTag("process-row-42"))
         compose.onNodeWithTag("process-row-42").assertExists()

@@ -143,6 +143,12 @@ internal fun MonitorScreen(
     // Capture the selected mode for this layout. Reading mutable mode inside the
     // lazy content could switch the outgoing list's data before it is disposed,
     // clamping that mode's saved position against the other mode's item count.
+    val profileControls: @Composable () -> Unit = {
+        Disclosure("Profiles and scope", if (profileId == ALL_PROFILES) "All profiles" else profiles.firstOrNull { it.userId == profileId }?.name ?: "User $profileId") {
+            ProfileFilters("monitor", profiles, profileId) { profileId = it; selectedProcess = null; selectedEnergy = null }
+            SourceNote("Profile filters apply to processes and UID battery use. Device CPU, RAM, battery flow and component totals cover the whole device.")
+        }
+    }
     val displayedMode = mode
     Column(Modifier.fillMaxSize()) {
         Surface(color = Ink) {
@@ -166,12 +172,29 @@ internal fun MonitorScreen(
                     item(key = "monitor-heading") {
                         Text("Resource monitor", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
                     }
-                    item(key = "profile-filters") {
-                        ProfileFilters("monitor", profiles, profileId) { profileId = it; selectedProcess = null; selectedEnergy = null }
-                        SourceNote("Profile filters apply to processes and UID battery use. Device CPU, RAM, battery flow and component totals cover the whole device.")
+                    if (ready && displayedMode == MonitorMode.LIVE && hasResourceReadings) {
+                        state.resources?.let { resources ->
+                            item(key = "whole-device") {
+                                ResourceCard("Whole device") {
+                                    ResourceValue("CPU · all cores", percent(resources.cpuPercent), accent = true)
+                                    ResourceValue("RAM available", memoryLabel(resources.memory?.availableKb), accent = true)
+                                    SourceNote("Sample ${resourceTimeLabel(resources.capturedAt)}" + if (state.monitorPaused) " · Paused" else "")
+                                    Disclosure("Device readings", "CPU cores, RAM and swap") {
+                                        ResourceValue("CPU cores", resources.cpuCoreCount?.toString() ?: "Unavailable")
+                                        ResourceValue("RAM total", memoryLabel(resources.memory?.totalKb))
+                                        ResourceValue("Swap used", resources.memory?.let { memoryLabel((it.swapTotalKb - it.swapFreeKb).coerceAtLeast(0)) } ?: "Unavailable")
+                                        ResourceValue("Swap total", memoryLabel(resources.memory?.swapTotalKb))
+                                        SourceNote("Device CPU is 0–100% of all cores. Available RAM includes memory Android can reclaim. Swap can include compressed RAM (zram).")
+                                    }
+                                }
+                            }
+                        }
                     }
                     if (displayedMode == MonitorMode.ENERGY) {
                         item(key = "battery-flow") { BatteryFlowCard(state.battery) }
+                    }
+                    if (!ready || displayedMode == MonitorMode.ENERGY) {
+                        item(key = "profile-filters") { profileControls() }
                     }
                     if (!ready) {
                         item(key = "monitor-access") { MonitorAccessCard(state.access, onAccess) }
@@ -191,17 +214,17 @@ internal fun MonitorScreen(
                                 }
                                 if (largeText) {
                                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) {
+                                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(24.dp)) {
                                             Text(if (state.monitorPaused) "Resume" else "Pause")
                                         }
-                                        OutlinedButton(onClick = onRefreshResources, enabled = !state.resourceLoading, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) { Text("Refresh now") }
+                                        OutlinedButton(onClick = onRefreshResources, enabled = !state.resourceLoading, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(24.dp)) { Text("Refresh now") }
                                     }
                                 } else {
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) {
+                                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), shape = RoundedCornerShape(24.dp)) {
                                             Text(if (state.monitorPaused) "Resume" else "Pause")
                                         }
-                                        OutlinedButton(onClick = onRefreshResources, enabled = !state.resourceLoading, modifier = Modifier.weight(1f).heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) { Text("Refresh now") }
+                                        OutlinedButton(onClick = onRefreshResources, enabled = !state.resourceLoading, modifier = Modifier.weight(1f).heightIn(min = 48.dp), shape = RoundedCornerShape(24.dp)) { Text("Refresh now") }
                                     }
                                 }
                                 SourceNote(state.resources?.let { "Last sample ${resourceTimeLabel(it.capturedAt)}" } ?: "No sample yet")
@@ -211,24 +234,12 @@ internal fun MonitorScreen(
                             }
                         }
                         state.resources?.let { resources ->
-                            item(key = "whole-device") {
-                                ResourceCard("Whole device") {
-                                    ResourceValue("CPU · all cores", percent(resources.cpuPercent), accent = true)
-                                    ResourceValue("RAM available", memoryLabel(resources.memory?.availableKb), accent = true)
-                                    Disclosure("Device readings", "CPU cores, RAM and swap") {
-                                        ResourceValue("CPU cores", resources.cpuCoreCount?.toString() ?: "Unavailable")
-                                        ResourceValue("RAM total", memoryLabel(resources.memory?.totalKb))
-                                        ResourceValue("Swap used", resources.memory?.let { memoryLabel((it.swapTotalKb - it.swapFreeKb).coerceAtLeast(0)) } ?: "Unavailable")
-                                        ResourceValue("Swap total", memoryLabel(resources.memory?.swapTotalKb))
-                                        SourceNote("Device CPU is 0–100% of all cores. Available RAM includes memory Android can reclaim. Swap can include compressed RAM (zram).")
-                                    }
-                                }
-                            }
                             item(key = "resource-trends") { ResourceTrends(state.resourceHistory, resources.memory?.totalKb) }
                             if (resources.warnings.isNotEmpty()) {
                                 item(key = "resource-warnings") { InfoCard("Some live readings are unavailable", resources.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange) }
                             }
                         }
+                        item(key = "profile-filters") { profileControls() }
                         item(key = "sampling-options") {
                             Disclosure("Sampling options") {
                                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -288,7 +299,7 @@ internal fun MonitorScreen(
                     } else {
                         item(key = "battery-estimates") {
                             ResourceCard("Android battery estimates") {
-                                OutlinedButton(onClick = onRefreshEnergy, enabled = !state.energyLoading, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) { Text("Refresh battery estimates") }
+                                OutlinedButton(onClick = onRefreshEnergy, enabled = !state.energyLoading, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(24.dp)) { Text("Refresh battery estimates") }
                                 Box(Modifier.fillMaxWidth().height(4.dp)) {
                                     if (state.energyLoading) LinearProgressIndicator(Modifier.fillMaxWidth().semantics { contentDescription = "Reading battery estimates" })
                                 }
@@ -344,12 +355,12 @@ internal fun MonitorScreen(
                                     val packages = appsByUid[item.uid].orEmpty()
                                     Surface(onClick = { focusManager.clearFocus(); selectedEnergy = item; selectedEnergyAt = snapshot.capturedAt },
                                         modifier = Modifier.testTag("energy-row-${item.uid}").animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = tween(220)),
-                                        color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+                                        color = Panel, shape = RoundedCornerShape(24.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
                                         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                                             Text(uidTitle(item.uid, packages), style = MaterialTheme.typography.titleMedium)
                                             ProfileLabel(profiles.firstOrNull { it.userId == item.uid / 100000 } ?: AndroidProfile(item.uid / 100000))
-                                            Text(mahLabel(item.estimatedMah), style = MaterialTheme.typography.headlineMedium, color = Cyan)
-                                            SourceNote("UID ${item.uid}${if (packages.size > 1) " · Shared by ${packages.size} apps" else ""}")
+                                            Text(mahLabel(item.estimatedMah), style = MaterialTheme.typography.headlineMedium.copy(fontFamily = ReadingFont), color = Cyan)
+                                            SourceNote("UID ${item.uid}${if (packages.size > 1) " · Shared by ${packages.size} apps" else ""}", technical = true)
                                             SourceNote("CPU ${durationLabel(item.cpuTimeMs)} · Wakelock ${durationLabel(item.wakelockMs)}")
                                             when (energySort) {
                                                 EnergySort.RECEIVED -> ResourceValue("Network received", bytesLabel(item.networkRxBytes))
@@ -396,11 +407,11 @@ private fun MonitorAccessCard(access: AccessState, onAccess: () -> Unit) {
 
 @Composable
 private fun ProcessRow(process: ProcessResource, apps: List<AppEntry>, sort: ProcessSort, profile: AndroidProfile, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier.testTag("process-row-${process.pid}"), color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+    Surface(onClick = onClick, modifier = modifier.testTag("process-row-${process.pid}"), color = Panel, shape = RoundedCornerShape(24.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(process.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             ProfileLabel(profile)
-            SourceNote("PID ${process.pid} · UID ${process.uid} · ${process.state}")
+            SourceNote("PID ${process.pid} · UID ${process.uid} · ${process.state}", technical = true)
             if (apps.isNotEmpty()) SourceNote(apps.joinToString { it.label } + if (apps.size > 1) " · Shared UID" else "")
             ResourceValue("CPU", percent(process.cpuPercent), accent = true)
             ResourceValue("Resident RAM", memoryLabel(process.rssKb))
@@ -489,7 +500,7 @@ private fun RelatedApps(
     sortedApps.forEach { app ->
         Button(onClick = { onSelect(app) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Open ${app.label}") }
         ProfileLabel(app.profile)
-        SelectionContainer { SourceNote(app.packageName) }
+        SelectionContainer { SourceNote(app.packageName, technical = true) }
         if (sort == AppSort.STATE) SourceNote(app.processState.label)
     }
 }

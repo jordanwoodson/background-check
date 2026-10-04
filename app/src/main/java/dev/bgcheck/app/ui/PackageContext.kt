@@ -34,7 +34,7 @@ import androidx.compose.runtime.key
 internal fun CanaDebloatRecommendationCard(app: AppEntry) {
     val recommendation = app.debloatRecommendation
     val uriHandler = LocalUriHandler.current
-    Surface(color = Panel, shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()
+    Surface(color = Panel, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()
         .testTag("cana-debloat-recommendation")) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Cana debloat recommendation", style = MaterialTheme.typography.titleMedium,
@@ -127,14 +127,14 @@ internal fun AssociatedPackages(state: UiState, app: AppEntry, onSelect: (AppEnt
                 val sorted = associations.sortedWith(compareBy({ entries[it.packageName] == null }, { entries[it.packageName]?.label ?: it.packageName }))
                 (if (expanded) sorted else sorted.take(5)).forEach { association ->
                     val entry = entries[association.packageName]
-                    Surface(color = Panel, shape = RoundedCornerShape(6.dp), modifier = Modifier.fillMaxWidth()
+                    Surface(color = Panel, shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()
                         .testTag("association-${kind.name}-${association.packageName}")
                         .clickable(enabled = entry != null && !state.busy, role = Role.Button) { entry?.let(onSelect) }) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(entry?.label ?: PackageDescriptions.label(association.packageName, association.packageName),
                                 style = MaterialTheme.typography.titleSmall, color = Purple)
                             entry?.let { ProfileLabel(it.profile) }
-                            Text(association.packageName, style = MaterialTheme.typography.bodySmall, color = Muted)
+                            Text(association.packageName, style = MaterialTheme.typography.bodySmall.copy(fontFamily = ReadingFont), color = Muted)
                             Text(when {
                                 entry == null -> "Not in ${app.profile.name} app inventory"
                                 !entry.installed -> "Uninstalled for this user · view details"

@@ -47,7 +47,29 @@ object StandardDialog {
             builder.setOnDismissListener { onDismiss() }
         }
 
-        builder.show()
+        val dialog = builder.show()
+        adaptToTextSize(dialog)
+    }
+
+    private fun adaptToTextSize(dialog: androidx.appcompat.app.AlertDialog) {
+        dialog.findViewById<android.widget.TextView>(androidx.appcompat.R.id.alertTitle)?.apply {
+            isSingleLine = false
+            setHorizontallyScrolling(false)
+            maxLines = Int.MAX_VALUE
+            ellipsize = null
+        }
+        listOf(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE, androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).forEach { which ->
+            dialog.getButton(which)?.apply {
+                isSingleLine = false
+                maxLines = Int.MAX_VALUE
+                ellipsize = null
+            }
+        }
+        val metrics = dialog.context.resources.displayMetrics
+        dialog.window?.setLayout(
+            minOf((metrics.widthPixels * 0.94f).toInt(), (560 * metrics.density).toInt()),
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
     }
 
     fun showError(
@@ -186,5 +208,6 @@ object StandardDialog {
         }
 
         dialog.show()
+        adaptToTextSize(dialog)
     }
 }

@@ -31,7 +31,7 @@ import java.util.Locale
 
 @Composable
 internal fun ResourceCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = null) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = Purple, modifier = Modifier.semantics { heading() })
             content()
@@ -45,21 +45,21 @@ internal fun ResourceValue(label: String, value: String, accent: Boolean = false
     if (LocalDensity.current.fontScale > 1.3f) {
         Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(label, Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodyMedium, color = Muted)
-            Text(value, Modifier.fillMaxWidth(), style = MaterialTheme.typography.labelLarge,
+            Text(value, Modifier.fillMaxWidth(), style = (if (accent) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.labelLarge).copy(fontFamily = ReadingFont),
                 color = if (accent) Cyan else Foreground)
         }
     } else {
         Row(modifier, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = Muted)
-            Text(value, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge,
+            Text(value, Modifier.weight(1f), style = (if (accent) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.labelLarge).copy(fontFamily = ReadingFont),
                 color = if (accent) Cyan else Foreground, textAlign = TextAlign.End)
         }
     }
 }
 
 @Composable
-internal fun SourceNote(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = Muted)
+internal fun SourceNote(text: String, technical: Boolean = false) {
+    Text(text, style = MaterialTheme.typography.bodySmall.copy(fontFamily = if (technical) ReadingFont else MaterialTheme.typography.bodySmall.fontFamily), color = Muted)
 }
 
 @Composable

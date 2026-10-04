@@ -94,14 +94,13 @@ internal fun AppIcon(packageName: String, size: Dp = 46.dp, userId: Int = androi
 
 @Composable
 internal fun Eyebrow(text: String, color: Color = Cyan, modifier: Modifier = Modifier) {
-    Text("// ${text.lowercase()}", modifier, style = MaterialTheme.typography.labelSmall, color = color)
+    Text(text, modifier, style = MaterialTheme.typography.labelSmall, color = color)
 }
 
 @Composable
 internal fun StatusPill(text: String, active: Boolean = false, modifier: Modifier = Modifier) {
     Row(
-        modifier.clip(RoundedCornerShape(4.dp)).background(Panel)
-            .border(1.dp, if (active) Green.copy(alpha = 0.4f) else Outline, RoundedCornerShape(4.dp))
+        modifier.clip(RoundedCornerShape(50)).background(if (active) Green.copy(alpha = 0.10f) else PanelRaised)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -114,12 +113,12 @@ internal fun StatusPill(text: String, active: Boolean = false, modifier: Modifie
 @Composable
 internal fun InfoCard(title: String, message: String, icon: ImageVector, modifier: Modifier = Modifier, accent: Color = Muted) {
     Row(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Panel)
-            .border(1.dp, Outline, RoundedCornerShape(8.dp)).padding(16.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Panel)
+            .border(1.dp, Outline, RoundedCornerShape(24.dp)).padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(icon, null, tint = accent, modifier = Modifier.size(22.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
             Text(message, style = MaterialTheme.typography.bodyMedium, color = Muted)
         }
@@ -128,7 +127,7 @@ internal fun InfoCard(title: String, message: String, icon: ImageVector, modifie
 
 @Composable
 internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort = AppSort.NAME, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier.testTag("app-row-${app.key}"), color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+    Surface(onClick = onClick, modifier = modifier.testTag("app-row-${app.key}"), color = Panel, shape = RoundedCornerShape(24.dp), border = null) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AppIcon(app.packageName, userId = app.userId, userSerial = app.profile.serialNumber)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -155,7 +154,7 @@ internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort 
                     AppSort.STANDBY -> "Standby: ${bucketLabel(app.standbyBucket)}"
                     else -> null
                 }
-                sortValue?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Muted) }
+                sortValue?.let { Text(it, style = MaterialTheme.typography.bodySmall.copy(fontFamily = ReadingFont), color = Muted) }
             }
             Icon(Icons.Rounded.ChevronRight, null, tint = Muted, modifier = Modifier.size(20.dp))
         }
@@ -174,8 +173,8 @@ internal fun Disclosure(
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, tween(180), label = "Disclosure arrow")
     Column(Modifier.fillMaxWidth()) {
         Surface(
-            onClick = { expanded = !expanded }, color = Panel, shape = RoundedCornerShape(8.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Outline),
+            onClick = { expanded = !expanded }, color = Panel, shape = RoundedCornerShape(24.dp),
+            border = null,
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                 .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" },
         ) {

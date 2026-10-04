@@ -27,6 +27,7 @@ class UiFlowTest {
                 state.apps.any { it.packageName == fixturePackage }
         }
         compose.onNodeWithText("Apps", useUnmergedTree = false).performClick()
+        compose.openAppFilters()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasTestTag("apps-profile-0"))
         compose.onNodeWithTag("apps-profile-0").performClick()
         compose.onNode(hasSetTextAction()).performTextInput(fixturePackage)

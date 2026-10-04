@@ -801,4 +801,5 @@
     <string name="error_package_scan_failed_title">Não foi possível ler a lista de aplicações</string>
     <string name="error_package_scan_failed_hint">Se acontecer de novo, feche e reabra o Background Check.</string>
     <string name="error_package_scan_failed">Não foi possível ler a lista de aplicações deste dispositivo. Se continuar a acontecer, feche e reabra o Background Check.</string>
+    <string name="support_upstream">Apoiar De1984</string>
 </resources>

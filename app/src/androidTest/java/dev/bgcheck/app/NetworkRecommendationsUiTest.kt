@@ -50,19 +50,17 @@ class NetworkRecommendationsUiTest {
         prefs.edit().putBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, false).commit()
         try {
             ActivityScenario.launch<android.app.Activity>(Intent(context, dev.bgcheck.network.ui.MainActivity::class.java)
-                .putExtra("dev.bgcheck.network.PACKAGE", "com.google.android.gms")).use {
-                val deadline = android.os.SystemClock.uptimeMillis() + 20_000
+                .putExtra("dev.bgcheck.network.PACKAGE", "com.google.android.gms")).use { scenario ->
+                // The package shortcut opens its sheet automatically. Verify its recommendation
+                // before closing the sheet to inspect the same advice on the inventory row.
+                val sheetDeadline = android.os.SystemClock.uptimeMillis() + 20_000
                 while (true) {
                     try {
-                        onView(allOf(withId(NetworkR.id.package_name), withText("com.google.android.gms"), isDisplayed()))
+                        onView(allOf(withId(NetworkR.id.action_sheet_package_name), withText(containsString("com.google.android.gms")), isDisplayed()))
                             .check(matches(isDisplayed()))
-                        onView(allOf(withId(NetworkR.id.internet_recommendation_summary), isDisplayed()))
-                            .check(matches(withText("Internet advice: Keep internet allowed")))
-                        onView(allOf(withId(NetworkR.id.package_name), withText("com.google.android.gms"), isDisplayed()))
-                            .perform(click())
                         break
                     } catch (failure: androidx.test.espresso.NoMatchingViewException) {
-                        if (android.os.SystemClock.uptimeMillis() >= deadline) throw failure
+                        if (android.os.SystemClock.uptimeMillis() >= sheetDeadline) throw failure
                         Thread.sleep(100)
                     }
                 }
@@ -76,6 +74,20 @@ class NetworkRecommendationsUiTest {
                     image.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output)
                 }
                 image.recycle()
+                scenario.closeNetworkAppSheet()
+                val deadline = android.os.SystemClock.uptimeMillis() + 20_000
+                while (true) {
+                    try {
+                        onView(allOf(withId(NetworkR.id.package_name), withText("com.google.android.gms"), isDisplayed()))
+                            .check(matches(isDisplayed()))
+                        onView(allOf(withId(NetworkR.id.internet_recommendation_summary), isDisplayed()))
+                            .check(matches(withText("Internet advice: Keep internet allowed")))
+                        break
+                    } catch (failure: androidx.test.espresso.NoMatchingViewException) {
+                        if (android.os.SystemClock.uptimeMillis() >= deadline) throw failure
+                        Thread.sleep(100)
+                    }
+                }
             }
         } finally {
             prefs.edit().putBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, startPrompt).commit()

@@ -117,6 +117,7 @@ class AccessUxTest {
             ),
         ))
         compose.onNodeWithText("Apps").performClick()
+        compose.openAppFilters()
         compose.onNodeWithText("Active").performScrollTo().performClick()
         scrollAppsTo("Active fixture")
         compose.onNodeWithText("Active fixture").assertIsDisplayed()
@@ -166,7 +167,9 @@ class AccessUxTest {
         compose.onNodeWithTag("apps-list").performScrollToNode(hasSetTextAction())
         compose.onNode(hasSetTextAction()).performTextInput("missing app")
         compose.onNode(hasSetTextAction()).performImeAction()
+        compose.openAppFilters()
         compose.onNodeWithText("System").performScrollTo().performClick()
+        compose.openAppFilters()
         compose.onNodeWithText("Active").performScrollTo().performClick()
 
         scrollAppsTo("No matching apps")

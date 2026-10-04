@@ -1,0 +1,97 @@
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+dev.bgcheck.app.NetworkUiTest:
+INSTRUMENTATION_STATUS: test=declinedStartupPromptStaysDismissedAcrossRecreation
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=declinedStartupPromptStaysDismissedAcrossRecreation
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=startupDialogShowsItsFullTitleAndAction
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=startupDialogShowsItsFullTitleAndAction
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=settingsSelectionsGrowToFitTheirText
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=settingsSelectionsGrowToFitTheirText
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=appShortcutClearsConflictingFiltersAndAllScreensOpen
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stack=org.junit.ComparisonFailure: expected:<[all]> but was:<[user]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at dev.bgcheck.app.NetworkUiTest.appShortcutClearsConflictingFiltersAndAllScreensOpen(NetworkUiTest.kt:130)
+
+INSTRUMENTATION_STATUS: stream=
+Error in appShortcutClearsConflictingFiltersAndAllScreensOpen(dev.bgcheck.app.NetworkUiTest):
+org.junit.ComparisonFailure: expected:<[all]> but was:<[user]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at dev.bgcheck.app.NetworkUiTest.appShortcutClearsConflictingFiltersAndAllScreensOpen(NetworkUiTest.kt:130)
+
+INSTRUMENTATION_STATUS: test=appShortcutClearsConflictingFiltersAndAllScreensOpen
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=externalTilePreferencesCannotStartFirewallWithInjectedAction
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=externalTilePreferencesCannotStartFirewallWithInjectedAction
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 10.32
+There was 1 failure:
+1) appShortcutClearsConflictingFiltersAndAllScreensOpen(dev.bgcheck.app.NetworkUiTest)
+org.junit.ComparisonFailure: expected:<[all]> but was:<[user]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at dev.bgcheck.app.NetworkUiTest.appShortcutClearsConflictingFiltersAndAllScreensOpen(NetworkUiTest.kt:130)
+
+FAILURES!!!
+Tests run: 5,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1

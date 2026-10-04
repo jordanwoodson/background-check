@@ -35,6 +35,7 @@ class PackageDescriptionsUiTest {
     }
 
     private fun filter(label: String) {
+        compose.openAppFilters()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasText(label) and isSelectable())
         compose.onNode(hasText(label) and isSelectable()).performScrollTo().performClick()
     }

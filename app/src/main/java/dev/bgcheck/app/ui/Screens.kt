@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -97,6 +98,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import dev.bgcheck.app.R
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
@@ -125,7 +133,6 @@ private enum class Page(val label: String, val icon: ImageVector) {
     OVERVIEW("Overview", Icons.Rounded.Insights),
     APPS("Apps", Icons.Rounded.Apps),
     MONITOR("Monitor", Icons.Rounded.Memory),
-    NETWORK("Network", Icons.Rounded.Shield),
     ACCESS("Access", Icons.Rounded.Key),
 }
 
@@ -164,21 +171,22 @@ fun BackgroundCheckApp(
             onClearMessage()
         }
     }
+    val wide = LocalConfiguration.current.screenWidthDp >= 600
     Scaffold(
         containerColor = Ink,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            if (LocalDensity.current.fontScale > 1.3f) {
-                Column(Modifier.background(Ink).navigationBarsPadding().padding(horizontal = 8.dp)) {
+            if (!wide && LocalDensity.current.fontScale > 1.3f) {
+                Column(Modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).clip(RoundedCornerShape(24.dp)).background(Panel)) {
                     Page.entries.chunked(2).forEach { row ->
                         Row(Modifier.fillMaxWidth()) {
                             row.forEach { item ->
                                 val selected = page == item
                                 Row(
                                     Modifier.weight(1f).heightIn(min = 56.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(if (selected) Panel else Color.Transparent)
-                                        .selectable(selected, role = Role.Tab, onClick = { if (item == Page.NETWORK) onOpenNetwork(null) else page = item })
+                                        .clip(RoundedCornerShape(24.dp))
+                                        .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                        .selectable(selected, role = Role.Tab, onClick = { page = item })
                                         .padding(horizontal = 8.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center,
@@ -191,36 +199,45 @@ fun BackgroundCheckApp(
                         }
                     }
                 }
-            } else {
-            NavigationBar(containerColor = Ink, tonalElevation = 0.dp) {
-                Page.entries.forEach { item ->
-                    NavigationBarItem(
-                        selected = page == item,
-                        onClick = { if (item == Page.NETWORK) onOpenNetwork(null) else page = item },
-                        icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(23.dp)) },
-                        label = { Text(item.label) },
-                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Purple, selectedTextColor = Purple, indicatorColor = Panel, unselectedIconColor = Muted, unselectedTextColor = Muted),
-                    )
+            } else if (!wide) {
+                NavigationBar(modifier = Modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).clip(RoundedCornerShape(28.dp)), containerColor = Panel, tonalElevation = 0.dp, windowInsets = WindowInsets(0, 0, 0, 0)) {
+                    Page.entries.forEach { item ->
+                        NavigationBarItem(
+                            selected = page == item,
+                            onClick = { page = item },
+                            icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(23.dp)) },
+                            label = { Text(item.label) },
+                            colors = NavigationBarItemDefaults.colors(selectedIconColor = Purple, selectedTextColor = Purple, indicatorColor = MaterialTheme.colorScheme.primaryContainer, unselectedIconColor = Muted, unselectedTextColor = Muted),
+                        )
+                    }
                 }
-            }
             }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            AppHeader(state, onRefresh)
-            AnimatedContent(
-                targetState = page, modifier = Modifier.weight(1f), label = "Page transition",
-                transitionSpec = { (fadeIn(tween(200, 40)) + slideInVertically(tween(220)) { it / 40 }) togetherWith fadeOut(tween(100)) },
-            ) { currentPage ->
-            pageState.SaveableStateProvider(currentPage.name) {
-                when (currentPage) {
-                    Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo)
-                    Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS })
-                    Page.MONITOR -> MonitorScreen(state, onRefreshResources, onRefreshEnergy, onSetMonitorPaused, onSetMonitorInterval, onSelect, onAccess = { page = Page.ACCESS })
-                    Page.NETWORK -> Unit
-                    Page.ACCESS -> AccessScreen(state, onConnect, onOpenShizuku, onOpenWirelessSettings)
+        Row(Modifier.fillMaxSize().padding(padding)) {
+            if (wide) {
+                NavigationRail(modifier = Modifier.verticalScroll(rememberScrollState()), containerColor = Panel, windowInsets = WindowInsets(0, 0, 0, 0)) {
+                    Page.entries.forEach { item ->
+                        NavigationRailItem(selected = page == item, onClick = { page = item },
+                            icon = { Icon(item.icon, null) }, label = { Text(item.label) })
+                    }
                 }
             }
+            Column(Modifier.weight(1f).fillMaxSize()) {
+                AppHeader(state, onRefresh, onOpenNetwork = { onOpenNetwork(null) })
+                AnimatedContent(
+                    targetState = page, modifier = Modifier.weight(1f), label = "Page transition",
+                    transitionSpec = { (fadeIn(tween(200, 40)) + slideInVertically(tween(220)) { it / 40 }) togetherWith fadeOut(tween(100)) },
+                ) { currentPage ->
+                    pageState.SaveableStateProvider(currentPage.name) {
+                        when (currentPage) {
+                            Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo)
+                            Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS })
+                            Page.MONITOR -> MonitorScreen(state, onRefreshResources, onRefreshEnergy, onSetMonitorPaused, onSetMonitorInterval, onSelect, onAccess = { page = Page.ACCESS })
+                            Page.ACCESS -> AccessScreen(state, onConnect, onOpenShizuku, onOpenWirelessSettings)
+                        }
+                    }
+                }
             }
         }
     }
@@ -235,19 +252,17 @@ fun BackgroundCheckApp(
 }
 
 @Composable
-private fun AppHeader(state: UiState, onRefresh: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 10.dp, top = 8.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(34.dp).clip(RoundedCornerShape(4.dp)).background(Panel)
-            .border(1.dp, Purple, RoundedCornerShape(4.dp)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Terminal, contentDescription = null, modifier = Modifier.size(22.dp), tint = Green)
-        }
-        Spacer(Modifier.width(9.dp))
+private fun AppHeader(state: UiState, onRefresh: () -> Unit, onOpenNetwork: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Image(painterResource(R.drawable.brand_mark), null, Modifier.size(34.dp))
+        Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Text("background check", style = MaterialTheme.typography.labelLarge, color = Foreground)
+            Text("Background Check", style = MaterialTheme.typography.titleMedium)
             if (LocalDensity.current.fontScale <= 1.3f) {
-                Text("android / local session", style = MaterialTheme.typography.labelSmall, color = Muted)
+                Text("Battery · apps · privacy", style = MaterialTheme.typography.labelSmall, color = Muted)
             }
         }
+        IconButton(onClick = onOpenNetwork) { Icon(Icons.Rounded.Shield, "Open Network", tint = Purple) }
         if (state.loading || state.refreshing) {
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(Modifier.size(20.dp).semantics { contentDescription = "Refreshing app and battery information" }, strokeWidth = 2.dp)
@@ -294,8 +309,8 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
                 Text("System overview", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
             }
         }
-        item { ProfileFilters("overview", profiles, profileId) { profileId = it } }
         item { BatteryCard(state.battery) }
+        item { ProfileFilters("overview", profiles, profileId) { profileId = it } }
         if (state.access in setOf(AccessState.NOT_RUNNING, AccessState.NEEDS_PERMISSION, AccessState.ERROR)) {
             item { AccessPrompt(state.access, onAccess) }
         }
@@ -360,14 +375,14 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
                 }
             }
         }
-        item { Text("// local only · no background monitoring", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) }
+        item { Text("Local data · no analytics", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BatteryCard(battery: BatteryInfo) {
-    Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel, contentColor = Foreground), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Panel, contentColor = Foreground), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Eyebrow("battery · whole device")
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -396,7 +411,7 @@ private fun SectionHeading(title: String, trailing: String? = null) {
 
 @Composable
 private fun ProcessMetric(title: String, count: Int?, description: String, modifier: Modifier, accent: Color) {
-    Card(modifier = modifier, shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+    Card(modifier = modifier, shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 Box(Modifier.size(6.dp).clip(CircleShape).background(accent))
@@ -410,7 +425,7 @@ private fun ProcessMetric(title: String, count: Int?, description: String, modif
 
 @Composable
 private fun AccessPrompt(access: AccessState, onAccess: () -> Unit) {
-    Surface(onClick = onAccess, color = Panel, shape = RoundedCornerShape(8.dp)) {
+    Surface(onClick = onAccess, color = Panel, shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.fillMaxWidth().padding(19.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(Icons.Rounded.Key, null, tint = Green, modifier = Modifier.size(22.dp))
@@ -429,7 +444,7 @@ private fun AccessPrompt(access: AccessState, onAccess: () -> Unit) {
 private fun HistoryCard(record: ChangeRecord, canUndo: Boolean, onUndo: (ChangeRecord) -> Unit, connected: Boolean) {
     val affectsAllProfiles = record.before.userExempt != record.after.userExempt || record.before.dozeExempt != record.after.dozeExempt
     var confirmUndo by remember(record.id) { mutableStateOf(false) }
-    Card(modifier = Modifier.testTag("history-record-${record.id}"), colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(8.dp)) {
+    Card(modifier = Modifier.testTag("history-record-${record.id}"), colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(24.dp)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 AppIcon(record.packageName, 34.dp, userId = record.userId, userSerial = record.userSerial)
@@ -489,12 +504,9 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
     LazyColumn(modifier = Modifier.testTag("apps-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.padding(bottom = 10.dp)) {
-                Eyebrow("package inventory")
                 Text("Your apps", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
-                Text("See what each package does, then inspect its activity and background settings.", style = MaterialTheme.typography.bodyMedium, color = Muted)
             }
         }
-        item { ProfileFilters("apps", profiles, profileId) { profileId = it } }
         item {
             OutlinedTextField(
                 value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
@@ -504,36 +516,39 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 placeholder = { Text("Name, package or purpose") },
                 leadingIcon = { Icon(Icons.Rounded.Search, null) },
                 trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = { query = "" }) { Icon(Icons.Rounded.Close, "Clear search") } }) else null,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Panel, focusedContainerColor = Panel, unfocusedBorderColor = Comment, focusedBorderColor = Purple),
             )
         }
         item {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PackageType.entries.forEach { item -> FilterChip(selected = type == item, onClick = { type = item }, label = { Text(item.label) }, modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors()) }
-            }
-        }
-        if (type == PackageType.UNINSTALLED) {
-            item { Text("Not installed for the shown profile. Only packages Android still has a record of are shown; this is not a complete uninstall history.", style = MaterialTheme.typography.bodySmall, color = Muted) }
-        } else if (state.access == AccessState.READY) {
-            item {
+            Disclosure("Filters", "${type.label} · ${effectiveProcess.label}" + if (profileId == ALL_PROFILES) "" else " · ${profiles.firstOrNull { it.userId == profileId }?.name ?: "User $profileId"}") {
+                SortControls("apps", AppSort.entries, sort, direction, onSort = { sort = it }, onDirection = { direction = it })
+                ProfileFilters("apps", profiles, profileId) { profileId = it }
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ProcessFilter.entries.forEach { item -> FilterChip(selected = process == item, onClick = { process = item }, label = { Text(item.label) }, modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors()) }
+                    PackageType.entries.forEach { item ->
+                        FilterChip(selected = type == item, onClick = { type = item }, label = { Text(item.label) },
+                            modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors())
+                    }
                 }
-            }
-        } else if (state.access !in setOf(AccessState.CHECKING, AccessState.CONNECTING)) {
-            item {
-                Surface(onClick = onAccess, color = PanelRaised, shape = RoundedCornerShape(8.dp)) {
-                    Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Icon(Icons.Rounded.Key, null, tint = Green, modifier = Modifier.size(19.dp))
-                        Text("Connect to see process and battery settings", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), color = Foreground)
-                        Icon(Icons.Rounded.ArrowForward, null, tint = Muted, modifier = Modifier.size(18.dp))
+                if (type == PackageType.UNINSTALLED) {
+                    Text("Not installed for the shown profile. Only packages Android still has a record of are shown; this is not a complete uninstall history.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                } else if (state.access == AccessState.READY) {
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ProcessFilter.entries.forEach { item ->
+                            FilterChip(selected = process == item, onClick = { process = item }, label = { Text(item.label) },
+                                modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors())
+                        }
+                    }
+                } else if (state.access !in setOf(AccessState.CHECKING, AccessState.CONNECTING)) {
+                    Surface(onClick = onAccess, color = PanelRaised, shape = RoundedCornerShape(24.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Icon(Icons.Rounded.Key, null, tint = Green, modifier = Modifier.size(19.dp))
+                            Text("Connect to see process and battery settings", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), color = Foreground)
+                            Icon(Icons.Rounded.ArrowForward, null, tint = Muted, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }
-        }
-        item {
-            SortControls("apps", AppSort.entries, sort, direction, onSort = { sort = it }, onDirection = { direction = it })
         }
         item {
             val scope = when {
@@ -560,4 +575,4 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
 }
 
 @Composable
-private fun appFilterColors() = FilterChipDefaults.filterChipColors(selectedContainerColor = Purple, selectedLabelColor = Ink, containerColor = Ink, labelColor = Muted)
+private fun appFilterColors() = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer, selectedLabelColor = Purple, containerColor = Ink, labelColor = Muted)

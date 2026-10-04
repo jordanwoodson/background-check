@@ -27,8 +27,8 @@
 
     <!-- AppCompat theme for Views-based activities -->
     <style name="Theme.De1984.Views" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:fontFamily">@font/network_mono</item>
-        <item name="fontFamily">@font/network_mono</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="fontFamily">sans-serif</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowBackground">@color/network_background</item>
@@ -36,9 +36,10 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="colorPrimary">#BD93F9</item>
         <item name="colorOnPrimary">#282A36</item>
-        <item name="colorPrimaryContainer">#282A36</item>
+        <item name="colorPrimaryContainer">#3D334F</item>
         <item name="colorOnPrimaryContainer">#F8F8F2</item>
         <item name="colorSurface">#282A36</item>
+        <item name="colorSurfaceContainerLow">#21222C</item>
         <item name="colorOnSurface">#F8F8F2</item>
         <item name="colorOnSurfaceVariant">#B9BCD0</item>
         <item name="colorSecondary">#50FA7B</item>
@@ -66,15 +67,15 @@
     <!-- Material Design 3 Bottom Navigation -->
     <style name="Widget.De1984.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
         <item name="materialThemeOverlay">@style/ThemeOverlay.De1984.BottomNavigationView</item>
-        <item name="android:background">?attr/colorPrimaryContainer</item>
-        <item name="elevation">8dp</item>
+        <item name="android:background">?attr/colorSurfaceContainerLow</item>
+        <item name="elevation">0dp</item>
         <item name="itemIconSize">28dp</item>
         <!-- itemIconTint and itemTextColor are set programmatically in MainActivity -->
         <item name="itemRippleColor">@null</item>
-        <item name="itemBackground">@drawable/bottom_nav_item_background</item>
+        <item name="itemBackground">@null</item>
         <item name="labelVisibilityMode">labeled</item>
         <item name="android:minHeight">60dp</item>
-        <item name="itemActiveIndicatorStyle">@null</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.Material3.BottomNavigationView.ActiveIndicator</item>
         <item name="itemPaddingTop">10dp</item>
         <item name="itemPaddingBottom">0dp</item>
     </style>

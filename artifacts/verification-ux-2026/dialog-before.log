@@ -1,0 +1,116 @@
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+dev.bgcheck.app.NetworkUiTest:
+INSTRUMENTATION_STATUS: test=startupDialogShowsItsFullTitleAndAction
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.NetworkUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stack=androidx.test.espresso.base.AssertionErrorHandler$AssertionFailedWithCauseError: Every line of Start Background Check Firewall? must fit
+	at dalvik.system.VMStack.getThreadStackTrace(Native Method)
+	at java.lang.Thread.getStackTrace(Thread.java:1960)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:35)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:26)
+	at androidx.test.espresso.base.DefaultFailureHandler$TypedFailureHandler.handle(DefaultFailureHandler.java:158)
+	at androidx.test.espresso.base.DefaultFailureHandler.handle(DefaultFailureHandler.java:120)
+	at androidx.test.espresso.ViewInteraction.waitForAndHandleInteractionResults(ViewInteraction.java:387)
+	at androidx.test.espresso.ViewInteraction.check(ViewInteraction.java:366)
+	at dev.bgcheck.app.NetworkUiTest.startupDialogShowsItsFullTitleAndAction(NetworkUiTest.kt:35)
+	... 32 trimmed
+Caused by: java.lang.AssertionError: Every line of Start Background Check Firewall? must fit
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at dev.bgcheck.app.NetworkUiTest.startupDialogShowsItsFullTitleAndAction$lambda$0$0$0(NetworkUiTest.kt:43)
+	at dev.bgcheck.app.NetworkUiTest.$r8$lambda$yW9KGoidUex0reVbdo6aZBPh2ho(Unknown Source:0)
+	at dev.bgcheck.app.NetworkUiTest$$ExternalSyntheticLambda0.check(D8$$SyntheticClass:0)
+	at androidx.test.espresso.ViewInteraction$SingleExecutionViewAssertion.check(ViewInteraction.java:488)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:346)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:319)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at android.os.Handler.handleCallback(Handler.java:995)
+	at android.os.Handler.dispatchMessage(Handler.java:103)
+	at android.os.Looper.loopOnce(Looper.java:248)
+	at android.os.Looper.loop(Looper.java:338)
+	at android.app.ActivityThread.main(ActivityThread.java:9067)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+
+INSTRUMENTATION_STATUS: stream=
+Error in startupDialogShowsItsFullTitleAndAction(dev.bgcheck.app.NetworkUiTest):
+androidx.test.espresso.base.AssertionErrorHandler$AssertionFailedWithCauseError: Every line of Start Background Check Firewall? must fit
+	at dalvik.system.VMStack.getThreadStackTrace(Native Method)
+	at java.lang.Thread.getStackTrace(Thread.java:1960)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:35)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:26)
+	at androidx.test.espresso.base.DefaultFailureHandler$TypedFailureHandler.handle(DefaultFailureHandler.java:158)
+	at androidx.test.espresso.base.DefaultFailureHandler.handle(DefaultFailureHandler.java:120)
+	at androidx.test.espresso.ViewInteraction.waitForAndHandleInteractionResults(ViewInteraction.java:387)
+	at androidx.test.espresso.ViewInteraction.check(ViewInteraction.java:366)
+	at dev.bgcheck.app.NetworkUiTest.startupDialogShowsItsFullTitleAndAction(NetworkUiTest.kt:35)
+	... 32 trimmed
+Caused by: java.lang.AssertionError: Every line of Start Background Check Firewall? must fit
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at dev.bgcheck.app.NetworkUiTest.startupDialogShowsItsFullTitleAndAction$lambda$0$0$0(NetworkUiTest.kt:43)
+	at dev.bgcheck.app.NetworkUiTest.$r8$lambda$yW9KGoidUex0reVbdo6aZBPh2ho(Unknown Source:0)
+	at dev.bgcheck.app.NetworkUiTest$$ExternalSyntheticLambda0.check(D8$$SyntheticClass:0)
+	at androidx.test.espresso.ViewInteraction$SingleExecutionViewAssertion.check(ViewInteraction.java:488)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:346)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:319)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at android.os.Handler.handleCallback(Handler.java:995)
+	at android.os.Handler.dispatchMessage(Handler.java:103)
+	at android.os.Looper.loopOnce(Looper.java:248)
+	at android.os.Looper.loop(Looper.java:338)
+	at android.app.ActivityThread.main(ActivityThread.java:9067)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+
+INSTRUMENTATION_STATUS: test=startupDialogShowsItsFullTitleAndAction
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 2.32
+There was 1 failure:
+1) startupDialogShowsItsFullTitleAndAction(dev.bgcheck.app.NetworkUiTest)
+androidx.test.espresso.base.AssertionErrorHandler$AssertionFailedWithCauseError: Every line of Start Background Check Firewall? must fit
+	at dalvik.system.VMStack.getThreadStackTrace(Native Method)
+	at java.lang.Thread.getStackTrace(Thread.java:1960)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:35)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:26)
+	at androidx.test.espresso.base.DefaultFailureHandler$TypedFailureHandler.handle(DefaultFailureHandler.java:158)
+	at androidx.test.espresso.base.DefaultFailureHandler.handle(DefaultFailureHandler.java:120)
+	at androidx.test.espresso.ViewInteraction.waitForAndHandleInteractionResults(ViewInteraction.java:387)
+	at androidx.test.espresso.ViewInteraction.check(ViewInteraction.java:366)
+	at dev.bgcheck.app.NetworkUiTest.startupDialogShowsItsFullTitleAndAction(NetworkUiTest.kt:35)
+	... 32 trimmed
+Caused by: java.lang.AssertionError: Every line of Start Background Check Firewall? must fit
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at dev.bgcheck.app.NetworkUiTest.startupDialogShowsItsFullTitleAndAction$lambda$0$0$0(NetworkUiTest.kt:43)
+	at dev.bgcheck.app.NetworkUiTest.$r8$lambda$yW9KGoidUex0reVbdo6aZBPh2ho(Unknown Source:0)
+	at dev.bgcheck.app.NetworkUiTest$$ExternalSyntheticLambda0.check(D8$$SyntheticClass:0)
+	at androidx.test.espresso.ViewInteraction$SingleExecutionViewAssertion.check(ViewInteraction.java:488)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:346)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:319)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at android.os.Handler.handleCallback(Handler.java:995)
+	at android.os.Handler.dispatchMessage(Handler.java:103)
+	at android.os.Looper.loopOnce(Looper.java:248)
+	at android.os.Looper.loop(Looper.java:338)
+	at android.app.ActivityThread.main(ActivityThread.java:9067)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1

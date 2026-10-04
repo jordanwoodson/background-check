@@ -67,6 +67,7 @@ class AppsRecommendationsUiTest {
     @Test fun uninstalledFilterShowsDebloatRatingWithoutLiveActions() {
         show(removed, selected = false)
         compose.onNodeWithText("Apps").performClick()
+        compose.openAppFilters()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasText("Uninstalled") and isSelectable())
         compose.onNode(hasText("Uninstalled") and isSelectable()).performScrollTo().performClick()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasText("Chrome"))
@@ -100,6 +101,7 @@ class AppsRecommendationsUiTest {
     @Test fun systemFilterAlsoShowsRecommendedRemovalForKnownPackages() {
         show(AppEntry("com.motorola.help", "Moto Feedback", 10201, true), selected = false)
         compose.onNodeWithText("Apps").performClick()
+        compose.openAppFilters()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasText("System") and isSelectable())
         compose.onNode(hasText("System") and isSelectable()).performScrollTo().performClick()
         compose.onNodeWithTag("apps-list").performScrollToNode(hasText("Moto Feedback"))

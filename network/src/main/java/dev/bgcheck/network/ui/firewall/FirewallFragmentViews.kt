@@ -828,7 +828,10 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
                             PackageType.SYSTEM -> Constants.Packages.TYPE_SYSTEM
                         }
 
-                        if (currentFilter.equals(packageType, ignoreCase = true)) {
+                        // All already includes the target. Keep it selected when an app shortcut
+                        // clears filters while the inventory is still loading.
+                        if (currentFilter.equals(Constants.Packages.TYPE_ALL, ignoreCase = true) ||
+                            currentFilter.equals(packageType, ignoreCase = true)) {
                             viewModel.uiState.collect { state ->
                                 if (pendingDialogPackageId != targetPackageId) {
                                     return@collect

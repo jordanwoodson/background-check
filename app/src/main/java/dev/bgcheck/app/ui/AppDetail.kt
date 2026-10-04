@@ -132,7 +132,7 @@ internal fun AppDetailSheet(
         containerColor = Ink,
         contentColor = Foreground,
         dragHandle = null,
-        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         Column(Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -147,7 +147,7 @@ internal fun AppDetailSheet(
                     }
                 }
                 sheetMessage?.takeIf { !state.busy && !state.detailLoading }?.let { message ->
-                    Surface(color = Panel, shape = RoundedCornerShape(6.dp)) {
+                    Surface(color = Panel, shape = RoundedCornerShape(20.dp)) {
                         Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(message, modifier = Modifier.weight(1f).padding(vertical = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
                                 style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
@@ -163,21 +163,16 @@ internal fun AppDetailSheet(
                     AppIcon(app.packageName, 62.dp, userId = app.userId, userSerial = app.profile.serialNumber)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(app.label, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-                        Text(app.packageName, style = MaterialTheme.typography.bodySmall, color = Muted)
+                        Text(app.packageName, style = MaterialTheme.typography.bodySmall.copy(fontFamily = ReadingFont), color = Muted)
                         ProfileLabel(profile)
                         Text((if (app.system) "System app" else "User app") + if (!app.installed) " · Uninstalled" else "", style = MaterialTheme.typography.labelMedium, color = Green)
                     }
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("What this package does", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-                    SelectionContainer { Text(app.description.text, style = MaterialTheme.typography.bodyMedium) }
-                    Text(app.description.source.label, style = MaterialTheme.typography.bodySmall, color = Muted)
-                    PackageSources(app)
-                }
-                CanaDebloatRecommendationCard(app)
-                AssociatedPackages(state, app, onSelectPackage)
                 if (!profileAvailable) {
                     InfoCard("Profile unavailable", profile.unavailableReason ?: "Resume or unlock ${profile.name} before changing app settings.", Icons.Rounded.Lock, accent = Orange)
+                }
+                if (!ready || !app.installed) {
+                    PackageInformation(state, app, onSelectPackage, initiallyExpanded = !ready || !app.installed)
                 }
                 if (!app.installed) {
                     InfoCard("Uninstalled for this user", "Android still retains a record of this package. It may retain app data, be part of the system image, or be installed for another user. Live readings and app controls are unavailable here.", Icons.Rounded.Info)
@@ -200,7 +195,7 @@ internal fun AppDetailSheet(
                             AccessState.READY -> "App controls are available."
                         }
                         InfoCard(accessTitle, accessDescription, Icons.Rounded.Lock, accent = Green)
-                        Button(onClick = onConnect, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), enabled = !connecting, shape = RoundedCornerShape(6.dp)) {
+                        Button(onClick = onConnect, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), enabled = !connecting, shape = RoundedCornerShape(20.dp)) {
                             Text(if (connecting) "Please wait…" else if (state.access == AccessState.NOT_RUNNING) "Set up access" else "Review access")
                         }
                     } else if (policy == null && !state.detailLoading && !state.busy) {
@@ -261,14 +256,17 @@ internal fun AppDetailSheet(
                     sheetMessage?.let { message ->
                         SelectionContainer { InfoCard("Update", message, Icons.Rounded.Info, accent = Green) }
                     }
-                    OutlinedButton(onClick = onOpenNetwork, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
+                    OutlinedButton(onClick = onOpenNetwork, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(24.dp)) {
                         Text("Network and internet access")
                     }
-                    OutlinedButton(onClick = { onOpenAppSettings(app) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
+                    OutlinedButton(onClick = { onOpenAppSettings(app) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(24.dp)) {
                         Icon(Icons.Rounded.Settings, null, modifier = Modifier.size(19.dp))
                         Spacer(Modifier.width(10.dp))
                         Text("Open Android app settings", modifier = Modifier.weight(1f))
                         Icon(Icons.Rounded.OpenInNew, null, modifier = Modifier.size(17.dp))
+                    }
+                    if (ready) {
+                        PackageInformation(state, app, onSelectPackage, initiallyExpanded = false)
                     }
                     key(app.key) {
                         Disclosure("Resource diagnostics", summary = "Processes, battery, memory and services") {
@@ -341,6 +339,20 @@ internal fun AppDetailSheet(
             dismissButton = { TextButton(onClick = { confirmation = null }) { Text("Cancel") } },
             containerColor = Panel,
         )
+    }
+}
+
+@Composable
+private fun PackageInformation(state: UiState, app: AppEntry, onSelectPackage: (AppEntry) -> Unit, initiallyExpanded: Boolean) {
+    Disclosure("Package information", "Purpose, Cana guidance and related apps", initiallyExpanded = initiallyExpanded) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("What this package does", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+            SelectionContainer { Text(app.description.text, style = MaterialTheme.typography.bodyMedium) }
+            Text(app.description.source.label, style = MaterialTheme.typography.bodySmall, color = Muted)
+            PackageSources(app)
+        }
+        CanaDebloatRecommendationCard(app)
+        AssociatedPackages(state, app, onSelectPackage)
     }
 }
 
@@ -453,7 +465,7 @@ private fun PolicyChoice(title: String, description: String, selected: Boolean, 
         modifier = Modifier.semantics { this.selected = current },
         color = if (selected) PanelRaised else Panel,
         contentColor = if (enabled || selected) Foreground else Muted,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(24.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) Green.copy(alpha = 0.6f) else Outline),
     ) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(13.dp)) {

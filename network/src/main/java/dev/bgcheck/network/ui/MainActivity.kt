@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "MainActivity"
         private const val KEY_CURRENT_TAB = "current_tab"
+        private const val KEY_STARTUP_PROMPT_HANDLED = "startup_prompt_handled"
         private const val KEY_VPN_PERMISSION_CONTEXT = "vpn_permission_context"
     }
 
@@ -139,6 +140,7 @@ class MainActivity : AppCompatActivity() {
     private var permissionsCompleted = false
     private var vpnPermissionContext: VpnPermissionContext = VpnPermissionContext.FIREWALL_START
     private var shouldShowFirewallStartDialog = false
+    private var startupPromptHandled = false
 
     private var firewallFragment: FirewallFragmentViews? = null
     private var packagesFragment: PackagesFragmentViews? = null
@@ -146,6 +148,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        startupPromptHandled = savedInstanceState?.getBoolean(KEY_STARTUP_PROMPT_HANDLED) ?: false
 
         AppLogger.d(TAG, "📱 MAINACTIVITY CREATED | savedInstanceState: ${if (savedInstanceState == null) "null (first launch)" else "present (restored)"}")
 
@@ -290,6 +293,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun onPermissionsComplete() {
         permissionsCompleted = true
+        if (startupPromptHandled) return
+        startupPromptHandled = true
 
         val isVpnFallbackRequest = intent?.action == Constants.Notifications.ACTION_ENABLE_VPN_FALLBACK
         if (isVpnFallbackRequest) {
@@ -468,14 +473,14 @@ class MainActivity : AppCompatActivity() {
             binding.bottomNavigation.itemIconTintList = colorStateList
             binding.bottomNavigation.itemTextColor = colorStateList
         } else {
-            val white = ContextCompat.getColor(this, R.color.text_white)
+            val white = android.graphics.Color.parseColor("#BD93F9")
             val states = arrayOf(
                 intArrayOf(android.R.attr.state_checked),
                 intArrayOf()
             )
             val colors = intArrayOf(
                 white,
-                applyAlpha(white, 0.6f)
+                android.graphics.Color.parseColor("#B4BEDB")
             )
             val colorStateList = android.content.res.ColorStateList(states, colors)
             binding.bottomNavigation.itemIconTintList = colorStateList
@@ -580,15 +585,15 @@ class MainActivity : AppCompatActivity() {
     private fun updateToolbar() {
         when (currentTab) {
             Tab.FIREWALL -> {
-                binding.toolbarSectionName.text = getString(R.string.nav_firewall).uppercase()
+                binding.toolbarSectionName.text = getString(R.string.nav_firewall)
                 binding.firewallToggleGroup.visibility = View.VISIBLE
             }
             Tab.APPS -> {
-                binding.toolbarSectionName.text = getString(R.string.nav_packages).uppercase()
+                binding.toolbarSectionName.text = getString(R.string.nav_packages)
                 binding.firewallToggleGroup.visibility = View.GONE
             }
             Tab.SETTINGS -> {
-                binding.toolbarSectionName.text = getString(R.string.nav_settings).uppercase()
+                binding.toolbarSectionName.text = getString(R.string.nav_settings)
                 binding.firewallToggleGroup.visibility = View.GONE
             }
         }
@@ -845,6 +850,7 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_CURRENT_TAB, currentTab.ordinal)
+        outState.putBoolean(KEY_STARTUP_PROMPT_HANDLED, startupPromptHandled)
         outState.putInt(KEY_VPN_PERMISSION_CONTEXT, vpnPermissionContext.ordinal)
     }
 
