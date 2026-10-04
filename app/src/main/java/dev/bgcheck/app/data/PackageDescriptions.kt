@@ -5,7 +5,12 @@ enum class DescriptionSource(val label: String) {
     CATEGORY("Android app category"), UNKNOWN("Purpose unavailable")
 }
 
-data class PackageDescription(val text: String, val source: DescriptionSource)
+data class PackageDescription(
+    val text: String,
+    val source: DescriptionSource,
+    val citations: List<DescriptionCitation> = emptyList(),
+    val note: String? = null,
+)
 
 object PackageDescriptions {
     // Match exact IDs only. A vendor prefix or a familiar app label does not establish purpose.
@@ -98,7 +103,10 @@ object PackageDescriptions {
     private val whitespace = Regex("\\s+")
 
     fun describe(packageName: String, appDescription: String? = null, category: Int = -1): PackageDescription {
-        guide[packageName]?.let { return PackageDescription(it, DescriptionSource.GUIDE) }
+        val audited = AuditedPackageGuide.packages[packageName]
+        (audited?.description ?: guide[packageName])?.let {
+            return PackageDescription(it, DescriptionSource.GUIDE, audited?.sources.orEmpty(), audited?.note)
+        }
         appDescription?.replace(whitespace, " ")?.trim()?.takeIf { it.isNotEmpty() }?.let {
             return PackageDescription(it, DescriptionSource.APP)
         }
@@ -107,6 +115,12 @@ object PackageDescriptions {
         }
         return PackageDescription("No description is available for this package. Its purpose has not been identified.", DescriptionSource.UNKNOWN)
     }
+
+    fun label(packageName: String, appLabel: String): String =
+        if (appLabel.isBlank() || appLabel == packageName) AuditedPackageGuide.packages[packageName]?.label ?: packageName else appLabel
+
+    fun associations(packageName: String): List<PackageAssociation> =
+        AuditedPackageGuide.packages[packageName]?.associations.orEmpty()
 }
 
 enum class PackageType(val label: String) {

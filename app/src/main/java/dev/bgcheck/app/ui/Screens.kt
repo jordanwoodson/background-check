@@ -224,7 +224,7 @@ fun BackgroundCheckApp(
         detailState.SaveableStateProvider(app.packageName) {
             AppDetailSheet(state, app, onDismissDetail, onAction, onOpenAppSettings,
                 onConnect = { onDismissDetail(); page = Page.ACCESS }, onForceStop = onForceStop,
-                onRetry = { onClearMessage(); onRefresh() })
+                onRetry = { onClearMessage(); onRefresh() }, onSelectPackage = onSelect)
         }
     }
 }

@@ -58,7 +58,7 @@ Unavailable or unsupported readings remain **Unavailable**, with warnings where 
 
 ## App controls
 
-Package rows now explain what each package does. Open a package to read its full description and source, or search by purpose as well as name or package ID. **Uninstalled** shows only removed packages Android still retains for this user, with read-only details. Unknown purposes are explicitly marked; the guide cannot identify every package. See [package descriptions](docs/package-descriptions.md) for sources and coverage.
+Package rows explain what each package does. The bundled guide covers every app in the USB-audited Motorola inventory, including system, user and retained-uninstalled packages. Open a package for its purpose, publisher sources and associated packages: current shared UIDs, overlay targets, shared libraries, declared package queries and documented companions. Tap a recorded related package to inspect it. Search matches purpose text, names and package IDs. **Uninstalled** shows removed packages Android still retains for this user, with read-only details. Unidentified future packages remain explicit. See [package descriptions](docs/package-descriptions.md) for sources and coverage.
 
 **Force stop app** is available only for an ordinary unprotected app. It requires confirmation, rechecks the package identity, Android user and shared UID before sending the command, and verifies Android’s stopped flag and process observation afterward. System/core apps, protected apps and shared UIDs are refused. Force stop can discard unsaved work and interrupt notifications or scheduled work until the app is opened again. **Force stop has no Undo**; the separate policy Undo remains available.
 

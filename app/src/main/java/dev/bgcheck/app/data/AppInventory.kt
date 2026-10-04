@@ -40,9 +40,10 @@ class AppInventory(private val context: Context) {
         // The broad query may have less metadata; prefer the normal query for installed apps.
         val applications = (pm.getInstalledApplications(0) +
             pm.getInstalledApplications(PackageManager.MATCH_UNINSTALLED_PACKAGES)).distinctBy { it.packageName }
-        applications.map { info ->
+        PackageAssociations.enrich(applications.map { info ->
             AppEntry(
-                packageName = info.packageName, label = runCatching { info.loadLabel(pm).toString() }.getOrDefault(info.packageName),
+                packageName = info.packageName, label = PackageDescriptions.label(info.packageName,
+                    runCatching { info.loadLabel(pm).toString() }.getOrDefault(info.packageName)),
                 uid = info.uid, system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0,
                 enabled = info.enabled, targetSdk = info.targetSdkVersion,
                 installed = info.flags and ApplicationInfo.FLAG_INSTALLED != 0,
@@ -55,7 +56,7 @@ class AppInventory(private val context: Context) {
                     else -> null
                 },
             )
-        }.sortedBy { it.label.lowercase() }
+        }).sortedBy { it.label.lowercase() }
     }
 
     fun battery(): BatteryInfo {

@@ -61,10 +61,35 @@ class PackageDescriptionsUiTest {
         compose.onNodeWithText("Removed keyboard").performClick()
         compose.onNodeWithText("What this package does").assertIsDisplayed()
         compose.onNodeWithText("Built-in package guide").assertIsDisplayed()
-        compose.onNodeWithText("Uninstalled for this user").assertIsDisplayed()
+        compose.onNodeWithText("Uninstalled for this user").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Allow background work").assertDoesNotExist()
         compose.onNodeWithText("Force stop app").assertDoesNotExist()
         compose.onNodeWithText("Open Android app settings").assertDoesNotExist()
         compose.onNodeWithText("Resource diagnostics").assertDoesNotExist()
+    }
+
+    @Test fun companionsShowRetainedStateAndOpenTheirOwnDetailsWithoutShizuku() {
+        val video = AppEntry("app.morphe.android.youtube", "YouTube Morphe", 11001, false)
+        val microg = AppEntry("app.revanced.android.gms", "MicroG RE", 11002, false, installed = false)
+        val state = mutableStateOf(UiState(access = AccessState.NOT_RUNNING, loading = false,
+            apps = listOf(video), uninstalledApps = listOf(microg), selected = video))
+        compose.setContent {
+            BackgroundCheckTheme {
+                BackgroundCheckApp(state.value,
+                    onRefresh = {}, onConnect = {}, onSelect = { state.value = state.value.copy(selected = it) },
+                    onDismissDetail = { state.value = state.value.copy(selected = null) }, onAction = {}, onUndo = {},
+                    onOpenAppSettings = {}, onOpenShizuku = {}, onOpenWirelessSettings = {}, onClearMessage = {},
+                    onRefreshResources = {}, onRefreshEnergy = {}, onSetMonitorPaused = {}, onSetMonitorInterval = {},
+                    onMonitorVisible = {}, onForceStop = {})
+            }
+        }
+        compose.onNodeWithText("Description sources (2)").performScrollTo().performClick()
+        compose.onNodeWithText("Morphe GmsCore setup and troubleshooting").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("association-COMPANION-app.revanced.android.gms").performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithText("MicroG RE", substring = false).assertExists()
+        compose.onNodeWithText("Provides a separate implementation of Google service APIs, account sign-in and notifications for compatible patched apps.")
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Force stop app").assertDoesNotExist()
+        compose.onNodeWithText("Allow background work").assertDoesNotExist()
     }
 }

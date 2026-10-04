@@ -79,6 +79,7 @@ internal fun AppDetailSheet(
     onConnect: () -> Unit,
     onForceStop: () -> Unit,
     onRetry: () -> Unit = {},
+    onSelectPackage: (AppEntry) -> Unit = {},
 ) {
     val windowHeight = LocalWindowInfo.current.containerSize.height
     val compactHeight = with(LocalDensity.current) { windowHeight.toDp() < 480.dp }
@@ -161,7 +162,9 @@ internal fun AppDetailSheet(
                     Text("What this package does", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
                     SelectionContainer { Text(app.description.text, style = MaterialTheme.typography.bodyMedium) }
                     Text(app.description.source.label, style = MaterialTheme.typography.bodySmall, color = Muted)
+                    PackageSources(app)
                 }
+                AssociatedPackages(state, app, onSelectPackage)
                 if (!app.installed) {
                     InfoCard("Uninstalled for this user", "Android still retains a record of this package. It may retain app data, be part of the system image, or be installed for another user. Live readings and app controls are unavailable here.", Icons.Rounded.Info)
                 } else {

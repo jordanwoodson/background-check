@@ -4,6 +4,36 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PackageDescriptionsTest {
+    @Test fun phoneSpecificPackagesHaveActualPurposesInsteadOfCategoryFallbacks() {
+        val ai = PackageDescriptions.describe("com.motorola.aicore")
+        assertEquals(DescriptionSource.GUIDE, ai.source)
+        assertTrue(ai.text.contains("summaries", true))
+        val hub = PackageDescriptions.describe("com.maazm7d.termuxhub", category = 7)
+        assertEquals(DescriptionSource.GUIDE, hub.source)
+        assertTrue(hub.text.contains("discover", true))
+        assertTrue(PackageDescriptions.describe("io.navivani.swiff").text.contains("Flash", true))
+    }
+
+    @Test fun everyPackageInTheIndependentUsbSnapshotHasASourcedPurpose() {
+        val ids = requireNotNull(javaClass.getResourceAsStream("/usb-package-ids.txt"))
+            .bufferedReader().use { it.readLines() }
+        assertEquals(676, ids.size)
+        assertEquals(ids.size, ids.toSet().size)
+        ids.forEach { id ->
+            val purpose = PackageDescriptions.describe(id)
+            assertEquals(id, DescriptionSource.GUIDE, purpose.source)
+            assertTrue(id, purpose.text.isNotBlank())
+            assertTrue("Missing source: $id", purpose.citations.isNotEmpty())
+            assertTrue(id, purpose.citations.all { it.url.startsWith("https://") && it.title.isNotBlank() })
+        }
+    }
+
+    @Test fun retainedRecordsGetReadableNamesWithoutReplacingActualAppLabels() {
+        assertEquals("TermuxHub", PackageDescriptions.label("com.maazm7d.termuxhub", "com.maazm7d.termuxhub"))
+        assertEquals("Mon clavier", PackageDescriptions.label("com.google.android.inputmethod.latin", "Mon clavier"))
+        assertEquals("com.example.unknown", PackageDescriptions.label("com.example.unknown", ""))
+    }
+
     @Test fun exactPackageGuideWinsOverBroadMetadata() {
         val description = PackageDescriptions.describe("com.android.systemui", "A system app", 7)
         assertEquals(DescriptionSource.GUIDE, description.source)
