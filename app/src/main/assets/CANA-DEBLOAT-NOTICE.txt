@@ -1,0 +1,20 @@
+Android Debloat List
+Copyright (C) 2022 Muntashir Al-Islam and contributors.
+
+Source: https://github.com/MuntashirAkon/android-debloat-list
+Bundled upstream revision: 10c82498154523d29ba0f268e4ab8316ab19c16b
+
+Background Check bundles the same unmodified source archive as Cana at commit
+98409037237f8c392efdda89f7955d7d35e736f1 (verified October 4, 2026).
+The archive is packaged as the Java resource cana-debloat-list.zip.
+Source archive: https://github.com/MuntashirAkon/android-debloat-list/archive/10c82498154523d29ba0f268e4ab8316ab19c16b.zip
+
+As in Cana, delete/replace/caution/unsafe map to Recommended/Advanced/Expert/Unsafe.
+Warnings, notes, dependencies, references and suggested replacements come from
+this source. No local audit or verdict overrides are applied. Packages absent
+from the list are explicitly not rated. This snapshot does not read Cana's
+private cache or custom list settings.
+
+The list is distributed under the GNU Affero General Public License version 3
+or later. See ADL-LICENSE.txt and COPYING inside the unmodified archive.
+Background Check's reader and UI are separate from this third-party data.

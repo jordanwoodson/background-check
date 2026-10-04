@@ -801,4 +801,6 @@
     <string name="error_package_scan_failed_title">Could not read the app list</string>
     <string name="error_package_scan_failed_hint">If this happens again, close and reopen Background Check.</string>
     <string name="error_package_scan_failed">Could not read the list of apps on this device. If this keeps happening, close and reopen Background Check.</string>
+    <!-- Recommendation labels and explanations are currently authored in English. -->
+    <string name="internet_advice_summary" translatable="false">Internet advice: %1$s</string>
 </resources>

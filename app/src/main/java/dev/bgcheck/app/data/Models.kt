@@ -17,7 +17,6 @@ data class AppEntry(
     val installed: Boolean = true,
     val description: PackageDescription = PackageDescriptions.describe(packageName),
     val associations: List<PackageAssociation> = PackageDescriptions.associations(packageName),
-    val hasInternetPermission: Boolean? = null,
 )
 enum class BatteryPowerState(val label: String) {
     CHARGING("Charging"), FULL("Full"), PLUGGED_IDLE("Plugged in · not charging"),

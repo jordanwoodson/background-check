@@ -4,9 +4,6 @@ import dev.bgcheck.network.domain.model.InternetAdvice
 import dev.bgcheck.network.domain.model.InternetRecommendations
 import org.junit.Assert.*
 import org.junit.Test
-import dev.bgcheck.app.data.AppEntry
-import dev.bgcheck.app.data.PackageAssociations
-import dev.bgcheck.app.data.internetRecommendation
 
 class InternetRecommendationsTest {
     private fun advice(id: String, system: Boolean = false) =
@@ -75,14 +72,4 @@ class InternetRecommendationsTest {
             false, uid = 10123, critical = true, hasInternetPermission = true).advice)
     }
 
-    @Test fun inventoryLinksOnlyLiveUidPeersAndRefreshRecomputesAdvice() {
-        val calculator = AppEntry("com.google.android.calculator", "Calculator", 10123, false,
-            hasInternetPermission = true)
-        val peer = AppEntry("example.peer", "Peer", 10123, false)
-        val shared = PackageAssociations.enrich(listOf(calculator, peer)).first()
-        assertEquals(InternetAdvice.KEEP_ALLOWED, shared.internetRecommendation.advice)
-        val removedPeer = PackageAssociations.enrich(listOf(calculator, peer.copy(installed = false))).first()
-        assertEquals(InternetAdvice.BLOCK_OPTIONAL, removedPeer.internetRecommendation.advice)
-        assertEquals(InternetAdvice.NO_DIRECT_ACCESS, calculator.copy(hasInternetPermission = false).internetRecommendation.advice)
-    }
 }

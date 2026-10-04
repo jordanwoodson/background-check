@@ -19,7 +19,7 @@ See the [Dracula terminal identity and screenshots](docs/dracula-theme.md), [Dra
 
 ## Network and internet controls
 
-Package rows and details now include **internet firewall recommendations** for system, user and retained-uninstalled packages. Guidance explains why to allow, consider blocking or review access, accounts for shared/core UIDs and INTERNET permission, and shows reinstall advice for removed packages. The same guidance appears beside Network's firewall controls. Recommendations do not change rules automatically. See [recommendations and their sources](docs/internet-recommendations.md).
+**Network** owns internet firewall recommendations. Its firewall rows and control sheets explain why to allow, consider blocking or review access, accounting for shared/core UIDs and INTERNET permission. Network's retained-package sheets show reinstall guidance. Recommendations do not change rules automatically. See [internet recommendations and their sources](docs/internet-recommendations.md).
 
 The **Network** workspace retains De1984’s four firewall backends, per-app and batch rules, Wi-Fi/mobile/roaming and screen-off controls, LAN blocking with root, allow-by-default/block-by-default policies, profile-aware app lists, package enable/disable/force-stop/uninstall/restore, rule backup and restore, captive-portal settings, Quick Settings tile, widget, installation notifications, logs, appearance and language settings. The MIT source and attribution are included; see [provenance](network/UPSTREAM.md) and the [feature and verification matrix](docs/network-controls-verification.md).
 
@@ -71,6 +71,8 @@ Battery rankings count each UID once. Several packages can share a UID, so the a
 Unavailable or unsupported readings remain **Unavailable**, with warnings where available; they are not converted to zero. A sleeping or cached process still occupies memory without necessarily consuming CPU. Battery statistics are read without resetting Android’s history. Detailed commands and processes may be restricted by Android or the device vendor.
 
 ## App controls
+
+**Apps** shows **Cana debloat recommendations** for system, user and retained-uninstalled packages. The same 4,801-entry Android Debloat List snapshot bundled with Cana supplies Recommended, Advanced, Expert and Unsafe ratings, package warnings and suggested replacements. Packages outside that list explicitly say **Not rated by Cana**. Removed packages retain their rating for review before restoring them. See [Cana recommendations and source provenance](docs/cana-debloat-recommendations.md).
 
 Package rows explain what each package does. The bundled guide covers every app in the USB-audited Motorola inventory, including system, user and retained-uninstalled packages. Open a package for its purpose, publisher sources and associated packages: current shared UIDs, overlay targets, shared libraries, declared package queries and documented companions. Tap a recorded related package to inspect it. Search matches purpose text, names and package IDs. **Uninstalled** shows removed packages Android still retains for this user, with read-only details. Unidentified future packages remain explicit. See [package descriptions](docs/package-descriptions.md) for sources and coverage.
 

@@ -59,7 +59,7 @@ import dev.bgcheck.app.data.AppEntry
 import dev.bgcheck.app.data.AppSort
 import dev.bgcheck.app.data.ProcessState
 import dev.bgcheck.app.data.bucketLabel
-import dev.bgcheck.app.data.internetRecommendation
+import dev.bgcheck.app.data.debloatRecommendation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.DateFormat
@@ -129,7 +129,7 @@ internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort 
                 Text(app.label, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(app.description.text, style = MaterialTheme.typography.bodySmall, color = Foreground,
                     maxLines = 3, overflow = TextOverflow.Ellipsis)
-                Text("Firewall: ${app.internetRecommendation.advice.label}",
+                Text("Cana: ${app.debloatRecommendation.rating.label}",
                     style = MaterialTheme.typography.bodySmall, color = Cyan)
                 Text(
                     buildString {

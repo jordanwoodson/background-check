@@ -25,33 +25,65 @@ import androidx.compose.ui.unit.dp
 import dev.bgcheck.app.data.AppEntry
 import dev.bgcheck.app.data.PackageDescriptions
 import dev.bgcheck.app.data.UiState
-import dev.bgcheck.app.data.internetRecommendation
-import dev.bgcheck.network.domain.model.InternetRecommendations
+import dev.bgcheck.app.data.debloatRecommendation
+import dev.bgcheck.app.data.CanaDebloatGuide
+import dev.bgcheck.app.data.DebloatRating
+import androidx.compose.runtime.key
 
 @Composable
-internal fun InternetRecommendationCard(app: AppEntry, onOpenNetwork: () -> Unit) {
-    val recommendation = app.internetRecommendation
+internal fun CanaDebloatRecommendationCard(app: AppEntry) {
+    val recommendation = app.debloatRecommendation
     val uriHandler = LocalUriHandler.current
     Surface(color = Panel, shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()
-        .testTag("internet-recommendation")) {
+        .testTag("cana-debloat-recommendation")) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Internet firewall recommendation", style = MaterialTheme.typography.titleMedium,
+            Text("Cana debloat recommendation", style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.semantics { heading() })
-            Text(recommendation.advice.label, style = MaterialTheme.typography.titleSmall, color = Cyan)
-            Text(recommendation.reason, style = MaterialTheme.typography.bodySmall)
-            Text(recommendation.consequence, style = MaterialTheme.typography.bodySmall, color = Muted)
-            recommendation.afterInstall?.let { restored ->
-                Text("If reinstalled: ${restored.advice.label}", style = MaterialTheme.typography.titleSmall, color = Purple)
-                Text("${restored.reason} ${restored.consequence}", style = MaterialTheme.typography.bodySmall)
+            Text(recommendation.rating.label, style = MaterialTheme.typography.titleSmall,
+                color = if (recommendation.rating == DebloatRating.UNSAFE || recommendation.rating == DebloatRating.EXPERT) Orange else Cyan)
+            Text(recommendation.rating.explanation, style = MaterialTheme.typography.bodySmall)
+            if (!app.installed) Text(
+                "Already uninstalled for this user. Cana's rating describes removal risk if this package is restored; review the notes before restoring it.",
+                style = MaterialTheme.typography.bodySmall, color = Muted)
+            recommendation.warning?.let {
+                Text("Cana list warning", style = MaterialTheme.typography.titleSmall, color = Orange)
+                Text(it, style = MaterialTheme.typography.bodySmall, color = Orange)
             }
-            Disclosure("Recommendation details", "Permissions, scope and source") {
-                recommendation.notes.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = Muted) }
-                Text(InternetRecommendations.GUIDANCE_NOTE, style = MaterialTheme.typography.bodySmall, color = Muted)
-                recommendation.sourceUrl?.let { url ->
-                    TextButton(onClick = { uriHandler.openUri(url) }) { Text("Recommendation source") }
+            Text("Source: Android Debloat List bundled with Cana", style = MaterialTheme.typography.labelSmall, color = Muted)
+            key(app.packageName) {
+                Disclosure("Cana list details", "Package notes, dependencies and replacements") {
+                    recommendation.description?.takeIf { it.isNotBlank() }?.let {
+                        Text("Upstream package notes", style = MaterialTheme.typography.titleSmall)
+                        Text(it, style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (recommendation.dependencies.isNotEmpty()) Text(
+                        "List-declared dependencies: ${recommendation.dependencies.joinToString()}",
+                        style = MaterialTheme.typography.bodySmall)
+                    if (recommendation.neededBy.isNotEmpty()) Text(
+                        "Listed as needed by: ${recommendation.neededBy.joinToString()}",
+                        style = MaterialTheme.typography.bodySmall)
+                    if (recommendation.dependencies.isNotEmpty() || recommendation.neededBy.isNotEmpty()) Text(
+                        "These relationships come from Cana's list; they do not establish what is installed or required on this device.",
+                        style = MaterialTheme.typography.bodySmall, color = Muted)
+                    if (recommendation.alternatives.isNotEmpty()) {
+                        Text("Suggested replacements", style = MaterialTheme.typography.titleSmall)
+                        recommendation.alternatives.forEach { alternative ->
+                            TextButton(onClick = { uriHandler.openUri(alternative.url) }) {
+                                Text("${alternative.label} · ${alternative.packageName}", style = MaterialTheme.typography.bodySmall)
+                            }
+                            alternative.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Orange) }
+                        }
+                    }
+                    recommendation.references.forEachIndexed { index, url ->
+                        if (url.startsWith("https://") || url.startsWith("http://")) TextButton(onClick = { uriHandler.openUri(url) }) {
+                            Text("List reference ${index + 1}", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    Text("Bundled source revision ${CanaDebloatGuide.REVISION.take(7)}. Cana may have a newer or custom list. Ratings are guidance, not a guarantee that removal is safe on this phone.",
+                        style = MaterialTheme.typography.bodySmall, color = Muted)
+                    TextButton(onClick = { uriHandler.openUri(CanaDebloatGuide.SOURCE_URL) }) { Text("View Cana's bundled source") }
                 }
             }
-            if (app.installed) TextButton(onClick = onOpenNetwork) { Text("Network and internet access") }
         }
     }
 }

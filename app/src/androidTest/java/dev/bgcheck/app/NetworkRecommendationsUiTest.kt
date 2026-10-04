@@ -55,6 +55,10 @@ class NetworkRecommendationsUiTest {
                 while (true) {
                     try {
                         onView(allOf(withId(NetworkR.id.package_name), withText("com.google.android.gms"), isDisplayed()))
+                            .check(matches(isDisplayed()))
+                        onView(allOf(withId(NetworkR.id.internet_recommendation_summary), isDisplayed()))
+                            .check(matches(withText("Internet advice: Keep internet allowed")))
+                        onView(allOf(withId(NetworkR.id.package_name), withText("com.google.android.gms"), isDisplayed()))
                             .perform(click())
                         break
                     } catch (failure: androidx.test.espresso.NoMatchingViewException) {

@@ -1,6 +1,8 @@
 # Internet firewall recommendations
 
-Every package in **Apps → Your apps, System, All apps, or Uninstalled** has a firewall recommendation beneath its description. Open the package for a reason, the effects of blocking, and **Recommendation details** (permission metadata, Android identity and source). Installed packages have a **Network and internet access** shortcut to the matching firewall entry. The Network workspace also shows the guidance in both firewall control sheets and package action sheets; tap **Show effects and details** to expand the explanation.
+Internet recommendations live in **Network**. Each firewall row shows a short **Internet advice** summary. Open the package for its reason and tap **Show effects and details** for blocking consequences, permission metadata, Android identity and source. Both firewall control sheets and Network's package action sheets use this guidance, including reinstall advice for retained packages.
+
+The main **Apps** page shows [Cana debloat recommendations](cana-debloat-recommendations.md). Its installed-package **Network and internet access** shortcut still opens the matching Network entry; internet recommendations are no longer rendered in Apps.
 
 Recommendations are advice, not the current firewall state. They never apply rules automatically. Use the existing Network controls to choose a rule and check the active backend's limitations. In particular, NetworkPolicyManager may only restrict metered background data; the advice does not turn that into full internet blocking.
 
@@ -29,7 +31,9 @@ Guidance is bundled locally and does not upload the app inventory. Exact-ID role
 
 When adding an exact-ID group, document the feature loss and use a relevant platform or publisher source. Do not convert uninstall-safety ratings, name prefixes or package queries into firewall recommendations. Add a behavioral test when changing precedence or metadata handling.
 
-## Verification — October 4, 2026
+## Initial implementation verification — October 4, 2026
+
+The results below describe release `1.1.1-bgcheck.8`, before moving Apps to Cana debloat guidance. Current separation checks are recorded in [Cana recommendations](cana-debloat-recommendations.md).
 
 - JDK 21.0.12.1 and Android SDK 36: `./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease` passed. All 124 unit tests passed; lint reported zero errors and 287 warnings.
 - API 35 emulator: 26 instrumented tests passed across `InternetRecommendationsUiTest`, `NetworkRecommendationsUiTest`, `PackageDescriptionsUiTest`, `AppDetailSortingUiTest`, `OverviewAppsSortingUiTest` and `SortRestorationUiTest`. They cover recommendation visibility/navigation without Shizuku, source disclosure, removed packages, stale UIDs, installed packages without a version name, unknown permission reads, real Android repository mappings, both firewall sheet layouts and list/detail regressions.

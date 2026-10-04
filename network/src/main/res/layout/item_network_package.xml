@@ -106,6 +106,14 @@
                 android:background="@drawable/badge_background_vpn"
                 android:visibility="gone" />
 
+            <TextView
+                android:id="@+id/internet_recommendation_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textSize="12sp"
+                android:textColor="?android:attr/textColorSecondary" />
+
             <!-- No Internet Permission Badge -->
             <TextView
                 android:id="@+id/no_internet_badge"

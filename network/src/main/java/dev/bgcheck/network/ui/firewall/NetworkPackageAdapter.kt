@@ -274,6 +274,7 @@ class NetworkPackageAdapter(
         private val appIcon: ImageView = itemView.findViewById(R.id.app_icon)
         private val appName: TextView = itemView.findViewById(R.id.app_name)
         private val packageName: TextView = itemView.findViewById(R.id.package_name)
+        private val internetAdvice: TextView = itemView.findViewById(R.id.internet_recommendation_summary)
         private val systemCriticalBadge: TextView = itemView.findViewById(R.id.system_critical_badge)
         private val vpnAppBadge: TextView = itemView.findViewById(R.id.vpn_app_badge)
         private val noInternetBadge: TextView = itemView.findViewById(R.id.no_internet_badge)
@@ -301,6 +302,7 @@ class NetworkPackageAdapter(
 
             appName.text = pkg.name
             packageName.text = pkg.packageName
+            dev.bgcheck.network.ui.common.InternetRecommendationView.bindSummary(internetAdvice, pkg)
 
             systemCriticalBadge.visibility = if (pkg.isSystemCritical) View.VISIBLE else View.GONE
 
