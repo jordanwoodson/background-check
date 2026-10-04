@@ -1,0 +1,24 @@
+--------- beginning of main
+10-03 19:46:41.214  6861  6875 I MonitorScroll: live-before: row=Rect.fromLTRB(40.0, 1100.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=2568.0
+10-03 19:46:42.044  6861  6875 I MonitorScroll: battery-before: row=Rect.fromLTRB(40.0, 1123.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=1578.0
+10-03 19:46:42.231  6861  6875 I MonitorScroll: live-restored: row=Rect.fromLTRB(40.0, 1214.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=2090.0
+10-03 19:47:33.554  7091  7091 I MonitorScroll: after LIVE: live=0/0/monitor-heading; energy=0/0/null
+10-03 19:47:34.598  7091  7105 I MonitorScroll: live-before: row=Rect.fromLTRB(40.0, 1100.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=2568.0
+10-03 19:47:34.703  7091  7091 I MonitorScroll: before LIVE to ENERGY: live=5/68/process-search; energy=0/0/null
+10-03 19:47:34.803  7091  7091 I MonitorScroll: after ENERGY: live=4/90/energy-search; energy=0/0/monitor-heading
+10-03 19:47:35.648  7091  7105 I MonitorScroll: battery-before: row=Rect.fromLTRB(40.0, 1123.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=1578.0
+10-03 19:47:35.735  7091  7091 I MonitorScroll: before ENERGY to LIVE: live=4/90/energy-search; energy=2/578/battery-estimates
+10-03 19:47:35.874  7091  7091 I MonitorScroll: after LIVE: live=4/90/sampling-options; energy=3/159/resource-trends
+10-03 19:47:35.965  7091  7105 I MonitorScroll: live-restored: row=Rect.fromLTRB(40.0, 1214.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=2090.0
+10-03 19:47:55.952  7221  7221 I MonitorScroll: after LIVE: live=0/0/monitor-heading; energy=0/0/null
+10-03 19:47:56.965  7221  7235 I MonitorScroll: live-before: row=Rect.fromLTRB(40.0, 1100.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=2568.0
+10-03 19:47:57.070  7221  7221 I MonitorScroll: before LIVE to ENERGY: live=5/68/process-search; energy=0/0/null
+10-03 19:47:57.127  7221  7221 I MonitorScroll: after ENERGY: live=5/68/process-search; energy=0/0/monitor-heading
+10-03 19:47:57.951  7221  7235 I MonitorScroll: battery-before: row=Rect.fromLTRB(40.0, 1123.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=1578.0
+10-03 19:47:58.027  7221  7221 I MonitorScroll: before ENERGY to LIVE: live=5/68/process-search; energy=2/578/battery-estimates
+10-03 19:47:58.113  7221  7221 I MonitorScroll: after LIVE: live=5/68/process-search; energy=2/578/battery-estimates
+10-03 19:47:58.198  7221  7235 I MonitorScroll: live-restored: row=Rect.fromLTRB(40.0, 1100.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=2568.0
+10-03 19:47:58.318  7221  7221 I MonitorScroll: before LIVE to LIVE: live=5/68/process-search; energy=2/578/battery-estimates
+10-03 19:47:58.452  7221  7221 I MonitorScroll: before LIVE to ENERGY: live=5/68/process-search; energy=2/578/battery-estimates
+10-03 19:47:58.520  7221  7221 I MonitorScroll: after ENERGY: live=5/68/process-search; energy=2/578/battery-estimates
+10-03 19:47:58.598  7221  7235 I MonitorScroll: battery-restored: row=Rect.fromLTRB(40.0, 1123.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=1578.0

@@ -1,20 +1,18 @@
 package dev.bgcheck.app.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowForward
@@ -27,9 +25,6 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,23 +38,30 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import dev.bgcheck.app.data.AccessState
 import dev.bgcheck.app.data.AppEntry
 import dev.bgcheck.app.data.ControlAction
 import dev.bgcheck.app.data.ListSorting
-import dev.bgcheck.app.data.PolicyState
 import dev.bgcheck.app.data.ProcessSort
 import dev.bgcheck.app.data.ServiceSort
 import dev.bgcheck.app.data.SortDirection
@@ -76,10 +78,20 @@ internal fun AppDetailSheet(
     onOpenAppSettings: (String) -> Unit,
     onConnect: () -> Unit,
     onForceStop: () -> Unit,
+    onRetry: () -> Unit = {},
 ) {
+    val windowHeight = LocalWindowInfo.current.containerSize.height
+    val compactHeight = with(LocalDensity.current) { windowHeight.toDp() < 480.dp }
+    val confirmationModifier = if (compactHeight) Modifier.widthIn(max = 560.dp).fillMaxWidth() else Modifier
+    val confirmationProperties = DialogProperties(usePlatformDefaultWidth = !compactHeight)
     val policy = state.policy?.takeIf { it.packageName == app.packageName }
     var confirmation by remember(app.packageName) { mutableStateOf<ControlAction?>(null) }
     var confirmForceStop by remember(app.packageName) { mutableStateOf(false) }
+    // Keep the full result available after the global snackbar has timed out.
+    var sheetMessage by remember(app.packageName) { mutableStateOf(state.message) }
+    LaunchedEffect(app.packageName, state.message) {
+        state.message?.let { sheetMessage = it }
+    }
     // Keep these in the caller's saveable registry, above the sheet's dialog composition.
     var processSort by rememberSaveable(app.packageName) { mutableStateOf(ProcessSort.PID) }
     var processDirection by rememberSaveable(app.packageName) { mutableStateOf(SortDirection.ASCENDING) }
@@ -112,108 +124,159 @@ internal fun AppDetailSheet(
         dragHandle = null,
         shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
     ) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 22.dp, end = 22.dp, bottom = 30.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Eyebrow("APP DETAILS")
-                IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Close app details", tint = Muted) }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
-                AppIcon(app.packageName, 62.dp)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text(app.label, style = MaterialTheme.typography.headlineMedium)
-                    Text(app.packageName, style = MaterialTheme.typography.bodySmall, color = Muted)
-                    Text(if (app.system) "System app" else "Installed app", style = MaterialTheme.typography.labelMedium, color = Green)
+        Column(Modifier.fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Eyebrow("APP DETAILS")
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) { Icon(Icons.Rounded.Close, "Close app details", tint = Muted) }
+                }
+                if (state.detailLoading || state.busy) {
+                    Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        Text(if (state.busy) "Applying and checking your change…" else "Reading current settings…", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    }
+                }
+                sheetMessage?.takeIf { !state.busy && !state.detailLoading }?.let { message ->
+                    Surface(color = Panel, shape = RoundedCornerShape(6.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(message, modifier = Modifier.weight(1f).padding(vertical = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
+                                style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                            IconButton(onClick = { sheetMessage = null }, modifier = Modifier.size(48.dp)) {
+                                Icon(Icons.Rounded.Close, "Dismiss update", tint = Muted)
+                            }
+                        }
+                    }
                 }
             }
-            if (state.detailLoading || state.busy) {
-                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    Text(if (state.busy) "Applying and checking your change…" else "Reading current settings…", style = MaterialTheme.typography.bodySmall, color = Muted)
+            Column(Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(start = 22.dp, end = 22.dp, bottom = 30.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
+                    AppIcon(app.packageName, 62.dp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(app.label, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+                        Text(app.packageName, style = MaterialTheme.typography.bodySmall, color = Muted)
+                        Text(if (app.system) "System app" else "Installed app", style = MaterialTheme.typography.labelMedium, color = Green)
+                    }
                 }
-            }
-            Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
-                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                    Eyebrow("OBSERVED ON THIS DEVICE")
-                    DetailValue("Process", if (ready) app.processState.label else "Access needed")
-                    DetailValue("Standby group", if (ready) bucketLabel(policy?.standbyBucket ?: app.standbyBucket) else "Access needed")
-                    HorizontalDivider(color = Outline)
-                    Text(if (ready && state.capturedAt != null) "Process snapshot at ${timeLabel(state.capturedAt)}. Being in memory does not measure battery use." else "Connect Shizuku for a process snapshot. Installed apps can still be browsed.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                if (!ready) {
+                    val connecting = state.access in setOf(AccessState.CHECKING, AccessState.CONNECTING)
+                    val accessTitle = when (state.access) {
+                        AccessState.CHECKING -> "Checking access"
+                        AccessState.CONNECTING -> "Connecting to Shizuku"
+                        AccessState.NEEDS_PERMISSION -> "Permission needed"
+                        AccessState.NOT_RUNNING -> "Start Shizuku for app controls"
+                        AccessState.ERROR -> "Connection needs attention"
+                        AccessState.READY -> "Connected"
+                    }
+                    val accessDescription = when (state.access) {
+                        AccessState.CHECKING, AccessState.CONNECTING -> "App controls will be available once access is verified."
+                        AccessState.NEEDS_PERMISSION -> "Shizuku is running. Allow Background Check to read and change app settings."
+                        AccessState.NOT_RUNNING -> "Open the access guide to start Shizuku, then return to this app."
+                        AccessState.ERROR -> "Review the connection in Access, or use Android app settings below."
+                        AccessState.READY -> "App controls are available."
+                    }
+                    InfoCard(accessTitle, accessDescription, Icons.Rounded.Lock, accent = Green)
+                    Button(onClick = onConnect, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), enabled = !connecting, shape = RoundedCornerShape(6.dp)) {
+                        Text(if (connecting) "Please wait…" else if (state.access == AccessState.NOT_RUNNING) "Set up access" else "Review access")
+                    }
+                } else if (policy == null && !state.detailLoading && !state.busy) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        InfoCard("Settings unavailable", "Read this app’s current settings before making a change.", Icons.Rounded.Info)
+                        TextButton(onClick = { sheetMessage = null; onRetry() }) { Text("Retry reading settings") }
+                    }
                 }
-            }
-            AppResourceDiagnostics(
-                state, app, processSort, processDirection, serviceSort, serviceDirection,
-                onProcessSort = { processSort = it }, onProcessDirection = { processDirection = it },
-                onServiceSort = { serviceSort = it }, onServiceDirection = { serviceDirection = it },
-            )
-            if (!ready) {
-                InfoCard("Access is needed for controls", "Start Shizuku and allow Background Check to read these settings before making a change.", Icons.Rounded.Lock, accent = Green)
-                Button(onClick = onConnect, modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp), enabled = state.access !in setOf(AccessState.CHECKING, AccessState.CONNECTING), shape = RoundedCornerShape(6.dp)) { Text("Connect Shizuku") }
-            }
-            app.protectedReason?.let { InfoCard("Protected app", it + " Use Android Settings to review this app manually.", Icons.Rounded.Lock, accent = Orange) }
-            policy?.error?.let { InfoCard("Settings could not be verified", it, Icons.Rounded.WarningAmber, accent = Orange) }
-            if (app.system && app.protectedReason == null) {
-                InfoCard("Part of your phone’s software", "Changes to a system app can affect features elsewhere on your phone. Only adjust settings you recognize.", Icons.Rounded.WarningAmber, accent = Orange)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                Text("Background access", style = MaterialTheme.typography.titleLarge)
-                Text("Choose whether Android lets this app work when you’re not using it. Restricting it can delay notifications, syncing, and scheduled tasks.", style = MaterialTheme.typography.bodyMedium, color = Muted)
-                if (policy != null && ready) {
-                    DetailValue("Current rule", backgroundLabel(policy.backgroundMode))
-                    if (legacyRelevant && policy.legacyMode != policy.backgroundMode) DetailValue("Legacy rule", backgroundLabel(policy.legacyMode))
+                app.protectedReason?.let { InfoCard("Protected app", it + " Use Android Settings to review this app manually.", Icons.Rounded.Lock, accent = Orange) }
+                policy?.error?.let { error ->
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        InfoCard("Settings could not be verified", error, Icons.Rounded.WarningAmber, accent = Orange)
+                        TextButton(onClick = { sheetMessage = null; onRetry() }, enabled = ready && !state.detailLoading && !state.busy) { Text("Retry reading settings") }
+                    }
                 }
-                if (policy?.uidOverride == true) {
-                    Text("An app-group rule overrides this setting. Quick changes are unavailable; review the app in Android Settings.", style = MaterialTheme.typography.bodySmall, color = Orange)
-                } else if (policy?.backgroundMode != null && policy.backgroundMode !in writableModes) {
-                    Text("This Android rule needs to be managed in Android Settings. Quick changes are unavailable.", style = MaterialTheme.typography.bodySmall, color = Orange)
-                } else if (policy != null && !backgroundKnown && !state.detailLoading) {
-                    Text("Android did not return all background rules. Controls stay off until they can be verified.", style = MaterialTheme.typography.bodySmall, color = Orange)
+                if (app.system && app.protectedReason == null) {
+                    InfoCard("Part of your phone’s software", "Changes to a system app can affect features elsewhere on your phone. Only adjust settings you recognize.", Icons.Rounded.WarningAmber, accent = Orange)
                 }
-                PolicyChoice("Allow background work", "Let the app work while you’re away.", selected = policy?.backgroundMode == "allow" && (!legacyRelevant || policy.legacyMode == "allow"), enabled = canChangeBackground, onClick = { confirmation = ControlAction.ALLOW_BACKGROUND })
-                PolicyChoice("Restrict background work", "Reduce background work; some features may be delayed.", selected = policy?.backgroundMode in setOf("ignore", "deny") && (!legacyRelevant || policy?.legacyMode in setOf("ignore", "deny")), enabled = canChangeBackground, onClick = { confirmation = ControlAction.RESTRICT_BACKGROUND })
-                Text("These are Android background rules. They may differ from the battery-mode choices in Motorola Settings.", style = MaterialTheme.typography.bodySmall, color = Muted)
-            }
-            HorizontalDivider(color = Outline)
-            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                Text("Battery optimization", style = MaterialTheme.typography.titleLarge)
-                Text("When the phone sits idle, Android pauses some activity to save battery. This is called Doze and is separate from background access.", style = MaterialTheme.typography.bodyMedium, color = Muted)
-                DetailValue("Doze exemption", if (!ready) "Access needed" else when (policy?.dozeExempt) { true -> "Exempt"; false -> "Not exempt"; null -> "Unknown" })
-                if (policy?.systemExempt == true) {
-                    Text("Android includes this app in its built-in exemption list. That exemption cannot be removed here.", style = MaterialTheme.typography.bodySmall, color = Orange)
+                Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                    Text("Background access", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+                    Text("Control work while you’re away. Restrictions can delay notifications, syncing and scheduled tasks.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    if (policy != null && ready) {
+                        DetailValue("Current rule", backgroundLabel(policy.backgroundMode))
+                        if (legacyRelevant && policy.legacyMode != policy.backgroundMode) DetailValue("Legacy rule", backgroundLabel(policy.legacyMode))
+                    }
+                    if (policy?.uidOverride == true) {
+                        Text("An app-group rule overrides this setting. Quick changes are unavailable; review the app in Android Settings.", style = MaterialTheme.typography.bodySmall, color = Orange)
+                    } else if (policy?.backgroundMode != null && policy.backgroundMode !in writableModes) {
+                        Text("This Android rule needs to be managed in Android Settings. Quick changes are unavailable.", style = MaterialTheme.typography.bodySmall, color = Orange)
+                    } else if (policy != null && !backgroundKnown && !state.detailLoading) {
+                        Text("Android did not return all background rules. Controls stay off until they can be verified.", style = MaterialTheme.typography.bodySmall, color = Orange)
+                    }
+                    PolicyChoice("Allow background work", "Let the app work while you’re away.", selected = policy?.backgroundMode == "allow" && (!legacyRelevant || policy.legacyMode == "allow"), enabled = canChangeBackground, onClick = { confirmation = ControlAction.ALLOW_BACKGROUND })
+                    PolicyChoice("Restrict background work", "Reduce background work; some features may be delayed.", selected = policy?.backgroundMode in setOf("ignore", "deny") && (!legacyRelevant || policy?.legacyMode in setOf("ignore", "deny")), enabled = canChangeBackground, onClick = { confirmation = ControlAction.RESTRICT_BACKGROUND })
+                    Text("These rules may differ from the battery modes in Motorola Settings.", style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
-                PolicyChoice("Keep optimized", "Let Android pause activity while your phone is idle.", selected = policy?.dozeExempt == false, enabled = canChangeDoze && policy?.systemExempt == false, onClick = { confirmation = ControlAction.OPTIMIZE_DOZE })
-                PolicyChoice("Allow during Doze", "Let this app do more while the phone is idle.", selected = policy?.dozeExempt == true, enabled = canChangeDoze && policy?.systemExempt == false, onClick = { confirmation = ControlAction.EXEMPT_DOZE })
-            }
-            HorizontalDivider(color = Outline)
-            Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                Text("Stop this app", style = MaterialTheme.typography.titleLarge)
-                Text("End the app’s current processes and background activity. Unsaved work may be lost. Notifications and scheduled work can stop until you open the app again. There is no Undo for force stop.", style = MaterialTheme.typography.bodyMedium, color = Muted)
-                forceStopRestriction?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Orange) }
-                OutlinedButton(onClick = { confirmForceStop = true }, enabled = canForceStop, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Force stop app") }
-            }
-            policy?.takeIf { ready }?.let {
-                Text("Settings checked ${dateTimeLabel(it.capturedAt)}. Changes are read back before being reported as applied.", style = MaterialTheme.typography.bodySmall, color = Muted)
-            }
-            state.message?.let { InfoCard("Update", it, Icons.Rounded.Info, accent = Green) }
-            OutlinedButton(onClick = { onOpenAppSettings(app.packageName) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
-                Icon(Icons.Rounded.Settings, null, modifier = Modifier.size(19.dp))
-                Spacer(Modifier.width(10.dp))
-                Text("Open Android app settings", modifier = Modifier.weight(1f))
-                Icon(Icons.Rounded.OpenInNew, null, modifier = Modifier.size(17.dp))
+                HorizontalDivider(color = Outline)
+                Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                    Text("Battery optimization", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+                    Text("Doze pauses activity while your phone is idle. It is separate from background access.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    DetailValue("Doze exemption", if (!ready) "Access needed" else when (policy?.dozeExempt) { true -> "Exempt"; false -> "Not exempt"; null -> "Unknown" })
+                    if (policy?.systemExempt == true) {
+                        Text("Android includes this app in its built-in exemption list. That exemption cannot be removed here.", style = MaterialTheme.typography.bodySmall, color = Orange)
+                    }
+                    PolicyChoice("Keep optimized", "Let Android pause activity while your phone is idle.", selected = policy?.dozeExempt == false, enabled = canChangeDoze && policy?.systemExempt == false, onClick = { confirmation = ControlAction.OPTIMIZE_DOZE })
+                    PolicyChoice("Allow during Doze", "Let this app do more while the phone is idle.", selected = policy?.dozeExempt == true, enabled = canChangeDoze && policy?.systemExempt == false, onClick = { confirmation = ControlAction.EXEMPT_DOZE })
+                }
+                HorizontalDivider(color = Outline)
+                Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                    Text("Stop this app", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+                    Text("End the app’s current processes and background activity. Unsaved work may be lost. Notifications and scheduled work can stop until you open the app again. There is no Undo for force stop.", style = MaterialTheme.typography.bodyMedium, color = Muted)
+                    forceStopRestriction?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Orange) }
+                    OutlinedButton(onClick = { confirmForceStop = true }, enabled = canForceStop, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Force stop app") }
+                }
+                policy?.takeIf { ready }?.let {
+                    Text("Settings checked ${dateTimeLabel(it.capturedAt)}. Changes are read back before being reported as applied.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                }
+                sheetMessage?.let { message ->
+                    SelectionContainer { InfoCard("Update", message, Icons.Rounded.Info, accent = Green) }
+                }
+                OutlinedButton(onClick = { onOpenAppSettings(app.packageName) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
+                    Icon(Icons.Rounded.Settings, null, modifier = Modifier.size(19.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text("Open Android app settings", modifier = Modifier.weight(1f))
+                    Icon(Icons.Rounded.OpenInNew, null, modifier = Modifier.size(17.dp))
+                }
+                key(app.packageName) {
+                    Disclosure("Resource diagnostics", summary = "Processes, battery, memory and services") {
+                        DetailValue("Process", if (ready) app.processState.label else "Access needed")
+                        DetailValue("Standby group", if (ready) bucketLabel(policy?.standbyBucket ?: app.standbyBucket) else "Access needed")
+                        SourceNote(when {
+                            !ready -> "Connect Shizuku for a process snapshot. Installed apps can still be browsed."
+                            state.capturedAt != null -> "Process snapshot at ${timeLabel(state.capturedAt)}. Being in memory does not measure battery use."
+                            state.refreshing -> "Reading the process snapshot…"
+                            else -> "Process snapshot unavailable. Refresh to try again."
+                        })
+                        HorizontalDivider(color = Outline)
+                        AppResourceDiagnostics(
+                            state, app, processSort, processDirection, serviceSort, serviceDirection,
+                            onProcessSort = { processSort = it }, onProcessDirection = { processDirection = it },
+                            onServiceSort = { serviceSort = it }, onServiceDirection = { serviceDirection = it },
+                        )
+                    }
+                }
             }
         }
     }
     if (confirmForceStop) {
         AlertDialog(
+            modifier = confirmationModifier,
+            properties = confirmationProperties,
             onDismissRequest = { confirmForceStop = false },
             title = { Text("Force stop ${app.label}?") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("This ends the app’s activity now. Unsaved work may be lost, and notifications, syncing and scheduled work may stop until you open the app again.")
                     Text("Force stop has no Undo. Your background and battery optimization settings remain in place.")
                     if (!canForceStop) Text("App identity or access changed. Close this dialog and refresh before continuing.", color = Orange)
                 }
             },
-            confirmButton = { TextButton(onClick = { confirmForceStop = false; onForceStop() }, enabled = canForceStop) { Text("Force stop now") } },
+            confirmButton = { TextButton(onClick = { confirmForceStop = false; sheetMessage = null; onForceStop() }, enabled = canForceStop) { Text("Force stop now") } },
             dismissButton = { TextButton(onClick = { confirmForceStop = false }) { Text("Cancel") } },
             containerColor = Panel,
         )
@@ -224,11 +287,13 @@ internal fun AppDetailSheet(
             ControlAction.EXEMPT_DOZE, ControlAction.OPTIMIZE_DOZE -> canChangeDoze && policy?.systemExempt == false
         }
         AlertDialog(
+            modifier = confirmationModifier,
+            properties = confirmationProperties,
             onDismissRequest = { confirmation = null },
-            icon = { Icon(Icons.Rounded.WarningAmber, null, tint = Orange) },
+            icon = if (compactHeight) null else { { Icon(Icons.Rounded.WarningAmber, null, tint = Orange) } },
             title = { Text(actionTitle(action)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("For ${app.label}: " + actionExplanation(action))
                     if (action == ControlAction.EXEMPT_DOZE || action == ControlAction.OPTIMIZE_DOZE) Text("Doze exemptions apply to the package across Android users. This may also affect this app in another user or work profile.", style = MaterialTheme.typography.bodySmall)
                     if (app.system) Text("This is a system app. Changing its behavior could affect other phone features.", color = Orange)
@@ -237,7 +302,7 @@ internal fun AppDetailSheet(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { confirmation = null; onAction(action) }, enabled = allowed) { Text(actionConfirm(action)) }
+                TextButton(onClick = { confirmation = null; sheetMessage = null; onAction(action) }, enabled = allowed) { Text(actionConfirm(action)) }
             },
             dismissButton = { TextButton(onClick = { confirmation = null }) { Text("Cancel") } },
             containerColor = Panel,
@@ -264,7 +329,7 @@ private fun AppResourceDiagnostics(
     val energy = state.energy?.uids?.firstOrNull { it.uid == app.uid }
     val diagnostics = state.diagnostics?.takeIf { it.packageName == app.packageName }
     val services = ListSorting.services(diagnostics?.services.orEmpty(), serviceSort, serviceDirection)
-    ResourceCard("Resource diagnostics") {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ResourceValue("Android UID", app.uid.toString())
         if (uidApps.size > 1) {
             Text("Shared UID · ${uidApps.size} apps", style = MaterialTheme.typography.titleMedium, color = Orange)
@@ -272,11 +337,11 @@ private fun AppResourceDiagnostics(
         } else {
             SourceNote("Processes match this app’s UID. Isolated processes using a different UID are not included.")
         }
-        if (state.access != AccessState.READY) SourceNote("Connect Shizuku for diagnostics. Any earlier readings are snapshots and are no longer live.")
-        Text("Processes with this UID", style = MaterialTheme.typography.titleMedium)
+        if (state.access != AccessState.READY) SourceNote("Shizuku access is needed for diagnostics.")
+        Text("Processes with this UID", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
         when {
             state.resourceLoading && resources == null -> SourceNote("Sampling processes…")
-            resources?.processesKnown != true -> SourceNote("Process readings unavailable. Open Monitor and refresh after connecting.")
+            resources?.processesKnown != true -> SourceNote(if (state.access == AccessState.READY) "Process readings unavailable. Open Monitor and refresh." else "Connect Shizuku to read this app’s processes.")
             processes.isEmpty() -> SourceNote("No processes with this UID were observed in the sample.")
             else -> {
                 SortControls(id = "app-process",
@@ -296,22 +361,29 @@ private fun AppResourceDiagnostics(
         }
         resources?.let { SourceNote("Process sample ${resourceTimeLabel(it.capturedAt)}. RSS includes shared memory and must not be added as private usage. Virtual memory is address space, not physical RAM use.") }
         HorizontalDivider(color = Outline)
-        ResourceValue("UID battery estimate", mahLabel(energy?.estimatedMah), accent = true)
-        ResourceValue("UID CPU time", durationLabel(energy?.cpuTimeMs))
-        ResourceValue("UID partial wakelocks", durationLabel(energy?.wakelockMs))
-        state.energy?.let { SourceNote("Android battery history · ${durationLabel(it.batteryRealtimeMs)} on battery · sampled ${resourceTimeLabel(it.capturedAt)}. This is cumulative estimated use, not live watts.") }
-            ?: SourceNote("Battery estimates unavailable. Open Monitor → Battery use to read Android’s history.")
+        if (state.energyLoading && state.energy == null) {
+            SourceNote("Reading battery estimates…")
+        } else {
+            ResourceValue("UID battery estimate", mahLabel(energy?.estimatedMah), accent = true)
+            ResourceValue("UID CPU time", durationLabel(energy?.cpuTimeMs))
+            ResourceValue("UID partial wakelocks", durationLabel(energy?.wakelockMs))
+            state.energy?.let { SourceNote("Android battery history · ${durationLabel(it.batteryRealtimeMs)} on battery · sampled ${resourceTimeLabel(it.capturedAt)}. This is cumulative estimated use, not live watts.") }
+                ?: SourceNote("Battery estimates unavailable. Open Monitor → Battery use to read Android’s history.")
+        }
         HorizontalDivider(color = Outline)
-        Text("Package memory and services", style = MaterialTheme.typography.titleMedium)
+        Text("Package memory and services", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
         if (state.diagnosticsLoading) {
             LinearProgressIndicator(Modifier.fillMaxWidth())
-            SourceNote("Reading detailed memory and running services…")
+            SourceNote(if (diagnostics == null) "Reading detailed memory and running services…" else "Refreshing diagnostics; the previous sample remains below.")
         }
-        ResourceValue("PSS", memoryLabel(diagnostics?.pssKb))
-        ResourceValue("Private dirty", memoryLabel(diagnostics?.privateDirtyKb))
-        ResourceValue("Swap PSS", memoryLabel(diagnostics?.swapPssKb))
-        SourceNote("Android’s package memory report. PSS apportions shared pages; private dirty is modified memory private to a process. Swap PSS apportions swapped pages. Package memory may include shared processes.")
+        if (!state.diagnosticsLoading || diagnostics != null) {
+            ResourceValue("PSS", memoryLabel(diagnostics?.pssKb))
+            ResourceValue("Private dirty", memoryLabel(diagnostics?.privateDirtyKb))
+            ResourceValue("Swap PSS", memoryLabel(diagnostics?.swapPssKb))
+            SourceNote("PSS apportions shared memory; private dirty is modified memory private to a process. Swap PSS apportions swapped pages. Package reports may include shared processes.")
+        }
         when {
+            state.diagnosticsLoading && diagnostics == null -> Unit
             diagnostics?.servicesKnown != true -> SourceNote("Running services unavailable.")
             services.isEmpty() -> SourceNote("No running services returned for this package.")
             else -> {
@@ -334,17 +406,16 @@ private fun AppResourceDiagnostics(
 
 @Composable
 private fun DetailValue(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = Muted, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
-    }
+    ResourceValue(label, value)
 }
 
 @Composable
 private fun PolicyChoice(title: String, description: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    val current = selected
     Surface(
         onClick = onClick,
         enabled = enabled && !selected,
+        modifier = Modifier.semantics { this.selected = current },
         color = if (selected) PanelRaised else Panel,
         contentColor = if (enabled || selected) Foreground else Muted,
         shape = RoundedCornerShape(8.dp),
@@ -356,7 +427,7 @@ private fun PolicyChoice(title: String, description: String, selected: Boolean, 
                 Text(description, style = MaterialTheme.typography.bodySmall, color = Muted)
                 if (selected) Text("Current setting", style = MaterialTheme.typography.labelMedium, color = Green)
             }
-            if (selected) Icon(Icons.Rounded.Check, contentDescription = "Current setting", tint = Green, modifier = Modifier.size(20.dp))
+            if (selected) Icon(Icons.Rounded.Check, contentDescription = null, tint = Green, modifier = Modifier.size(20.dp))
             else Icon(if (enabled) Icons.Rounded.ArrowForward else Icons.Rounded.Lock, contentDescription = if (enabled) null else "Unavailable", tint = Muted, modifier = Modifier.size(18.dp))
         }
     }

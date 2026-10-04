@@ -53,7 +53,9 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                 }
                 if (access == AccessState.READY) refresh()
                 else {
-                    resourceJob?.cancel(); energyJob?.cancel(); diagnosticsJob?.cancel()
+                    detailRevision++
+                    detailJob?.cancel(); resourceJob?.cancel(); energyJob?.cancel(); diagnosticsJob?.cancel()
+                    mutableState.update { it.copy(detailLoading = false, diagnosticsLoading = false) }
                 }
                 restartPolling()
             }
@@ -131,6 +133,8 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         mutableState.update { it.copy(energyLoading = true) }
         energyJob = viewModelScope.launch {
             try {
+                val battery = inventory.battery()
+                mutableState.update { it.copy(battery = battery) }
                 val energy = gate.withLock { monitor.energy() }
                 if (bridge.access.value == AccessState.READY) mutableState.update { it.copy(energy = energy) }
             } catch (e: Exception) {
@@ -182,7 +186,7 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
     fun select(app: AppEntry) {
         detailJob?.cancel()
         diagnosticsJob?.cancel()
-        mutableState.update { it.copy(selected = app, policy = null, diagnostics = null) }
+        mutableState.update { it.copy(selected = app, policy = null, diagnostics = null, message = null) }
         loadDetail(app)
     }
 
@@ -203,7 +207,10 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                mutableState.update { if (detailRevision == revision && it.selected?.packageName == app.packageName) it.copy(message = e.message ?: "Couldn't read this app's policy.") else it }
+                mutableState.update {
+                    if (detailRevision == revision && it.selected?.packageName == app.packageName)
+                        it.copy(policy = null, message = e.message ?: "Couldn't read this app's policy.") else it
+                }
             } finally {
                 mutableState.update { if (detailRevision == revision && it.selected?.packageName == app.packageName) it.copy(detailLoading = false) else it }
             }
@@ -237,7 +244,7 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
     fun forceStop() {
         val app = state.value.selected ?: return
         if (state.value.busy || bridge.access.value != AccessState.READY) return
-        mutableState.update { it.copy(busy = true) }
+        mutableState.update { it.copy(busy = true, message = null) }
         viewModelScope.launch {
             try {
                 val result = gate.withLock { processManager.forceStop(app) }
@@ -256,7 +263,7 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         val app = state.value.selected ?: return
         val before = state.value.policy ?: return
         if (state.value.busy || bridge.access.value != AccessState.READY) return
-        mutableState.update { it.copy(busy = true) }
+        mutableState.update { it.copy(busy = true, message = null) }
         viewModelScope.launch {
             try {
                 gate.withLock {

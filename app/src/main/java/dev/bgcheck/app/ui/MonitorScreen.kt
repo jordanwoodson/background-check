@@ -1,16 +1,21 @@
 package dev.bgcheck.app.ui
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -39,14 +44,20 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -78,7 +89,11 @@ internal fun MonitorScreen(
     onAccess: () -> Unit,
 ) {
     var mode by rememberSaveable { mutableStateOf(MonitorMode.LIVE) }
-    var query by rememberSaveable { mutableStateOf("") }
+    var processQuery by rememberSaveable { mutableStateOf("") }
+    var energyQuery by rememberSaveable { mutableStateOf("") }
+    val liveListState = rememberLazyListState()
+    val energyListState = rememberLazyListState()
+    val modeState = rememberSaveableStateHolder()
     var filter by rememberSaveable { mutableStateOf(MonitorProcessFilter.ALL) }
     var sort by rememberSaveable { mutableStateOf(ProcessSort.CPU) }
     var processDirection by rememberSaveable { mutableStateOf(ProcessSort.CPU.defaultDirection) }
@@ -94,9 +109,11 @@ internal fun MonitorScreen(
     var selectedEnergyAt by remember { mutableStateOf<Long?>(null) }
     val appsByUid = remember(state.apps) { ListSorting.apps(state.apps, AppSort.NAME, SortDirection.ASCENDING).groupBy { it.uid } }
     val ready = state.access == AccessState.READY
+    val largeText = LocalDensity.current.fontScale > 1.3f
+    val hasResourceReadings = state.resources?.let { it.cpuPercent != null || it.memory != null || it.processesKnown } == true
     val focusManager = LocalFocusManager.current
-    val processes = remember(state.resources, query, filter, sort, processDirection, appsByUid) {
-        val needle = query.trim()
+    val processes = remember(state.resources, processQuery, filter, sort, processDirection, appsByUid) {
+        val needle = processQuery.trim()
         state.resources?.processes.orEmpty().filter { process ->
             val packages = appsByUid[process.uid].orEmpty()
             val userApp = packages.any { !it.system }
@@ -109,8 +126,8 @@ internal fun MonitorScreen(
                 .any { it.contains(needle, ignoreCase = true) } || packages.any { it.label.contains(needle, true) || it.packageName.contains(needle, true) })
         }.let { ListSorting.processes(it, sort, processDirection) }
     }
-    val energy = remember(state.energy, query, energySort, energyDirection, appsByUid) {
-        val needle = query.trim()
+    val energy = remember(state.energy, energyQuery, energySort, energyDirection, appsByUid) {
+        val needle = energyQuery.trim()
         state.energy?.uids.orEmpty().filter { item ->
             needle.isEmpty() || item.uid.toString().contains(needle) || appsByUid[item.uid].orEmpty()
                 .any { it.label.contains(needle, true) || it.packageName.contains(needle, true) }
@@ -119,155 +136,221 @@ internal fun MonitorScreen(
     val components = remember(state.energy, componentSort, componentDirection) {
         ListSorting.components(state.energy?.components.orEmpty(), componentSort, componentDirection)
     }
-    LazyColumn(
-        modifier = Modifier.testTag("monitor-list"),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Eyebrow("resources / live telemetry")
-                Text("Resource monitor", style = MaterialTheme.typography.headlineLarge)
-                Text("Inspect live activity and Android’s battery estimates.", style = MaterialTheme.typography.bodyMedium, color = Muted)
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MonitorMode.entries.forEach { item -> FilterChip(selected = mode == item, onClick = { mode = item; query = "" }, label = { Text(item.label) }) }
+    // Capture the selected mode for this layout. Reading mutable mode inside the
+    // lazy content could switch the outgoing list's data before it is disposed,
+    // clamping that mode's saved position against the other mode's item count.
+    val displayedMode = mode
+    Column(Modifier.fillMaxSize()) {
+        Surface(color = Ink) {
+            FlowRow(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MonitorMode.entries.forEach { item ->
+                    FilterChip(selected = mode == item, onClick = { focusManager.clearFocus(); mode = item },
+                        modifier = Modifier.heightIn(min = 48.dp), label = { Text(item.label) })
                 }
             }
         }
-        if (!ready) {
-            item {
-                InfoCard("Connect for resource readings", "Shizuku access is needed to read process, memory and per-app battery statistics. Any previous samples are no longer live.", Icons.Rounded.Info, accent = Green)
-                TextButton(onClick = onAccess) { Text("Set up access") }
-            }
-        }
-        if (mode == MonitorMode.LIVE) {
-            item {
-                ResourceCard("Live sampling") {
-                    StatusPill(when {
-                        !ready -> "Disconnected"
-                        state.monitorPaused -> "Paused"
-                        state.resourceLoading -> "Sampling…"
-                        state.monitoring -> "Live"
-                        else -> "Waiting for sample"
-                    }, ready && !state.monitorPaused)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, enabled = ready, modifier = Modifier.weight(1f), shape = RoundedCornerShape(6.dp)) {
-                            Text(if (state.monitorPaused) "Resume" else "Pause")
+        // Give each mode a distinct lazy layout as well as a saved scroll position.
+        // This prevents item anchoring or placement animations leaking between lists.
+        key(displayedMode) {
+            modeState.SaveableStateProvider(displayedMode.name) {
+                LazyColumn(
+                    state = if (displayedMode == MonitorMode.LIVE) liveListState else energyListState,
+                    modifier = Modifier.weight(1f).testTag("monitor-list"),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item(key = "monitor-heading") {
+                        Text("Resource monitor", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
+                    }
+                    if (displayedMode == MonitorMode.ENERGY) {
+                        item(key = "battery-flow") { BatteryFlowCard(state.battery) }
+                    }
+                    if (!ready) {
+                        item(key = "monitor-access") { MonitorAccessCard(state.access, onAccess) }
+                    } else if (displayedMode == MonitorMode.LIVE) {
+                        item(key = "sampling") {
+                            ResourceCard("Live sampling") {
+                                FlowRow(Modifier.fillMaxWidth().heightIn(min = 48.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    StatusPill(when {
+                                        state.resourceLoading -> "Sampling…"
+                                        state.resources == null -> "Waiting for sample"
+                                        !hasResourceReadings -> "Readings unavailable"
+                                        state.monitorPaused -> "Paused"
+                                        state.monitoring -> "Live"
+                                        else -> "Snapshot"
+                                    }, hasResourceReadings && state.monitoring && !state.monitorPaused)
+                                    Text("${state.monitorIntervalMs / 1000}s interval", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(vertical = 6.dp))
+                                }
+                                if (largeText) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) {
+                                            Text(if (state.monitorPaused) "Resume" else "Pause")
+                                        }
+                                        OutlinedButton(onClick = onRefreshResources, enabled = !state.resourceLoading, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) { Text("Refresh now") }
+                                    }
+                                } else {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedButton(onClick = { onSetPaused(!state.monitorPaused) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) {
+                                            Text(if (state.monitorPaused) "Resume" else "Pause")
+                                        }
+                                        OutlinedButton(onClick = onRefreshResources, enabled = !state.resourceLoading, modifier = Modifier.weight(1f).heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) { Text("Refresh now") }
+                                    }
+                                }
+                                SourceNote(state.resources?.let { "Last sample ${resourceTimeLabel(it.capturedAt)}" } ?: "No sample yet")
+                                Box(Modifier.fillMaxWidth().height(4.dp)) {
+                                    if (state.resourceLoading) LinearProgressIndicator(Modifier.fillMaxWidth().semantics { contentDescription = "Sampling resources" })
+                                }
+                            }
                         }
-                        OutlinedButton(onClick = onRefreshResources, enabled = ready && !state.resourceLoading, modifier = Modifier.weight(1f), shape = RoundedCornerShape(6.dp)) { Text("Refresh now") }
-                    }
-                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(3_000L, 5_000L, 10_000L).forEach { interval ->
-                            FilterChip(selected = state.monitorIntervalMs == interval, onClick = { onSetInterval(interval) }, label = { Text("${interval / 1000} seconds") })
+                        state.resources?.let { resources ->
+                            item(key = "whole-device") {
+                                ResourceCard("Whole device") {
+                                    ResourceValue("CPU · all cores", percent(resources.cpuPercent), accent = true)
+                                    ResourceValue("RAM available", memoryLabel(resources.memory?.availableKb), accent = true)
+                                    Disclosure("Device readings", "CPU cores, RAM and swap") {
+                                        ResourceValue("CPU cores", resources.cpuCoreCount?.toString() ?: "Unavailable")
+                                        ResourceValue("RAM total", memoryLabel(resources.memory?.totalKb))
+                                        ResourceValue("Swap used", resources.memory?.let { memoryLabel((it.swapTotalKb - it.swapFreeKb).coerceAtLeast(0)) } ?: "Unavailable")
+                                        ResourceValue("Swap total", memoryLabel(resources.memory?.swapTotalKb))
+                                        SourceNote("Device CPU is 0–100% of all cores. Available RAM includes memory Android can reclaim. Swap can include compressed RAM (zram).")
+                                    }
+                                }
+                            }
+                            item(key = "resource-trends") { ResourceTrends(state.resourceHistory, resources.memory?.totalKb) }
+                            if (resources.warnings.isNotEmpty()) {
+                                item(key = "resource-warnings") { InfoCard("Some live readings are unavailable", resources.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange) }
+                            }
                         }
-                    }
-                    SourceNote("Only samples while this screen is open and the app is in the foreground. Faster sampling adds monitoring overhead.")
-                    state.resources?.let { SourceNote("Sample ${resourceTimeLabel(it.capturedAt)} · CPU interval ${durationLabel(it.sampleDurationMs)}") }
-                    if (state.resourceLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
-                }
-            }
-            item {
-                val resources = state.resources
-                ResourceCard("Whole device") {
-                    ResourceValue("CPU · all cores", percent(resources?.cpuPercent), accent = true)
-                    ResourceValue("CPU cores", resources?.cpuCoreCount?.toString() ?: "Unavailable")
-                    ResourceValue("RAM available", memoryLabel(resources?.memory?.availableKb))
-                    ResourceValue("RAM total", memoryLabel(resources?.memory?.totalKb))
-                    ResourceValue("Swap used", resources?.memory?.let { memoryLabel((it.swapTotalKb - it.swapFreeKb).coerceAtLeast(0)) } ?: "Unavailable")
-                    ResourceValue("Swap total", memoryLabel(resources?.memory?.swapTotalKb))
-                    SourceNote("Device CPU is 0–100% of all cores. Available RAM includes memory Android can reclaim. Swap can include compressed RAM (zram).")
-                }
-            }
-            item { ResourceTrends(state.resourceHistory, state.resources?.memory?.totalKb) }
-            if (state.resources?.warnings?.isNotEmpty() == true) {
-                item { InfoCard("Some live readings are unavailable", state.resources.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange) }
-            }
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Processes", style = MaterialTheme.typography.titleLarge)
-                    OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                        label = { Text("Search processes") }, supportingText = { Text("Name, command, app, PID or UID") }, leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                        trailingIcon = { if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Rounded.Close, "Clear process search") } })
-                }
-            }
-            item {
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MonitorProcessFilter.entries.forEach { item -> FilterChip(selected = filter == item, onClick = { filter = item }, label = { Text(item.label) }) }
-                }
-            }
-            item {
-                SortControls("process", ProcessSort.entries, sort, processDirection,
-                    onSort = { sort = it }, onDirection = { processDirection = it })
-            }
-            item {
-                SourceNote((if (state.resources?.processesKnown == true) "${processes.size} shown / ${state.resources.processes.size} sampled. " else "Process count unavailable. ") + "App processes match an installed non-system app UID; other processes appear under System / native. CPU: one core = 100%. RSS includes shared memory; do not add it as private app usage.")
-            }
-            if (state.resources?.processesKnown != true) {
-                item { InfoCard(if (state.resourceLoading) "Reading processes…" else "Process list unavailable", "Refresh after connecting. Android or the device vendor may restrict some readings.", Icons.Rounded.Info) }
-            } else if (processes.isEmpty()) {
-                item { SourceNote(if (query.isNotBlank() || filter != MonitorProcessFilter.ALL) "No processes match this search and filter." else "No shell-visible processes were returned.") }
-            }
-            items(processes, key = { it.pid }) { process ->
-                ProcessRow(process, appsByUid[process.uid].orEmpty(), sort, onClick = { selectedProcess = process; selectedAt = state.resources?.capturedAt })
-            }
-        } else {
-            item { BatteryFlowCard(state.battery) }
-            item {
-                ResourceCard("Android battery estimates") {
-                    OutlinedButton(onClick = onRefreshEnergy, enabled = ready && !state.energyLoading, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(6.dp)) { Text("Refresh battery estimates") }
-                    if (state.energyLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
-                    ResourceValue("Estimated total", mahLabel(state.energy?.estimatedTotalMah), accent = true)
-                    ResourceValue("Time on battery", durationLabel(state.energy?.batteryRealtimeMs))
-                    ResourceValue("History begins", state.energy?.startClockTimeMs?.let { dateTimeLabel(it) } ?: "Unavailable")
-                    state.energy?.let { SourceNote("Battery statistics sampled ${resourceTimeLabel(it.capturedAt)}") }
-                    SourceNote("Cumulative estimates from Android’s current battery history, not instantaneous power. Each UID is counted once. History can reset after charging or a system reset. Missing readings mean unavailable, not zero.")
-                }
-            }
-            if (state.energy?.warnings?.isNotEmpty() == true) {
-                item { InfoCard("Some battery readings are unavailable", state.energy.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange) }
-            }
-            if (state.energy?.components?.isNotEmpty() == true) {
-                item {
-                    ResourceCard("Device components") {
-                        SortControls("component", ComponentSort.entries, componentSort, componentDirection,
-                            onSort = { componentSort = it }, onDirection = { componentDirection = it })
-                        components.forEach { ResourceValue(powerComponentLabel(it.name), mahLabel(it.estimatedMah)) }
-                        SourceNote("System component estimates overlap the UID breakdown; do not add the two lists together.")
-                    }
-                }
-            } else {
-                item { SourceNote("Device component estimates are unavailable in this sample.") }
-            }
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Battery use by UID", style = MaterialTheme.typography.titleLarge)
-                    OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                        label = { Text("Search battery use") }, supportingText = { Text("App, package or UID") }, leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                        trailingIcon = { if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Rounded.Close, "Clear battery search") } })
-                    SourceNote("Select a UID for CPU time, traffic, wakelocks and related apps.")
-                }
-            }
-            item {
-                SortControls("energy", EnergySort.entries, energySort, energyDirection,
-                    onSort = { energySort = it }, onDirection = { energyDirection = it })
-            }
-            if (energy.isEmpty()) {
-                item { InfoCard(if (state.energyLoading) "Reading battery estimates…" else if (query.isNotBlank()) "No matching UIDs" else "UID battery estimates unavailable", if (query.isNotBlank()) "Try another app, package or UID." else "No per-UID estimates were returned. Refresh after connecting; some Android builds do not expose these statistics.", Icons.Rounded.Info) }
-            }
-            items(energy, key = { it.uid }) { item ->
-                val packages = appsByUid[item.uid].orEmpty()
-                Surface(onClick = { selectedEnergy = item; selectedEnergyAt = state.energy?.capturedAt }, color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
-                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text(uidTitle(item.uid, packages), style = MaterialTheme.typography.titleMedium)
-                        Text(mahLabel(item.estimatedMah), style = MaterialTheme.typography.headlineMedium, color = Cyan)
-                        SourceNote("UID ${item.uid}${if (packages.size > 1) " · Shared by ${packages.size} apps" else ""}")
-                        SourceNote("CPU ${durationLabel(item.cpuTimeMs)} · Wakelock ${durationLabel(item.wakelockMs)}")
-                        when (energySort) {
-                            EnergySort.RECEIVED -> ResourceValue("Network received", bytesLabel(item.networkRxBytes))
-                            EnergySort.SENT -> ResourceValue("Network sent", bytesLabel(item.networkTxBytes))
-                            else -> Unit
+                        item(key = "sampling-options") {
+                            Disclosure("Sampling options") {
+                                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf(3_000L, 5_000L, 10_000L).forEach { interval ->
+                                        FilterChip(selected = state.monitorIntervalMs == interval, onClick = { onSetInterval(interval) },
+                                            modifier = Modifier.heightIn(min = 48.dp), label = { Text("${interval / 1000} seconds") })
+                                    }
+                                }
+                                SourceNote("Only samples while this screen is open and the app is in the foreground. Faster sampling adds monitoring overhead.")
+                                state.resources?.let { SourceNote("CPU interval ${durationLabel(it.sampleDurationMs)}") }
+                            }
+                        }
+                        if (state.resources?.processesKnown != true) {
+                            item(key = "process-unavailable") {
+                                InfoCard(if (state.resourceLoading) "Reading processes…" else "Process list unavailable",
+                                    if (state.resourceLoading) "The first sample takes a moment." else "Use Refresh now to try again. Android or the device vendor may restrict some readings.", Icons.Rounded.Info)
+                            }
+                        } else if (state.resources.processes.isEmpty()) {
+                            item(key = "process-empty") { InfoCard("No processes observed", "No shell-visible processes were returned. Use Refresh now to take another sample.", Icons.Rounded.Info) }
+                        } else {
+                            item(key = "process-search") {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Processes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+                                    OutlinedTextField(value = processQuery, onValueChange = { processQuery = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                                        label = { Text("Search processes") }, supportingText = { Text("Name, command, app, PID or UID") }, leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                                        trailingIcon = { if (processQuery.isNotEmpty()) IconButton(onClick = { processQuery = "" }) { Icon(Icons.Rounded.Close, "Clear process search") } })
+                                }
+                            }
+                            item(key = "process-filters") {
+                                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    MonitorProcessFilter.entries.forEach { item -> FilterChip(selected = filter == item, onClick = { filter = item },
+                                        modifier = Modifier.heightIn(min = 48.dp), label = { Text(item.label) }) }
+                                }
+                            }
+                            item(key = "process-sort") {
+                                SortControls("process", ProcessSort.entries, sort, processDirection,
+                                    onSort = { sort = it }, onDirection = { processDirection = it })
+                            }
+                            item(key = "process-explanation") {
+                                Disclosure("${processes.size} shown · ${state.resources.processes.size} sampled", "How to read process values") {
+                                    SourceNote("App processes match an installed non-system app UID; other processes appear under System / native. CPU: one core = 100%. RSS includes shared memory; do not add it as private app usage.")
+                                }
+                            }
+                            if (processes.isEmpty()) {
+                                item(key = "process-no-match") {
+                                    InfoCard("No matching processes", "Try another search or reset the process filter.", Icons.Rounded.Search)
+                                    TextButton(onClick = { processQuery = ""; filter = MonitorProcessFilter.ALL }) { Text("Reset search and filter") }
+                                }
+                            }
+                            items(processes, key = { "process-${it.pid}" }) { process ->
+                                ProcessRow(process, appsByUid[process.uid].orEmpty(), sort,
+                                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = tween(220)),
+                                    onClick = { focusManager.clearFocus(); selectedProcess = process; selectedAt = state.resources.capturedAt })
+                            }
+                        }
+                    } else {
+                        item(key = "battery-estimates") {
+                            ResourceCard("Android battery estimates") {
+                                OutlinedButton(onClick = onRefreshEnergy, enabled = !state.energyLoading, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(6.dp)) { Text("Refresh battery estimates") }
+                                Box(Modifier.fillMaxWidth().height(4.dp)) {
+                                    if (state.energyLoading) LinearProgressIndicator(Modifier.fillMaxWidth().semantics { contentDescription = "Reading battery estimates" })
+                                }
+                                state.energy?.let { snapshot ->
+                                    ResourceValue("Estimated total", mahLabel(snapshot.estimatedTotalMah), accent = true)
+                                    ResourceValue("Time on battery", durationLabel(snapshot.batteryRealtimeMs))
+                                    SourceNote("Battery statistics sampled ${resourceTimeLabel(snapshot.capturedAt)}")
+                                    Disclosure("About these estimates", "Cumulative Android battery history") {
+                                        ResourceValue("History begins", snapshot.startClockTimeMs?.let { dateTimeLabel(it) } ?: "Unavailable")
+                                        SourceNote("Cumulative estimates from Android’s current battery history, not instantaneous power. Each UID is counted once. History can reset after charging or a system reset. Missing readings mean unavailable, not zero.")
+                                    }
+                                } ?: SourceNote(if (state.energyLoading) "Reading Android’s battery history…" else "Refresh to read Android’s battery history.")
+                            }
+                        }
+                        state.energy?.let { snapshot ->
+                            if (snapshot.warnings.isNotEmpty()) {
+                                item(key = "energy-warnings") { InfoCard("Some battery readings are unavailable", snapshot.warnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange) }
+                            }
+                            item(key = "battery-components") {
+                                Disclosure("Device components", if (components.isEmpty()) "No component estimates in this sample" else "${components.size} component estimates") {
+                                    if (components.isNotEmpty()) {
+                                        SortControls("component", ComponentSort.entries, componentSort, componentDirection,
+                                            onSort = { componentSort = it }, onDirection = { componentDirection = it })
+                                        components.forEach { ResourceValue(powerComponentLabel(it.name), mahLabel(it.estimatedMah)) }
+                                    } else SourceNote("Device component estimates are unavailable in this sample.")
+                                    SourceNote("System component estimates overlap the UID breakdown; do not add the two lists together.")
+                                }
+                            }
+                            if (snapshot.uids.isEmpty()) {
+                                item(key = "energy-unavailable") { InfoCard("UID battery estimates unavailable", "No per-UID estimates were returned. Try refreshing; some Android builds do not expose these statistics.", Icons.Rounded.Info) }
+                            } else {
+                                item(key = "energy-search") {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text("Battery use by UID", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+                                        OutlinedTextField(value = energyQuery, onValueChange = { energyQuery = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                                            label = { Text("Search battery use") }, supportingText = { Text("App, package or UID") }, leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                                            trailingIcon = { if (energyQuery.isNotEmpty()) IconButton(onClick = { energyQuery = "" }) { Icon(Icons.Rounded.Close, "Clear battery search") } })
+                                        SourceNote("Select a UID for CPU time, traffic, wakelocks and related apps.")
+                                    }
+                                }
+                                item(key = "energy-sort") {
+                                    SortControls("energy", EnergySort.entries, energySort, energyDirection,
+                                        onSort = { energySort = it }, onDirection = { energyDirection = it })
+                                }
+                                if (energy.isEmpty()) {
+                                    item(key = "energy-no-match") {
+                                        InfoCard("No matching UIDs", "Try another app, package or UID.", Icons.Rounded.Search)
+                                        TextButton(onClick = { energyQuery = "" }) { Text("Clear battery search") }
+                                    }
+                                }
+                                items(energy, key = { "energy-${it.uid}" }) { item ->
+                                    val packages = appsByUid[item.uid].orEmpty()
+                                    Surface(onClick = { focusManager.clearFocus(); selectedEnergy = item; selectedEnergyAt = snapshot.capturedAt },
+                                        modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, placementSpec = tween(220)),
+                                        color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+                                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                            Text(uidTitle(item.uid, packages), style = MaterialTheme.typography.titleMedium)
+                                            Text(mahLabel(item.estimatedMah), style = MaterialTheme.typography.headlineMedium, color = Cyan)
+                                            SourceNote("UID ${item.uid}${if (packages.size > 1) " · Shared by ${packages.size} apps" else ""}")
+                                            SourceNote("CPU ${durationLabel(item.cpuTimeMs)} · Wakelock ${durationLabel(item.wakelockMs)}")
+                                            when (energySort) {
+                                                EnergySort.RECEIVED -> ResourceValue("Network received", bytesLabel(item.networkRxBytes))
+                                                EnergySort.SENT -> ResourceValue("Network sent", bytesLabel(item.networkTxBytes))
+                                                else -> Unit
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -285,8 +368,26 @@ internal fun MonitorScreen(
 }
 
 @Composable
-private fun ProcessRow(process: ProcessResource, apps: List<AppEntry>, sort: ProcessSort, onClick: () -> Unit) {
-    Surface(onClick = onClick, color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
+private fun MonitorAccessCard(access: AccessState, onAccess: () -> Unit) {
+    val checking = access == AccessState.CHECKING || access == AccessState.CONNECTING
+    ResourceCard(when (access) {
+        AccessState.CHECKING -> "Checking connection…"
+        AccessState.CONNECTING -> "Connecting to Shizuku…"
+        AccessState.NEEDS_PERMISSION -> "Allow access for resource readings"
+        AccessState.ERROR -> "Connection needs attention"
+        else -> "Connect for resource readings"
+    }) {
+        SourceNote(if (checking) "Resource readings will appear when the connection is ready." else "Shizuku access is needed for process, memory and per-app battery readings.")
+        if (checking) LinearProgressIndicator(Modifier.fillMaxWidth().semantics { contentDescription = "Checking Shizuku connection" })
+        else Button(onClick = onAccess, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(if (access == AccessState.NEEDS_PERMISSION) "Grant access" else "Set up access")
+        }
+    }
+}
+
+@Composable
+private fun ProcessRow(process: ProcessResource, apps: List<AppEntry>, sort: ProcessSort, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(onClick = onClick, modifier = modifier, color = Panel, shape = RoundedCornerShape(8.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(process.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             SourceNote("PID ${process.pid} · UID ${process.uid} · ${process.state}")
@@ -353,7 +454,7 @@ private fun EnergyDetailSheet(
 @Composable
 private fun DetailSheetHeading(title: String, onDismiss: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+        Text(title, Modifier.weight(1f).semantics { heading() }, style = MaterialTheme.typography.titleLarge)
         IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Close $title") }
     }
 }
@@ -365,7 +466,7 @@ private fun RelatedApps(
 ) {
     val sortedApps = remember(apps, sort, direction) { ListSorting.apps(apps, sort, direction) }
     HorizontalDivider(color = Outline)
-    Text("Apps with this UID", style = MaterialTheme.typography.titleLarge)
+    Text("Apps with this UID", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
     SourceNote(when {
         apps.size > 1 -> "Shared UID: these apps share this identity. Resource use belongs to the UID and cannot reliably be assigned to just one package."
         apps.isEmpty() -> "No installed app matches this UID. It may belong to a native/system service, another user, or an isolated process."

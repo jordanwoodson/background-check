@@ -73,7 +73,8 @@ class ResourceUiTest {
         compose.onNodeWithTag("process-sort").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithText("PID").assertIsDisplayed().performClick()
         compose.onNodeWithTag("process-sort").assertTextContains("PID", substring = true)
-        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText("native-service"))
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText("fixture:worker"))
+        compose.onNodeWithText("fixture:worker").performScrollTo()
         val first = compose.onNodeWithText("native-service").fetchSemanticsNode().boundsInRoot.top
         val second = compose.onNodeWithText("other:worker").fetchSemanticsNode().boundsInRoot.top
         val third = compose.onNodeWithText("fixture:worker").fetchSemanticsNode().boundsInRoot.top

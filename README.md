@@ -6,10 +6,10 @@ A native Android app for inspecting running processes, CPU, memory and battery u
 
 1. In Obtainium, add `https://github.com/jordanwoodson/background-check` using a GitHub token with access to this private repository, as for Cana. Alternatively install the signed APK from the [latest release](https://github.com/jordanwoodson/background-check/releases/latest). See [release and Obtainium setup](docs/releases.md).
 2. Open Shizuku and start it with **Wireless debugging** (or root).
-3. Open Background Check → **Access** and authorize Shizuku.
+3. Open Background Check → **Access** and authorize Shizuku. Once connected, setup instructions stay tucked inside **Connection help**. If permission was denied, use **Open Shizuku** to allow Background Check under Authorized applications.
 4. Open **Monitor → Live processes** for whole-device CPU, RAM and swap, session trends, and shell-visible processes. Search by name, command, app, PID or UID; filter app versus system/native processes, and choose a sort order. Tap a process for its command, parent, UID and related apps.
 5. Open **Monitor → Battery use** for current battery flow, component estimates and Android UID measurements, initially ranked by estimated mAh. Tap a UID for cumulative CPU time, traffic, partial wakelocks and related apps.
-6. Browse **Apps** or open a related app from Monitor for its processes, UID battery estimate, package memory and running services. Background-policy changes require confirmation and Android readback. Undo is available in **Overview → Your changes**.
+6. Browse **Apps** or open a related app from Monitor. App controls appear first; expand **Resource diagnostics** for processes, UID battery estimates, package memory and running services. Background-policy changes require confirmation and Android readback. Undo is available in **Overview → Your changes**.
 
 Shizuku may need to be started again after a reboot. Background Check does not run a background monitor, upload data, or require an internet permission. Tailscale is used only to deliver and test the APK from the development machine; normal use is local on the phone. Direct in-app ADB pairing is not implemented; Shizuku is the supported privilege backend.
 
@@ -38,7 +38,7 @@ The complete filtered list is sorted before Overview selects its first four acti
 
 ## Reading the monitor
 
-Live polling runs only while Monitor is open and the app is in the foreground. Choose **3, 5 or 10 seconds**, use **Pause / Resume**, or take one sample with **Refresh now**, including while paused. A maximum of 60 recent CPU/RAM samples stays in memory. Sampling itself adds overhead. Battery estimates refresh separately at a slower cadence, or with **Refresh battery estimates**. Timestamps identify each source’s sample; app diagnostics are read when you open an app.
+Live polling runs only while Monitor is open and the app is in the foreground. Expand **Sampling options** to choose **3, 5 or 10 seconds**, use **Pause / Resume**, or take one sample with **Refresh now**, including while paused. A maximum of 60 recent CPU/RAM samples stays in memory. Sampling itself adds overhead. Battery estimates refresh separately at a slower cadence, or with **Refresh battery estimates**, which also updates the local battery reading. Expand **Device readings**, **Session trend**, **Battery measurements** or **Device components** for the full detail. Live and battery views retain separate searches and scroll positions. Timestamps identify each source’s sample; app diagnostics are read when you open an app.
 
 | Reading | Meaning |
 | --- | --- |
@@ -91,7 +91,7 @@ Keep that keystore and its credentials private and backed up; updates must use t
 
 The test suite covers shell validation, resource and battery parsing, unavailable-versus-zero readings, sorting fields and directions, policy changes and recovery, and force-stop identity/readback safeguards. Compose tests exercise rendered sort order, search/filter retention, page navigation, preview limits, Undo targeting and force-stop confirmation. Device tests use only `dev.bgcheck.fixture`, a disposable APK with a test activity, a separate worker service and no requested permissions, for mutations. They exercise the Shizuku transport, resource reads, restrictions, Doze exemptions, restoration and force stop.
 
-See the [1.1.1 list-sorting verification record](docs/list-sorting-verification.md) for build, test, device and delivery evidence and outstanding limitations. The historical [1.1.0 resource-monitor verification record](docs/resource-monitor-verification.md) and [1.0.0 verification record](docs/verification.md) document earlier versions and do not establish verification of the new sorting features.
+See the [UI polish verification record](docs/ui-polish-verification.md) for the current release sweep and the [1.1.1 list-sorting verification record](docs/list-sorting-verification.md) for build, test, device and delivery evidence and outstanding limitations. The historical [1.1.0 resource-monitor verification record](docs/resource-monitor-verification.md) and [1.0.0 verification record](docs/verification.md) document earlier versions and do not establish verification of the new sorting features.
 
 ```sh
 ./gradlew :fixture:assembleDebug :app:assembleDebug :app:assembleDebugAndroidTest
@@ -115,6 +115,6 @@ Do not run the fixture mutation test against any other package.
 
 This project is independent of the Cana app in the neighboring repository and uses the same automatic signed GitHub-release and Obtainium update flow. App changes pushed to `main` publish `1.1.1-bgcheck.N` releases; the existing [1.1.1 APK](artifacts/background-check-1.1.1.apk) is the historical local baseline.
 
-[Dracula screens](docs/dracula-theme.md) · [Current overview](artifacts/screenshots/dracula-overview.png) · [Current monitor](artifacts/screenshots/dracula-monitor.png) · [Current battery view](artifacts/screenshots/dracula-battery.png) · [Historical list sorting verification](docs/list-sorting-verification.md) · [1.1.0 resource monitor verification](docs/resource-monitor-verification.md) · [1.0.0 verification](docs/verification.md)
+[Dracula screens](docs/dracula-theme.md) · [Current overview](artifacts/verification-ui-polish/after/ux-captures/01-overview-720x1600-font1p0.png) · [Current monitor](artifacts/verification-ui-polish/after/ux-captures/06-monitor-live-720x1600-font1p0.png) · [Current battery view](artifacts/verification-ui-polish/after/ux-captures/09-battery-flow-720x1600-font1p0.png) · [Historical list sorting verification](docs/list-sorting-verification.md) · [1.1.0 resource monitor verification](docs/resource-monitor-verification.md) · [1.0.0 verification](docs/verification.md)
 
 Platform references: [Shizuku API](https://github.com/RikkaApps/Shizuku-API), [Android battery policy](https://android.googlesource.com/platform/packages/apps/Settings/+/refs/heads/android15-release/src/com/android/settings/fuelgauge/BatteryOptimizeUtils.java), [Doze implementation](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android15-release/apex/jobscheduler/service/java/com/android/server/DeviceIdleController.java).

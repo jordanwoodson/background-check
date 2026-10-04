@@ -1,0 +1,568 @@
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+dev.bgcheck.app.AccessUxTest:
+INSTRUMENTATION_STATUS: test=connectingSuccessfullyCollapsesPreviouslyOpenedSetupHelp
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=connectingSuccessfullyCollapsesPreviouslyOpenedSetupHelp
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=connectedAccessKeepsSetupOutOfTheWayButAvailableInHelp
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=connectedAccessKeepsSetupOutOfTheWayButAvailableInHelp
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=searchIgnoresSurroundingWhitespaceAndKeepsItsLabel
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=searchIgnoresSurroundingWhitespaceAndKeepsItsLabel
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=overviewWaitsForAccessChecksBeforeOfferingSetup
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=overviewWaitsForAccessChecksBeforeOfferingSetup
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=deniedPermissionExplainsHowToRecoverAndCanOpenShizuku
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=deniedPermissionExplainsHowToRecoverAndCanOpenShizuku
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=processFilterResumesAfterConnectionReturns
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=processFilterResumesAfterConnectionReturns
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=7
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=emptySearchCanResetTheQueryAndFiltersToBrowseAppsAgain
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=7
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=emptySearchCanResetTheQueryAndFiltersToBrowseAppsAgain
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=8
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=permissionNeededShowsOneGrantActionUntilHelpIsOpened
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AccessUxTest
+INSTRUMENTATION_STATUS: current=8
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=permissionNeededShowsOneGrantActionUntilHelpIsOpened
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=9
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+dev.bgcheck.app.AppDetailSortingUiTest:
+INSTRUMENTATION_STATUS: test=processMetricsSortBothWaysWithUnavailableReadingsLast
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=9
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=processMetricsSortBothWaysWithUnavailableReadingsLast
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=10
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=diagnosticsStartCollapsedAndRetainTheirControlsWhenOpened
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=10
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=diagnosticsStartCollapsedAndRetainTheirControlsWhenOpened
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=11
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=accessGuidanceMatchesTheConnectionStage
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=11
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=accessGuidanceMatchesTheConnectionStage
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=12
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=initialDiagnosticLoadingDoesNotClaimReadingsAreUnavailable
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=12
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=initialDiagnosticLoadingDoesNotClaimReadingsAreUnavailable
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=13
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=missingVerifiedPolicyOffersRetryWithoutSuggestingDisconnectedAccess
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=13
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=missingVerifiedPolicyOffersRetryWithoutSuggestingDisconnectedAccess
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=14
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=choicesSurviveUpdatesAndResetForAnotherPackage
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=14
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=choicesSurviveUpdatesAndResetForAnotherPackage
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=15
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=servicesSortByProcessAndForegroundWithIndependentProcessControls
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.AppDetailSortingUiTest
+INSTRUMENTATION_STATUS: current=15
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=servicesSortByProcessAndForegroundWithIndependentProcessControls
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=16
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+dev.bgcheck.app.MonitorSortingUiTest:
+INSTRUMENTATION_STATUS: test=componentsCanSortByDisplayedNameAndReverse
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=16
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=componentsCanSortByDisplayedNameAndReverse
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=17
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=processSortAndDirectionKeepSearchAndAppFilter
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=17
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=processSortAndDirectionKeepSearchAndAppFilter
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=18
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=modesPreserveIndependentSearchAndScroll
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=18
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Beta worker' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.MonitorSortingUiTest.modesPreserveIndependentSearchAndScroll(MonitorSortingUiTest.kt:165)
+
+INSTRUMENTATION_STATUS: stream=
+Error in modesPreserveIndependentSearchAndScroll(dev.bgcheck.app.MonitorSortingUiTest):
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Beta worker' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.MonitorSortingUiTest.modesPreserveIndependentSearchAndScroll(MonitorSortingUiTest.kt:165)
+
+INSTRUMENTATION_STATUS: test=modesPreserveIndependentSearchAndScroll
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=19
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=batteryFlowRemainsAvailableWithoutShizuku
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=19
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=batteryFlowRemainsAvailableWithoutShizuku
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=20
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=checkingAccessAvoidsSetupAndUnavailableReadingStacks
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=20
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=checkingAccessAvoidsSetupAndUnavailableReadingStacks
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=21
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=initialProcessSampleHidesSearchUntilReadingsExist
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=21
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=initialProcessSampleHidesSearchUntilReadingsExist
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=22
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=failedResourceSampleDoesNotClaimLiveReadings
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=22
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=failedResourceSampleDoesNotClaimLiveReadings
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=23
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=sharedUidRelatedAppsCanSortByPackageInEitherDirection
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=23
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=sharedUidRelatedAppsCanSortByPackageInEitherDirection
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=24
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=batteryRankingChangesMetricAndKeepsLiveSortIndependent
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.MonitorSortingUiTest
+INSTRUMENTATION_STATUS: current=24
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Beta app' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.MonitorSortingUiTest.assertOrder(MonitorSortingUiTest.kt:77)
+	at dev.bgcheck.app.MonitorSortingUiTest.assertOrder$default(MonitorSortingUiTest.kt:71)
+	at dev.bgcheck.app.MonitorSortingUiTest.batteryRankingChangesMetricAndKeepsLiveSortIndependent(MonitorSortingUiTest.kt:105)
+
+INSTRUMENTATION_STATUS: stream=
+Error in batteryRankingChangesMetricAndKeepsLiveSortIndependent(dev.bgcheck.app.MonitorSortingUiTest):
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Beta app' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.MonitorSortingUiTest.assertOrder(MonitorSortingUiTest.kt:77)
+	at dev.bgcheck.app.MonitorSortingUiTest.assertOrder$default(MonitorSortingUiTest.kt:71)
+	at dev.bgcheck.app.MonitorSortingUiTest.batteryRankingChangesMetricAndKeepsLiveSortIndependent(MonitorSortingUiTest.kt:105)
+
+INSTRUMENTATION_STATUS: test=batteryRankingChangesMetricAndKeepsLiveSortIndependent
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.OverviewAppsSortingUiTest
+INSTRUMENTATION_STATUS: current=25
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+dev.bgcheck.app.OverviewAppsSortingUiTest:
+INSTRUMENTATION_STATUS: test=appsSortUidNumericallyInBothDirections
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.OverviewAppsSortingUiTest
+INSTRUMENTATION_STATUS: current=25
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Hundred' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.OverviewAppsSortingUiTest.assertOrder(OverviewAppsSortingUiTest.kt:49)
+	at dev.bgcheck.app.OverviewAppsSortingUiTest.appsSortUidNumericallyInBothDirections(OverviewAppsSortingUiTest.kt:57)
+
+INSTRUMENTATION_STATUS: stream=
+Error in appsSortUidNumericallyInBothDirections(dev.bgcheck.app.OverviewAppsSortingUiTest):
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Hundred' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.OverviewAppsSortingUiTest.assertOrder(OverviewAppsSortingUiTest.kt:49)
+	at dev.bgcheck.app.OverviewAppsSortingUiTest.appsSortUidNumericallyInBothDirections(OverviewAppsSortingUiTest.kt:57)
+
+INSTRUMENTATION_STATUS: test=appsSortUidNumericallyInBothDirections
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.OverviewAppsSortingUiTest
+INSTRUMENTATION_STATUS: current=26
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=appsRetainSearchFiltersAndSortAcrossPageChanges
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.OverviewAppsSortingUiTest
+INSTRUMENTATION_STATUS: current=26
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=appsRetainSearchFiltersAndSortAcrossPageChanges
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.OverviewAppsSortingUiTest
+INSTRUMENTATION_STATUS: current=27
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=historySortsBeforePreviewLimitAndUndoTargetsRenderedRecord
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.OverviewAppsSortingUiTest
+INSTRUMENTATION_STATUS: current=27
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=historySortsBeforePreviewLimitAndUndoTargetsRenderedRecord
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.OverviewAppsSortingUiTest
+INSTRUMENTATION_STATUS: current=28
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=activePreviewSortsWholeCollectionBeforeLimitAndKeepsIndependentChoice
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.OverviewAppsSortingUiTest
+INSTRUMENTATION_STATUS: current=28
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=activePreviewSortsWholeCollectionBeforeLimitAndKeepsIndependentChoice
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.SortRestorationUiTest
+INSTRUMENTATION_STATUS: current=29
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+dev.bgcheck.app.SortRestorationUiTest:
+INSTRUMENTATION_STATUS: test=detailSortChoicesSurviveDismissalAndStaySeparateForEachApp
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.SortRestorationUiTest
+INSTRUMENTATION_STATUS: current=29
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=detailSortChoicesSurviveDismissalAndStaySeparateForEachApp
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=30
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+dev.bgcheck.app.ResourceUiTest:
+INSTRUMENTATION_STATUS: test=systemFilterKeepsNativeProcessesAndExcludesInstalledApps
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=30
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=systemFilterKeepsNativeProcessesAndExcludesInstalledApps
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=31
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=searchByPidFindsProcessAndOpensResponsibleApp
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=31
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=searchByPidFindsProcessAndOpensResponsibleApp
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=32
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=forceStopRequiresConfirmationAndCancelDoesNotRunIt
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=32
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=forceStopRequiresConfirmationAndCancelDoesNotRunIt
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=33
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=pidSortOrdersProcessesNumerically
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=33
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Failed: assertExists.
+Reason: Expected exactly '1' node but could not find any node that satisfies: (Text + InputText + EditableText contains 'fixture:worker' (ignoreCase: false))
+
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow(SemanticsNodeInteraction.kt:178)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow$default(SemanticsNodeInteraction.kt:150)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode(SemanticsNodeInteraction.kt:84)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode$default(SemanticsNodeInteraction.kt:83)
+	at dev.bgcheck.app.ResourceUiTest.pidSortOrdersProcessesNumerically(ResourceUiTest.kt:79)
+
+INSTRUMENTATION_STATUS: stream=
+Error in pidSortOrdersProcessesNumerically(dev.bgcheck.app.ResourceUiTest):
+java.lang.AssertionError: Failed: assertExists.
+Reason: Expected exactly '1' node but could not find any node that satisfies: (Text + InputText + EditableText contains 'fixture:worker' (ignoreCase: false))
+
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow(SemanticsNodeInteraction.kt:178)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow$default(SemanticsNodeInteraction.kt:150)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode(SemanticsNodeInteraction.kt:84)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode$default(SemanticsNodeInteraction.kt:83)
+	at dev.bgcheck.app.ResourceUiTest.pidSortOrdersProcessesNumerically(ResourceUiTest.kt:79)
+
+INSTRUMENTATION_STATUS: test=pidSortOrdersProcessesNumerically
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=34
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=sharedUidAppCannotBeForceStopped
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=dev.bgcheck.app.ResourceUiTest
+INSTRUMENTATION_STATUS: current=34
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=34
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=sharedUidAppCannotBeForceStopped
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 43.924
+There were 4 failures:
+1) modesPreserveIndependentSearchAndScroll(dev.bgcheck.app.MonitorSortingUiTest)
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Beta worker' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.MonitorSortingUiTest.modesPreserveIndependentSearchAndScroll(MonitorSortingUiTest.kt:165)
+2) batteryRankingChangesMetricAndKeepsLiveSortIndependent(dev.bgcheck.app.MonitorSortingUiTest)
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Beta app' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.MonitorSortingUiTest.assertOrder(MonitorSortingUiTest.kt:77)
+	at dev.bgcheck.app.MonitorSortingUiTest.assertOrder$default(MonitorSortingUiTest.kt:71)
+	at dev.bgcheck.app.MonitorSortingUiTest.batteryRankingChangesMetricAndKeepsLiveSortIndependent(MonitorSortingUiTest.kt:105)
+3) appsSortUidNumericallyInBothDirections(dev.bgcheck.app.OverviewAppsSortingUiTest)
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Hundred' (ignoreCase: false) is not displayed!
+	at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+	at dev.bgcheck.app.OverviewAppsSortingUiTest.assertOrder(OverviewAppsSortingUiTest.kt:49)
+	at dev.bgcheck.app.OverviewAppsSortingUiTest.appsSortUidNumericallyInBothDirections(OverviewAppsSortingUiTest.kt:57)
+4) pidSortOrdersProcessesNumerically(dev.bgcheck.app.ResourceUiTest)
+java.lang.AssertionError: Failed: assertExists.
+Reason: Expected exactly '1' node but could not find any node that satisfies: (Text + InputText + EditableText contains 'fixture:worker' (ignoreCase: false))
+
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow(SemanticsNodeInteraction.kt:178)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow$default(SemanticsNodeInteraction.kt:150)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode(SemanticsNodeInteraction.kt:84)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode$default(SemanticsNodeInteraction.kt:83)
+	at dev.bgcheck.app.ResourceUiTest.pidSortOrdersProcessesNumerically(ResourceUiTest.kt:79)
+
+FAILURES!!!
+Tests run: 34,  Failures: 4
+
+
+INSTRUMENTATION_CODE: -1

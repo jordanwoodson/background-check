@@ -17,7 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,7 +33,7 @@ import java.util.Locale
 internal fun ResourceCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = androidx.compose.foundation.BorderStroke(1.dp, Outline)) {
         Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge, color = Purple)
+            Text(title, style = MaterialTheme.typography.titleMedium, color = Purple, modifier = Modifier.semantics { heading() })
             content()
         }
     }
@@ -39,10 +41,19 @@ internal fun ResourceCard(title: String, content: @Composable ColumnScope.() -> 
 
 @Composable
 internal fun ResourceValue(label: String, value: String, accent: Boolean = false) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = Muted)
-        Text(value, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge,
-            color = if (accent) Cyan else Foreground, textAlign = TextAlign.End)
+    val modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}
+    if (LocalDensity.current.fontScale > 1.3f) {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(label, Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodyMedium, color = Muted)
+            Text(value, Modifier.fillMaxWidth(), style = MaterialTheme.typography.labelLarge,
+                color = if (accent) Cyan else Foreground)
+        }
+    } else {
+        Row(modifier, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = Muted)
+            Text(value, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge,
+                color = if (accent) Cyan else Foreground, textAlign = TextAlign.End)
+        }
     }
 }
 
@@ -53,23 +64,25 @@ internal fun SourceNote(text: String) {
 
 @Composable
 internal fun BatteryFlowCard(battery: BatteryInfo) {
-    ResourceCard("Battery flow now") {
+    ResourceCard("Battery flow") {
         ResourceValue("Battery level", battery.percent?.let { "$it%" } ?: "Unavailable")
         ResourceValue("State", battery.powerState.label)
         ResourceValue("Current", battery.currentMa?.let { signedDecimal(it) + " mA" } ?: "Unavailable")
-        ResourceValue("Estimated power", battery.powerMw?.let { signedDecimal(it / 1000.0, 2) + " W" } ?: "Unavailable")
-        ResourceValue("Voltage", battery.voltageMv?.let { decimal(it / 1000.0, 2) + " V" } ?: "Unavailable")
-        ResourceValue("Temperature", battery.temperatureC?.let { decimal(it.toDouble()) + " °C" } ?: "Unavailable")
-        battery.capturedAt?.let { SourceNote("Battery reading ${resourceTimeLabel(it)}") }
-        SourceNote("Positive values flow into the battery; negative values flow out. Power is current × voltage for the whole battery, not an app’s power draw. Current may be unavailable on this device.")
-        SourceNote("Zero battery flow while plugged in does not mean the phone uses no power; the adapter may supply it directly.")
+        ResourceValue("Estimated power", battery.powerMw?.let { signedDecimal(it / 1000.0, 2) + " W" } ?: "Unavailable", accent = true)
+        SourceNote(battery.capturedAt?.let { "Battery reading ${resourceTimeLabel(it)}" } ?: "Battery reading time unavailable")
+        Disclosure("Battery measurements", "Voltage, temperature and reading details") {
+            ResourceValue("Voltage", battery.voltageMv?.let { decimal(it / 1000.0, 2) + " V" } ?: "Unavailable")
+            ResourceValue("Temperature", battery.temperatureC?.let { decimal(it.toDouble()) + " °C" } ?: "Unavailable")
+            SourceNote("Positive values flow into the battery; negative values flow out. Power is current × voltage for the whole battery, not an app’s power draw. Current may be unavailable on this device.")
+            SourceNote("Zero battery flow while plugged in does not mean the phone uses no power; the adapter may supply it directly.")
+        }
     }
 }
 
 @Composable
 internal fun ResourceTrends(history: List<ResourceHistoryPoint>, totalMemoryKb: Long?) {
     val points = history.takeLast(60)
-    ResourceCard("Session trend") {
+    Disclosure("Session trend", if (points.isEmpty()) "Trends appear after sampling" else "${points.size} samples in this session") {
         if (points.isEmpty()) {
             SourceNote("Live samples appear here while the Monitor is open. No background monitoring.")
         } else {

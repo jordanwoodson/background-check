@@ -1,5 +1,7 @@
 package dev.bgcheck.app
 
+import androidx.compose.ui.semantics.SemanticsActions
+
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,13 +31,20 @@ class MonitorSortingUiTest {
         components = listOf(PowerComponent("scrn", 90.0), PowerComponent("cpu", 20.0)),
     )
 
-    private fun show(sharedUid: Boolean = false) {
+    private fun show(
+        sharedUid: Boolean = false,
+        access: AccessState = AccessState.READY,
+        resources: ResourceSnapshot? = ResourceSnapshot(processes = processes, processesKnown = true),
+        energySnapshot: EnergySnapshot? = energy,
+        resourceLoading: Boolean = false,
+        monitoring: Boolean = false,
+    ) {
         val apps = if (sharedUid) listOf(alpha, beta.copy(uid = alpha.uid)) else listOf(alpha, beta)
         compose.setContent {
             BackgroundCheckTheme {
                 BackgroundCheckApp(
-                    state = UiState(access = AccessState.READY, loading = false, apps = apps,
-                        resources = ResourceSnapshot(processes = processes, processesKnown = true), energy = energy),
+                    state = UiState(access = access, loading = false, apps = apps,
+                        resources = resources, energy = energySnapshot, resourceLoading = resourceLoading, monitoring = monitoring),
                     onRefresh = {}, onConnect = {}, onSelect = {}, onDismissDetail = {}, onAction = {},
                     onUndo = {}, onOpenAppSettings = {}, onOpenShizuku = {}, onOpenWirelessSettings = {},
                     onClearMessage = {}, onRefreshResources = {}, onRefreshEnergy = {}, onSetMonitorPaused = {},
@@ -58,15 +67,21 @@ class MonitorSortingUiTest {
     }
 
     private fun mode(label: String) {
-        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText(label))
-        compose.onNodeWithText(label).performScrollTo().performClick()
+        compose.onNodeWithText(label).assertIsDisplayed().performClick()
     }
 
     private fun assertOrder(first: String, second: String, inSheet: Boolean = false) {
-        if (!inSheet) compose.onNodeWithTag("monitor-list").performScrollToNode(hasText(first))
-        // LazyColumn may reveal only the first row of a containing card. Bring the
-        // adjacent second row into view before comparing both rendered positions.
+        if (!inSheet) compose.onNodeWithTag("monitor-list").performScrollToNode(hasText(second))
         compose.onNodeWithText(second).performScrollTo()
+        if (!inSheet) {
+            val list = compose.onNodeWithTag("monitor-list")
+            val lastBounds = compose.onNodeWithText(second).fetchSemanticsNode().boundsInRoot
+            val viewport = list.fetchSemanticsNode().boundsInRoot
+            // Keep the last label near the viewport bottom so preceding rows fit.
+            list.performSemanticsAction(SemanticsActions.ScrollBy) { scroll ->
+                scroll(0f, lastBounds.bottom - viewport.bottom + 16f)
+            }
+        }
         val firstTop = compose.onNodeWithText(first).assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top
         val secondTop = compose.onNodeWithText(second).assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top
         assertTrue("Expected '$first' before '$second'", firstTop < secondTop)
@@ -114,6 +129,8 @@ class MonitorSortingUiTest {
     @Test fun componentsCanSortByDisplayedNameAndReverse() {
         show()
         mode("Battery use")
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText("Device components"))
+        compose.onNodeWithText("Device components").performClick()
         assertOrder("Screen", "CPU")
         chooseSort("component", "Name")
         assertOrder("CPU", "Screen")
@@ -138,4 +155,70 @@ class MonitorSortingUiTest {
         reverse("related-apps", inSheet = true)
         assertOrder("Open Beta app", "Open Alpha app", inSheet = true)
     }
+    @Test fun modesPreserveIndependentSearchAndScroll() {
+        show()
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasSetTextAction())
+        compose.onNode(hasSetTextAction()).performTextInput("worker")
+        compose.onNode(hasSetTextAction()).performImeAction()
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText("Beta worker"))
+        val livePosition = compose.onNodeWithText("Beta worker").performScrollTo().assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top
+
+        mode("Battery use")
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasSetTextAction())
+        compose.onNode(hasSetTextAction()).performTextInput("Alpha")
+        compose.onNode(hasSetTextAction()).performImeAction()
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText("Alpha app"))
+        val batteryPosition = compose.onNodeWithText("Alpha app").performScrollTo().assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top
+
+        mode("Live processes")
+        val restoredLivePosition = compose.onNodeWithText("Beta worker").assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top
+        assertTrue("Live scroll position must survive mode changes: $livePosition → $restoredLivePosition", kotlin.math.abs(livePosition - restoredLivePosition) < 2f)
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasSetTextAction())
+        compose.onNode(hasSetTextAction()).assertTextContains("worker")
+        mode("Live processes")
+        compose.onNode(hasSetTextAction()).assertTextContains("worker")
+
+        mode("Battery use")
+        val restoredBatteryPosition = compose.onNodeWithText("Alpha app").assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top
+        assertTrue("Battery scroll position must survive mode changes: $batteryPosition → $restoredBatteryPosition", kotlin.math.abs(batteryPosition - restoredBatteryPosition) < 2f)
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasSetTextAction())
+        compose.onNode(hasSetTextAction()).assertTextContains("Alpha")
+    }
+
+    @Test fun checkingAccessAvoidsSetupAndUnavailableReadingStacks() {
+        show(access = AccessState.CHECKING, resources = null, energySnapshot = null)
+        compose.onNodeWithText("Checking connection…").assertIsDisplayed()
+        compose.onNodeWithText("Set up access").assertDoesNotExist()
+        compose.onNodeWithText("Whole device").assertDoesNotExist()
+        compose.onNodeWithTag("process-sort").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
+    }
+
+    @Test fun batteryFlowRemainsAvailableWithoutShizuku() {
+        show(access = AccessState.NOT_RUNNING, resources = null, energySnapshot = null)
+        mode("Battery use")
+        compose.onNodeWithText("Battery flow").assertIsDisplayed()
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText("Set up access"))
+        compose.onNodeWithText("Set up access").assertIsDisplayed()
+        compose.onNodeWithText("Android battery estimates").assertDoesNotExist()
+        compose.onNodeWithTag("energy-sort").assertDoesNotExist()
+    }
+
+    @Test fun initialProcessSampleHidesSearchUntilReadingsExist() {
+        show(resources = null, energySnapshot = null, resourceLoading = true)
+        compose.onNodeWithTag("monitor-list").performScrollToNode(hasText("Reading processes…"))
+        compose.onNodeWithText("Reading processes…").assertIsDisplayed()
+        compose.onNodeWithText("Whole device").assertDoesNotExist()
+        compose.onNodeWithTag("process-sort").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
+    }
+
+    @Test fun failedResourceSampleDoesNotClaimLiveReadings() {
+        show(resources = ResourceSnapshot(processesKnown = false), monitoring = true)
+        compose.onNodeWithText("Readings unavailable").assertIsDisplayed()
+        compose.onNodeWithText("Live", substring = false).assertDoesNotExist()
+        compose.onNodeWithText("Last sample", substring = true).assertIsDisplayed()
+    }
+
+
 }

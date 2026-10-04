@@ -1,6 +1,7 @@
 package dev.bgcheck.app
 
 import androidx.compose.ui.test.*
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.bgcheck.app.data.*
@@ -45,7 +46,15 @@ class OverviewAppsSortingUiTest {
     }
 
     private fun assertOrder(list: String, vararg labels: String) {
-        compose.onNodeWithTag(list).performScrollToNode(hasText(labels.first()))
+        compose.onNodeWithTag(list).performScrollToNode(hasText(labels.last()))
+        compose.onNodeWithText(labels.last()).performScrollTo()
+        // Keep the last label near the viewport bottom so preceding rows remain
+        // visible even on compact phones; scrolling to a child may align it at top.
+        val viewportBottom = compose.onNodeWithTag(list).fetchSemanticsNode().boundsInRoot.bottom
+        val lastBottom = compose.onNodeWithText(labels.last()).fetchSemanticsNode().boundsInRoot.bottom
+        compose.onNodeWithTag(list).performSemanticsAction(SemanticsActions.ScrollBy) { scroll ->
+            scroll(0f, lastBottom - viewportBottom + 16f)
+        }
         val positions = labels.map { label -> compose.onNodeWithText(label).assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top }
         assertTrue("Expected rendered order ${labels.toList()}, got vertical positions $positions", positions.zipWithNext().all { (a, b) -> a < b })
     }

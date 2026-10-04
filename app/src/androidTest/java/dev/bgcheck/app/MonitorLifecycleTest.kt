@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.bgcheck.app.data.AccessState
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -14,6 +15,30 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MonitorLifecycleTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test fun energyRefreshUpdatesBatteryFlowWithoutResumingPausedMonitor() {
+        lateinit var model: BackgroundViewModel
+        compose.runOnUiThread {
+            model = ViewModelProvider(compose.activity)[BackgroundViewModel::class.java]
+            model.setMonitorPaused(true)
+        }
+        compose.waitUntil(30_000) {
+            val state = model.state.value
+            state.access == AccessState.READY && !state.loading && !state.refreshing &&
+                !state.resourceLoading && !state.energyLoading && !state.diagnosticsLoading &&
+                state.battery.capturedAt != null
+        }
+        val batteryAt = requireNotNull(model.state.value.battery.capturedAt)
+        compose.waitUntil(2_000) { System.currentTimeMillis() > batteryAt }
+
+        compose.runOnUiThread { model.refreshEnergy() }
+        compose.waitUntil(20_000) {
+            val state = model.state.value
+            (state.battery.capturedAt ?: 0) > batteryAt && !state.energyLoading
+        }
+        assertTrue("Refreshing battery estimates must keep the monitor paused", model.state.value.monitorPaused)
+        assertFalse("Refreshing battery estimates must not restart polling", model.state.value.monitoring)
+    }
 
     @Test fun backgroundingDuringRefreshDoesNotStartNewAppDiagnostics() {
         lateinit var model: BackgroundViewModel

@@ -1,0 +1,1 @@
+battery-restored: row=Rect.fromLTRB(40.0, 1123.0, 680.0, 1392.0); list=Rect.fromLTRB(0.0, 284.0, 720.0, 1392.0); root=Rect.fromLTRB(0.0, 0.0, 720.0, 1600.0); scroll=1578.0

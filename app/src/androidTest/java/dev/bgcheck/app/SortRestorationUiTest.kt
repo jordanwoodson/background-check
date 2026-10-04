@@ -1,6 +1,7 @@
 package dev.bgcheck.app
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -61,17 +62,26 @@ class SortRestorationUiTest {
     }
 
     private fun choose(id: String, label: String) {
+        ensureDiagnosticsExpanded()
         compose.onNodeWithTag("$id-sort").performScrollTo().assertIsDisplayed().performClick()
         compose.onNode(hasText(label) and hasAnyAncestor(isPopup())).assertIsDisplayed().performClick()
     }
 
     private fun assertSort(id: String, key: String, direction: String) {
+        ensureDiagnosticsExpanded()
         compose.onNodeWithTag("$id-sort").performScrollTo().assertTextContains("Sort by: $key")
         compose.onNodeWithTag("$id-direction").performScrollTo().assertTextContains(direction)
     }
 
+    private fun ensureDiagnosticsExpanded() {
+        val disclosure = compose.onNodeWithText("Resource diagnostics")
+        if (disclosure.fetchSemanticsNode().config[SemanticsProperties.StateDescription] == "Collapsed") {
+            disclosure.performScrollTo().performClick()
+        }
+    }
+
     private fun closeDetails() {
-        compose.onNodeWithContentDescription("Close app details").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Close app details").assertIsDisplayed().performClick()
         compose.onNodeWithContentDescription("Close app details").assertDoesNotExist()
     }
 }
