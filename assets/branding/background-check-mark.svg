@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <title>Background Check — protected battery</title>
+  <path fill="#BD93F9" fill-rule="evenodd" d="M54 26 C61 31 70 33 78 33 V52 C78 67 68 77 54 83 C40 77 30 67 30 52 V33 C38 33 47 31 54 26 Z M54 34 C48 37 42 39 37 39 V52 C37 63 43 70 54 75 C65 70 71 63 71 52 V39 C66 39 60 37 54 34 Z"/>
+  <path fill="#FF79C6" fill-rule="evenodd" d="M50 40 H58 V44 H61 Q64 44 64 47 V63 Q64 66 61 66 H47 Q44 66 44 63 V47 Q44 44 47 44 H50 Z M55 47 L48 56 H53 L52 63 L60 53 H55 Z"/>
+</svg>
