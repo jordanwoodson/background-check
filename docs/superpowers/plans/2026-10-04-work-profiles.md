@@ -40,7 +40,7 @@
 - [x] 4. Audit and implement missing Network profile handling: settings/shortcuts, retained packages, profile lifecycle, notifications, backup and backend coverage. Test actual behavior and explain unsupported backend scope.
 - [x] 5. Wire profile-specific host engines, state refresh and monitored diagnostics; test UID/PID isolation and asynchronous selection safety.
 - [x] 6. Provision a disposable managed-profile emulator and run end-to-end policy/Undo, stop, inventory, monitor, navigation and firewall verification. Inspect rendered UI.
-- [ ] 7. Run `./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease`, obtain independent code review, fix findings, update docs and push main. Verify the signed automatic release.
+- [x] 7. Run `./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease`, obtain independent code review, fix findings, update docs and push main. Verify the signed automatic release.
 
 ## Execution notes
 
@@ -55,4 +55,4 @@ The user authorized implementation and delivery; routine design decisions are re
 - Package lists: seven codec and three runtime/UI tests passed for Work-only/mixed-profile roundtrips and explicit legacy profile selection.
 - Independent review findings were fixed: retained-state filtering, captured action UID/serial, removal of own-profile fallbacks, profile-bound text imports and partial inventory warnings. Final mutation revalidation preserves the selected identity across asynchronous reads.
 - Full evidence, platform limits and screenshots: `docs/work-profile-verification.md`.
-- Commit, push and automatic release verification are the remaining delivery step. Do not create tags or publish APKs manually.
+- Delivered on main as `44ea3dea14fe16065541dd4e862a70497c9be438`. Automatic release `1.1.1-bgcheck.10` (code 13) passed workflow `37219854446`; the separately downloaded APK passed signature/version/checksum verification and installed/launched on API 36. No tags, APK publication or default-version changes were made manually.

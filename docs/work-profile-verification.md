@@ -64,3 +64,13 @@ The final gate passed **176 unit tests**, release lint (**0 errors**, 305 warnin
 `3d770ebfa7c2eacd7735adc9fadca193b62e59424659aed58afe2243c1879951`
 
 Default versioning and the established signing key remain unchanged. The existing workflow assigns the release version and publishes the signed APK when `main` is pushed.
+
+## Published release
+
+[1.1.1-bgcheck.10](https://github.com/jordanwoodson/background-check/releases/tag/1.1.1-bgcheck.10), Android version code **13**, was automatically published from `44ea3dea14fe16065541dd4e862a70497c9be438`. [Release workflow 37219854446](https://github.com/jordanwoodson/background-check/actions/runs/37219854446) passed its unit tests, lint, signed build, certificate and version checks.
+
+The published APK was downloaded separately. Its established signing certificate, version and published SHA-256 checksum were verified; it installed successfully as an update and launched on API 36.
+
+APK SHA-256: `94203931a8ab60c9c4dde038cef9a80235813715447c3c044caa40fe711a4ebc`.
+
+Obtainium can retrieve this release from the existing private repository configuration. The default local version and established key were preserved; only the existing workflow created the tag and published the APK.
