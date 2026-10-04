@@ -8,10 +8,12 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.bgcheck.app.R
 
 // Dracula's terminal palette. Muted body text is lighter than the comment color
 // so it remains readable on Android; the comment color is reserved for borders.
@@ -29,8 +31,15 @@ internal val Orange = Color(0xFFFFB86C)
 internal val Pink = Color(0xFFFF79C6)
 internal val Red = Color(0xFFFF5555)
 
+private val JetBrainsMono = FontFamily(
+    Font(R.font.jetbrains_mono_regular, FontWeight.Normal),
+    Font(R.font.jetbrains_mono_medium, FontWeight.Medium),
+    Font(R.font.jetbrains_mono_semibold, FontWeight.SemiBold),
+    Font(R.font.jetbrains_mono_bold, FontWeight.Bold),
+)
+
 private fun terminalStyle(size: Int, height: Int, weight: FontWeight = FontWeight.Normal) = TextStyle(
-    fontFamily = FontFamily.Monospace,
+    fontFamily = JetBrainsMono,
     fontWeight = weight,
     fontSize = size.sp,
     lineHeight = height.sp,

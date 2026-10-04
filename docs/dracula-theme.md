@@ -2,7 +2,7 @@
 
 Background Check uses a terminal-inspired interface based on the [Dracula palette](https://draculatheme.com/contribute). The app name, package (`dev.bgcheck.app`), signing key, app data and Shizuku integration stay the same.
 
-The theme applies to Overview, Apps, Monitor, Access, app/process/battery details, sorting menus, policy confirmations, messages, launcher icons and the launch screen. Every Material typography role uses Android's monospace family, including headings, form controls and dialogs. Terminal panels use restrained corners and borders. The new launcher mark is a terminal window with a green prompt and cyan cursor, including adaptive and monochrome Android variants.
+The theme applies to Overview, Apps, Monitor, Access, app/process/battery details, sorting menus, policy confirmations, messages, launcher icons and the launch screen. Every Material typography role uses bundled [JetBrains Mono 2.304](https://github.com/JetBrains/JetBrainsMono/releases/tag/v2.304), including headings, form controls and dialogs. Regular, Medium, SemiBold and Bold weights work offline; the font license and provenance ship in the APK assets. Terminal panels use restrained corners and borders. The new launcher mark is a terminal window with a green prompt and cyan cursor, including adaptive and monochrome Android variants.
 
 | Role | Color |
 | --- | --- |
