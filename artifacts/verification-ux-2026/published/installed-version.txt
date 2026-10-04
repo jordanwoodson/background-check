@@ -1,0 +1,2 @@
+versionCode=15 minSdk=30 targetSdk=36
+versionName=1.1.1-bgcheck.12

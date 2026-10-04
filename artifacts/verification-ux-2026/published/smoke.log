@@ -1,0 +1,47 @@
+Initial smoke: upgrade, retained access, live resources, and correct Network sheet passed. The first scroll script skipped the startup setting; the remaining dialog and cleanup checks resumed using smaller gestures.
+
+--- Initial run ---
+Published APK retained Shizuku access.
+Published APK sampled actual CPU and RAM.
+Published APK row tap opened the correct personal-profile sheet.
+Traceback (most recent call last):
+  File "/tmp/bgcheck-redesign-tools/smoke-published-release.py", line 60, in <module>
+    else:raise RuntimeError('Startup-prompt setting not found')
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Startup-prompt setting not found
+
+--- Resumed large-text check and cleanup ---
+Inspecting Settings scroll step 1
+Inspecting Settings scroll step 2
+Inspecting Settings scroll step 3
+Inspecting Settings scroll step 4
+Inspecting Settings scroll step 5
+Inspecting Settings scroll step 6
+Inspecting Settings scroll step 7
+Inspecting Settings scroll step 8
+Inspecting Settings scroll step 9
+Inspecting Settings scroll step 10
+Inspecting Settings scroll step 11
+Inspecting Settings scroll step 12
+Inspecting Settings scroll step 13
+Inspecting Settings scroll step 14
+Inspecting Settings scroll step 15
+Inspecting Settings scroll step 16
+Inspecting Settings scroll step 17
+Inspecting Settings scroll step 18
+Inspecting Settings scroll step 19
+Inspecting Settings scroll step 20
+Inspecting Settings scroll step 21
+Inspecting Settings scroll step 22
+Inspecting Settings scroll step 23
+Inspecting Settings scroll step 24
+Inspecting Settings scroll step 25
+Found startup-prompt setting at scroll step 25
+Published APK dialog verified at 200%; firewall remains off.
+Inspecting Settings scroll step 1
+Inspecting Settings scroll step 2
+Inspecting Settings scroll step 3
+Inspecting Settings scroll step 4
+Inspecting Settings scroll step 5
+Found startup-prompt setting at scroll step 5
+Published APK smoke complete; startup preference, font size, and rotation restored.

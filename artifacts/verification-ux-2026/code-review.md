@@ -10,7 +10,7 @@ The final Settings review found no issues in replacing two fixed-height selectio
 
 The shortcut follow-up found no issues in treating All apps as a compatible target filter during asynchronous loading. Incompatible package types still switch; package/user identity checks and permissions stay intact. The revised test verifies the target sheet before closing it and retains the inventory/filter assertions.
 
-The recommendation-test review confirms it waits for the matching shortcut sheet, retains the advice/rationale assertions, and checks the inventory summary after closing the sheet. Row-to-sheet navigation was checked manually and will also be included in the published-APK smoke check.
+The recommendation-test review confirms it waits for the matching shortcut sheet, retains the advice/rationale assertions, and checks the inventory summary after closing the sheet. Row-to-sheet navigation was checked manually and passed again in the published-APK smoke check.
 
 The dismissal helper review confirms both tests wait for the main window to regain focus on the UI thread and for the old sheet to disappear, using a bounded wait. This prevents assertions from selecting the closing dialog during its exit transition.
 

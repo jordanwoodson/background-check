@@ -1,0 +1,30 @@
+{
+  "release": "1.1.1-bgcheck.12",
+  "versionCode": 15,
+  "sourceCommit": "7e130318d1bb88195f781162dd48bccbc7abe767",
+  "releaseUrl": "https://github.com/jordanwoodson/background-check/releases/tag/1.1.1-bgcheck.12",
+  "workflowUrl": "https://github.com/jordanwoodson/background-check/actions/runs/37244450939",
+  "workflowConclusion": "success",
+  "apk": "background-check-1.1.1-bgcheck.12.apk",
+  "apkSha256": "854105cf174d89db81e45dc8d8994a02e8429d7dacbba4672deab1b6ccd963ec",
+  "certificateSha256": "3d770ebfa7c2eacd7735adc9fadca193b62e59424659aed58afe2243c1879951",
+  "publishedAt": "2026-10-04T23:49:18Z",
+  "emulator": {
+    "androidApi": 36,
+    "serial": "emulator-5590",
+    "portraitWidthDp": 360
+  },
+  "publishedApkSmoke": {
+    "upgradeInstall": "passed",
+    "installedVersionCode": 15,
+    "retainedShizukuAccess": "passed",
+    "liveCpuAndRam": "passed",
+    "networkRowSheetIdentity": "Personal (user 0) \u00b7 com.google.android.gms",
+    "settingsAt200Percent": "passed",
+    "startupDialogAt200Percent": "passed",
+    "laterLeavesFirewallOff": "passed",
+    "startupPreferenceRestored": true,
+    "fontScaleRestored": 1.0,
+    "rotationLockReleased": true
+  }
+}
