@@ -1,0 +1,12 @@
+{
+  "recordedApps": 675,
+  "installedSystemApps": 360,
+  "installedUserApps": 173,
+  "uninstalledRecords": 142,
+  "hiddenLibraries": [
+    "com.google.android.trichromelibrary"
+  ],
+  "apexModules": 42,
+  "describedIdentities": 718,
+  "missingPurposes": []
+}

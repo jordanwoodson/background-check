@@ -1,0 +1,10 @@
+{
+  "version": "1.1.1-bgcheck.6",
+  "versionCode": 9,
+  "commit": "03da6e05f8c01ec9895ff0a6de3807aed3d97893",
+  "apkSha256": "2cb65f6fb6c65f45e323c30936d8e60c99af7e3938699fc472a9350ac282f55f",
+  "guideSha256": "c4e0bdd216a05c876158fdd152adedfed92ed86b88ca0d2b6c275a51d217f952",
+  "certificateSha256": "3d770ebfa7c2eacd7735adc9fadca193b62e59424659aed58afe2243c1879951",
+  "installedMatchesPublished": true,
+  "debuggable": false
+}

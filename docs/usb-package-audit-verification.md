@@ -25,3 +25,13 @@ The hidden code library and APEX identities are not ordinary application records
 - The real phone UI was inspected for a retained Moto AI Core record, its purpose and related installed/uninstalled packages. Raw dumps, APK inspection output, app inventory exports and screenshots remain outside Git under `/tmp`.
 
 The collection script and source/association limitations are documented in [package descriptions](package-descriptions.md). No user or system app was removed, disabled or reconfigured during this audit. The temporary instrumentation package was removed after testing; existing Background Check data and the established signing key were preserved.
+
+## Published release
+
+[Release 1.1.1-bgcheck.6](https://github.com/jordanwoodson/background-check/releases/tag/1.1.1-bgcheck.6), Android version code 9, was published automatically from commit `03da6e05f8c01ec9895ff0a6de3807aed3d97893`. The [release workflow](https://github.com/jordanwoodson/background-check/actions/runs/37171951186) completed successfully.
+
+The published APK was downloaded, checked against the published checksum and established signing certificate, and installed over USB. The APK installed on the phone is byte-identical to the published artifact and is not debuggable. APK SHA-256: `2cb65f6fb6c65f45e323c30936d8e60c99af7e3938699fc472a9350ac282f55f`.
+
+A fresh collection after installation still found 675 app records and 718 total identities, with zero missing purposes. The published UI showed all 675 apps and 142 retained-uninstalled records. The Termux:Tasker detail screen displayed its shared-UID group and the two documented companion links to Tasker and Termux.
+
+Sanitized release and coverage metadata are saved in [installed release](../artifacts/verification-usb-packages/installed-release.json) and [published coverage](../artifacts/verification-usb-packages/published-coverage.json). Raw package dumps and phone screenshots remain outside Git.
