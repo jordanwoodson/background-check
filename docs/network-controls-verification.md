@@ -56,3 +56,11 @@ VPN mode occupies Android’s VPN slot and requires “Block connections without
 Some automatic privilege-change transitions retain upstream’s stop-before-start protection gap (approximately 1–2 seconds). Boot restoration without root happens after unlock, not before credential storage is available. Real cellular/roaming transitions, managed/clone-profile and shared-UID traffic, early-root boot protection, and full NPM blocking on a supporting custom ROM require those environments. Emulator results do not establish those hardware/ROM behaviors.
 
 [App rules](../artifacts/verification-network/app-rules-release-api36.png) · [Firewall](../artifacts/verification-network/firewall-api36.png) · [Large text](../artifacts/verification-network/firewall-api36-large-text.png) · [Packages](../artifacts/verification-network/packages-api36.png) · [Settings](../artifacts/verification-network/settings-api36.png)
+
+## Published release
+
+[1.1.1-bgcheck.7](https://github.com/jordanwoodson/background-check/releases/tag/1.1.1-bgcheck.7), Android version code **10**, was automatically published from `f18554d8959c9c59263ccd8f1ba618eec2f882c2` on 2026-10-04. [Release workflow 37178685881](https://github.com/jordanwoodson/background-check/actions/runs/37178685881) passed test, lint, signed build, certificate and version checks. The published APK was downloaded separately and its signature, version and published SHA-256 checksum verified.
+
+APK SHA-256: `40c2b657f0a93f6fccb13ad10690fc5940988b584b83ef66beb7fa97e5b13522`.
+
+Obtainium can install this update from the existing private repository configuration. The default local version and established signing key were preserved. Tags and APK publication were performed only by the existing release workflow.

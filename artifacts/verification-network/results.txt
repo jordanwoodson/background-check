@@ -14,3 +14,6 @@ Release certificate SHA-256: 3d770ebfa7c2eacd7735adc9fadca193b62e59424659aed58af
 Default local version preserved: 1.1.1 / code 3. CI assigns the next release version.
 Package shortcut regression: package-row assertion failed before package-ID search matching; fixed run OK (2 tests).
 Minified signed release on API36: installed as an update, launched, package-ID search returned the fixture, Wi-Fi block dropped fixture traffic after asynchronous application, and stopping restored traffic.
+CI run 37178685881: SUCCESS, 2026-10-04; automatic release 1.1.1-bgcheck.7, code 10, source f18554d8959c9c59263ccd8f1ba618eec2f882c2.
+Published APK independently downloaded: certificate and version match; SHA256SUMS.txt verified OK.
+APK SHA-256: 40c2b657f0a93f6fccb13ad10690fc5940988b584b83ef66beb7fa97e5b13522
