@@ -1,0 +1,8 @@
+<resources>
+    <string name="network_policy_limited">Proteção limitada: este modo restringe os dados em segundo plano em redes limitadas até que o bloqueio completo seja confirmado. O Wi-Fi e o tráfego em primeiro plano podem continuar permitidos. Escolha VPN, ConnectivityManager ou iptables para bloquear todo o acesso à Internet.</string>
+    <string name="network_policy_background_data">Dados em segundo plano em redes limitadas</string>
+    <string name="network_policy_restricted">Dados em segundo plano em redes limitadas restritos</string>
+    <string name="network_policy_allowed">Dados em segundo plano em redes limitadas permitidos</string>
+    <string name="network_policy_restrict_action">Restringir dados em segundo plano</string>
+    <string name="network_policy_allow_action">Permitir dados em segundo plano</string>
+</resources>

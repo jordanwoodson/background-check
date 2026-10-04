@@ -1,0 +1,8 @@
+<resources>
+    <string name="network_policy_limited">Protection limitée : ce mode restreint les données en arrière-plan sur les réseaux facturés au volume tant que le blocage complet n’est pas confirmé. Le Wi-Fi et le trafic au premier plan peuvent rester autorisés. Choisissez VPN, ConnectivityManager ou iptables pour bloquer tout accès à Internet.</string>
+    <string name="network_policy_background_data">Données en arrière-plan facturées au volume</string>
+    <string name="network_policy_restricted">Données en arrière-plan facturées au volume restreintes</string>
+    <string name="network_policy_allowed">Données en arrière-plan facturées au volume autorisées</string>
+    <string name="network_policy_restrict_action">Restreindre les données en arrière-plan</string>
+    <string name="network_policy_allow_action">Autoriser les données en arrière-plan</string>
+</resources>

@@ -1,0 +1,804 @@
+<resources>
+    <!-- App Identity -->
+    <string name="app_name" translatable="false">Background Check</string>
+
+    <!-- Donate Button -->
+    <string name="donate_button">Doar</string>
+
+    <!-- Navigation -->
+    <string name="nav_firewall">Firewall</string>
+    <string name="nav_packages">Pacotes</string>
+    <string name="nav_settings">Configurações</string>
+
+    <!-- Navigation Labels -->
+
+    <!-- Toolbar Titles -->
+
+    <!-- Firewall Toggle Button -->
+    <string name="firewall_button_off">DESLIGADO</string>
+    <string name="firewall_status_active">ATIVO</string>
+
+    <!-- Firewall States -->
+    <string name="firewall_state_blocked">Bloqueado</string>
+    <string name="firewall_state_allowed">Permitido</string>
+    <string name="firewall_state_on">ON</string>
+    <string name="firewall_state_off">OFF</string>
+    <string name="firewall_state_internet">Internet</string>
+    <string name="firewall_search_hint">Pesquisar apps…</string>
+
+    <!-- Firewall Dialogs -->
+    <string name="dialog_firewall_start_title">Iniciar Background Check Firewall?</string>
+    <string name="dialog_firewall_start_message">Bem-vindo ao Background Check! Gostaria de iniciar o firewall agora para proteger sua privacidade?</string>
+    <string name="dialog_firewall_start_confirm">Iniciar Firewall</string>
+    <string name="dialog_firewall_start_skip">Mais tarde</string>
+
+    <string name="dialog_firewall_stop_title">Parar Firewall?</string>
+    <string name="dialog_firewall_stop_message">⚠️ Parar o firewall permitirá que todos os apps acessem a internet.\n\nSua proteção de privacidade será desativada até que você ligue o firewall novamente.</string>
+    <string name="dialog_firewall_stop_confirm">Parar Firewall</string>
+
+
+
+    <!-- Quick Toggle Dialogs -->
+    <string name="dialog_quick_toggle_block_title">Bloquear %1$s?</string>
+    <string name="dialog_quick_toggle_allow_title">Permitir %1$s?</string>
+    <string name="dialog_quick_toggle_message_wifi">Isto vai %1$s o acesso WiFi para %2$s</string>
+    <string name="dialog_quick_toggle_message_mobile">Isto vai %1$s o acesso de dados móveis para %2$s</string>
+    <string name="dialog_quick_toggle_message_roaming">Isto vai %1$s o acesso de roaming para %2$s</string>
+    <string name="dialog_quick_toggle_action_block">bloquear</string>
+    <string name="dialog_quick_toggle_action_allow">permitir</string>
+    <string name="snackbar_wifi_blocked">WiFi bloqueado para %s</string>
+    <string name="snackbar_wifi_allowed">WiFi permitido para %s</string>
+    <string name="snackbar_mobile_blocked">Dados móveis bloqueados para %s</string>
+    <string name="snackbar_mobile_allowed">Dados móveis permitidos para %s</string>
+    <string name="snackbar_roaming_blocked">Roaming bloqueado para %s</string>
+    <string name="snackbar_roaming_allowed">Roaming permitido para %s</string>
+    <string name="dialog_quick_toggle_message_internet">Isto vai %1$s o acesso à Internet para %2$s</string>
+    <string name="snackbar_internet_blocked">Internet bloqueada para %s</string>
+    <string name="snackbar_internet_allowed">Internet permitida para %s</string>
+    <string name="snackbar_undo">Desfazer</string>
+
+
+    <!-- Package Management -->
+    <string name="packages_search_hint">Pesquisar pacotes…</string>
+    <string name="packages_filter_all">Todos</string>
+    <string name="packages_filter_system">Sistema</string>
+    <string name="packages_filter_user">Usuário</string>
+    <string name="packages_filter_bloatware">Bloatware</string>
+    <string name="packages_export_description">Exportar a lista na tela</string>
+    <string name="packages_export_empty">Nada na tela para exportar</string>
+    <string name="packages_export_success">✅ %d nomes de pacotes exportados</string>
+    <string name="packages_export_failed">Exportação falhou: %s</string>
+    <string name="packages_filter_enabled">Ativados</string>
+    <string name="packages_filter_disabled">Desativados</string>
+    <string name="packages_empty_state_no_uninstalled">Nenhum app do sistema desinstalado</string>
+
+    <!-- Profile Filters (Multi-user/Work Profile Support) -->
+    <string name="filter_profile_all">Todos os perfis</string>
+    <string name="filter_profile_personal">Pessoal</string>
+    <string name="filter_profile_work">Trabalho</string>
+    <string name="filter_profile_clone">Clone</string>
+    <string name="badge_work_profile">Trabalho</string>
+    <string name="badge_clone_profile">Clone</string>
+
+    <!-- Package Status -->
+    <string name="status_uninstalled">Desinstalado</string>
+    <!-- Per-row status badge. Singular, unlike the plural filter chips above. -->
+    <string name="packages_status_enabled">Ativado</string>
+    <string name="packages_status_disabled">Desativado</string>
+
+    <!-- Package Actions -->
+    <string name="action_enable">Ativar</string>
+    <string name="action_disable">Desativar</string>
+    <string name="action_uninstall">Desinstalar</string>
+    <string name="action_reinstall">Reinstalar</string>
+    <string name="action_force_stop">Forçar Parada</string>
+    <string name="select_package">Selecionar pacote</string>
+    <string name="close_selection">Fechar modo de seleção</string>
+
+    <!-- Package Action Sheet -->
+    <string name="action_sheet_package_name_label">Nome do Pacote</string>
+    <string name="action_sheet_force_stop_desc_running">Parar imediatamente todos os processos</string>
+    <string name="action_sheet_force_stop_desc_not_running">Forçar parada (se em execução)</string>
+    <string name="action_sheet_disable_desc">Impedir este app de executar</string>
+    <string name="action_sheet_enable_desc">Permitir este app executar</string>
+    <string name="action_sheet_uninstall_desc">Remover este app do seu dispositivo</string>
+    <string name="action_sheet_reinstall_desc">Restaurar este app do sistema</string>
+
+    <!-- Package Action Confirmations -->
+    <string name="dialog_force_stop_title">Forçar Parada de %s?</string>
+    <string name="dialog_force_stop_system_message">⚠️ Este é um pacote do sistema. Forçar a parada pode causar instabilidade no sistema.\n\nTem certeza que deseja continuar?</string>
+    <string name="dialog_force_stop_message">Isto irá parar imediatamente todos os processos de %s.\n\nTem certeza?</string>
+    <string name="dialog_enable_disable_title">%1$s %2$s?</string>
+    <string name="dialog_disable_system_message">⚠️ Este é um pacote do sistema. Desativá-lo pode causar instabilidade no sistema ou impedir outros apps de funcionar.\n\nTem certeza que deseja continuar?</string>
+    <string name="dialog_enable_message">Isto permitirá que %s execute normalmente.\n\nTem certeza?</string>
+    <string name="dialog_disable_message">Isto impedirá que %s execute.\n\nTem certeza?</string>
+
+    <!-- Permission Names -->
+    <string name="permission_network_state">Estado da Rede</string>
+    <string name="permission_wifi_state">Estado do WiFi</string>
+    <string name="permission_notification">Permissão de Notificação</string>
+    <string name="permission_battery_optimization">Isenção de Otimização de Bateria</string>
+    <string name="permission_modify_system_settings">Modificar Configurações do Sistema</string>
+    <string name="permission_enable_disable_components">Ativar/Desativar Componentes</string>
+    <string name="permission_superuser_access">Acesso de Superusuário</string>
+    <string name="permission_vpn">Permissão VPN</string>
+
+    <!-- Permission Descriptions -->
+    <string name="permission_network_state_desc">Monitorar conectividade de rede (WiFi/Móvel/Roaming)</string>
+    <string name="permission_wifi_state_desc">Detectar estado da rede WiFi</string>
+    <string name="permission_notification_desc">Mostrar notificações para novas instalações de apps</string>
+    <string name="permission_battery_optimization_desc">Impede o Android de encerrar o serviço de firewall para economizar bateria. Crítico para confiabilidade da VPN.</string>
+    <string name="permission_modify_system_settings_desc">Alterar configurações de segurança do sistema</string>
+    <string name="permission_enable_disable_components_desc">Ativar ou desativar componentes de apps</string>
+    <string name="permission_superuser_access_desc">Acesso completo ao sistema para operações avançadas</string>
+    <string name="permission_vpn_desc">Permite fallback automático para VPN quando backends privilegiados (iptables/ConnectivityManager) falham. Garante que o firewall permaneça ativo.</string>
+
+    <!-- Permission Tier Titles -->
+    <string name="permission_tier_basic_title">Funcionalidade Básica</string>
+    <string name="permission_tier_battery_title">Processo em Segundo Plano</string>
+    <string name="permission_tier_advanced_title">Operações Avançadas</string>
+    <string name="permission_tier_vpn_title">Fallback VPN</string>
+
+    <!-- Permission Tier Descriptions -->
+    <string name="permission_tier_basic_desc">Ver pacotes instalados e informações básicas</string>
+    <string name="permission_tier_battery_desc">Impede o Android de encerrar o serviço de firewall para economizar bateria. Crítico para confiabilidade da VPN.</string>
+    <string name="permission_tier_advanced_desc">Gestão de pacotes e operações de nível de sistema (via Shizuku ou root)</string>
+    <string name="permission_tier_vpn_desc">Permite fallback automático para VPN quando backends privilegiados (iptables/ConnectivityManager) falham. Garante que o firewall permaneça ativo.</string>
+    <string name="permission_tier_vpn_desc_privileged">Não necessário ao usar backend de firewall privilegiado (iptables/ConnectivityManager). Necessário apenas como fallback.</string>
+
+    <!-- Permission Tier Status -->
+    <string name="permission_status_completed">Concluído</string>
+    <string name="permission_status_required">Permissão Necessária</string>
+    <string name="permission_status_not_required">Não Necessário</string>
+    <string name="permission_status_shizuku_or_root_required">Shizuku ou Root Necessário</string>
+
+    <!-- Permission Tier Buttons -->
+    <string name="permission_button_grant">Conceder Permissão</string>
+    <string name="permission_button_grant_shizuku">Conceder Permissão Shizuku</string>
+    <string name="permission_button_grant_privileged">Conceder Acesso Privilegiado</string>
+    <string name="permission_button_grant_vpn">Conceder Permissão VPN</string>
+
+    <!-- Multi-Select Package Operations -->
+    <string name="multiselect_toast_not_available_disabled">Seleção múltipla não disponível para pacotes desativados</string>
+    <string name="multiselect_toast_not_available_uninstalled">Seleção múltipla não disponível para pacotes desinstalados</string>
+    <string name="multiselect_toolbar_title_format">%d selecionados</string>
+    <string name="multiselect_toolbar_button_uninstall">Desinstalar</string>
+    <string name="multiselect_toolbar_button_reinstall">Reinstalar</string>
+
+
+
+
+
+
+    <string name="multiselect_toast_limit_reached">Máximo de %d pacotes podem ser selecionados de uma vez</string>
+
+    <!-- Firewall Multi-Select -->
+    <string name="firewall_multiselect_toast_cannot_select_critical">Pacotes críticos/VPN não podem ser selecionados</string>
+    <string name="firewall_multiselect_toast_cannot_select_system_uid">Esta aplicação não pode ser bloqueada no modo atual da firewall</string>
+    <string name="firewall_multiselect_toolbar_button_block">Bloquear</string>
+    <string name="firewall_multiselect_toolbar_button_allow">Permitir</string>
+    <string name="firewall_multiselect_toolbar_button_rules">Alterar regras</string>
+    <string name="firewall_multiselect_dialog_title_results">Resultados do Firewall</string>
+    <string name="firewall_multiselect_dialog_message_success_format">✓ %2$s com sucesso: %1$d apps</string>
+    <string name="firewall_multiselect_dialog_message_failed_format">✓ %1$d sucesso, ✗ %2$d falha ao %3$s</string>
+
+    <!-- Firewall Multi-Select Bottom Sheet -->
+    <string name="firewall_multiselect_sheet_header_format">%d pacotes selecionados</string>
+    <string name="firewall_multiselect_sheet_section_network_rules">Regras de rede</string>
+    <string name="firewall_multiselect_sheet_state_mixed">Misto</string>
+    <string name="firewall_multiselect_sheet_quick_actions">Ações rápidas</string>
+    <string name="firewall_multiselect_sheet_allow_all">Permitir todas as redes</string>
+    <string name="firewall_multiselect_sheet_block_all">Bloquear todas as redes</string>
+
+    <!-- Theme -->
+
+    <!-- Common -->
+
+    <!-- Content Descriptions -->
+    <string name="cd_app_icon">Ícone do app</string>
+    <string name="cd_wifi_status">Estado do WiFi</string>
+    <string name="cd_wifi_blocked">WiFi bloqueado</string>
+    <string name="cd_mobile_data_status">Estado dos dados móveis</string>
+    <string name="cd_mobile_blocked">Móvel bloqueado</string>
+    <string name="cd_roaming_status">Estado do roaming</string>
+    <string name="cd_roaming_blocked">Roaming bloqueado</string>
+    <string name="cd_shield_icon">Ícone de escudo</string>
+    <string name="cd_open_app_settings">Abrir configurações do app</string>
+    <string name="cd_package_control_icon">Ícone de controle de pacotes</string>
+    <string name="cd_status_icon">Ícone de estado</string>
+    <string name="cd_de1984_logo">Logo Background Check</string>
+    <string name="cd_force_stop_icon">Ícone de forçar parada</string>
+    <string name="cd_enable_disable_icon">Ícone de ativar/desativar</string>
+    <string name="cd_uninstall_icon">Ícone de desinstalar</string>
+    <string name="cd_firewall_rules_icon">Ícone de regras de firewall</string>
+    <string name="cd_settings_icon">Ícone de configurações</string>
+    <string name="cd_backend_information">Informações do backend</string>
+    <string name="cd_captive_portal_icon">Ícone de Portal Cativo</string>
+    <string name="cd_apps_icon">Ícone de apps</string>
+    <string name="cd_permission_status">Estado da permissão</string>
+
+    <!-- Footer / Branding -->
+    <string name="footer_tagline">Noites tardias para dias mais brilhantes.\nCriado por Doru Moraru</string>
+    <string name="footer_author_name" translatable="false">Doru Moraru</string>
+    <string name="footer_author_url" translatable="false">https://github.com/dorumrr/de1984</string>
+
+    <!-- Plurals -->
+    <plurals name="package_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+
+    <!-- Root Access -->
+    <string name="root_status_denied">Acesso Root: Negado</string>
+    <string name="root_status_not_available">Acesso Root: Não Disponível</string>
+
+    <string name="root_desc_denied">Permissão root foi negada. Siga as instruções abaixo para conceder acesso.</string>
+    <string name="root_desc_not_available">Seu dispositivo não tem root. Acesso root é necessário para operações avançadas de gestão de pacotes.</string>
+
+    <string name="root_grant_instructions_title">Para conceder acesso root:</string>
+    <string name="root_grant_instructions_body">• Reinstale o app para acionar o diálogo de permissão novamente\n• Ou adicione manualmente o Background Check ao seu app de superusuário (Magisk, KernelSU, etc.)</string>
+
+    <string name="root_rooting_tools_title"><![CDATA[<b>Ferramentas de root recomendadas:</b>]]></string>
+    <string name="root_rooting_tools_body">• Magisk - Solução de root mais popular e amplamente suportada. Funciona no Android 5.0+ e suporta módulos para recursos adicionais.\n• KernelSU - Gestão de root moderna baseada em kernel. Fornece melhor isolamento de segurança e não modifica a partição do sistema.\n• APatch - Alternativa mais recente com abordagem de patch de kernel. Bom para dispositivos com políticas de segurança rigorosas.</string>
+
+
+    <!-- Shizuku Access -->
+    <string name="shizuku_status_denied">Shizuku: Negado</string>
+    <string name="shizuku_status_not_running">Shizuku: Não Executando</string>
+
+    <string name="shizuku_desc_denied">Permissão Shizuku foi negada. Toque em \'Conceder Permissão Shizuku\' para tentar novamente.</string>
+    <string name="shizuku_desc_not_running">Shizuku está instalado mas não está executando. Inicie o Shizuku para ativar gestão de pacotes.</string>
+
+
+
+    <!-- Privileged Access Banner -->
+
+
+    <!-- Backend Monitoring -->
+
+    <string name="backend_notification_title_waiting">Background Check Firewall Ativo (Modo VPN)</string>
+    <string name="backend_notification_title_switching">Background Check está mudando backend…</string>
+    <string name="backend_notification_title_success">Backend do Background Check Firewall alterado</string>
+    <string name="backend_notification_title_failed">Falha ao alterar backend do Background Check Firewall</string>
+
+    <string name="backend_notification_text_shizuku_not_running">Aguardando Shizuku iniciar. Toque para tentar novamente.</string>
+    <string name="backend_notification_text_shizuku_no_permission">Aguardando permissão Shizuku. Toque para tentar novamente.</string>
+    <string name="backend_notification_text_switching">Shizuku está agora disponível. Mudando para backend preferido…</string>
+    <string name="backend_notification_text_failed">Background Check Firewall falhou ao mudar backend. Ainda usando VPN.</string>
+
+    <string name="backend_action_button_retry">Tentar Novamente</string>
+
+    <string name="backend_switched_notification_title">Backend da firewall alterado</string>
+    <string name="backend_switched_notification_text">Mudou para %1$s — outra VPN está ativa</string>
+    <string name="backend_switched_notification_big">Outra app VPN ligou-se. O Background Check mudou automaticamente para %1$s para continuar a proteger-te. Toca para abrir as definições.</string>
+    <string name="backend_upgraded_notification_title">Firewall melhorada</string>
+    <string name="backend_upgraded_notification_text">Mudou de VPN para %1$s</string>
+    <string name="backend_upgraded_notification_big">Acesso root detetado. O Background Check mudou automaticamente de VPN para %1$s para melhor proteção. Modo definido como AUTO.</string>
+    <string name="backend_toast_success">O Background Check mudou para %1$s</string>
+    <string name="backend_notification_text_success">O Background Check está agora a usar o backend %1$s</string>
+    <string name="backend_unknown_name">Desconhecido</string>
+    <string name="backend_toast_failed">Background Check Firewall falhou ao mudar backend</string>
+
+    <!-- VPN Fallback -->
+
+    <string name="vpn_fallback_notification_title">Background Check Firewall Inativo</string>
+    <string name="vpn_fallback_notification_text">Backend privilegiado falhou. Toque para ativar fallback VPN e restaurar proteção do firewall.</string>
+    <string name="vpn_fallback_notification_action_text">Ativar Fallback VPN</string>
+    <!-- Widget/tile start that needs VPN permission. Distinct from the fallback strings
+         above: nothing has failed here, the user just asked to turn the firewall on. -->
+    <string name="vpn_permission_notification_title">Iniciar o Background Check Firewall</string>
+    <string name="vpn_permission_notification_text">O Background Check precisa da sua permissão para criar uma conexão VPN. Toque para permitir e iniciar o firewall.</string>
+    <string name="vpn_permission_notification_action_text">Permitir e iniciar</string>
+
+    <!-- Firewall Down warning (in-app banner + notification) -->
+    <string name="firewall_down_title">Firewall inativa — as suas apps estão desbloqueadas</string>
+    <string name="firewall_down_reason_no_plan">Não há nenhum backend de firewall utilizável neste dispositivo.</string>
+    <string name="firewall_down_reason_fallback_failed">O backend de reserva não arrancou. Nada está a bloquear o acesso à rede.</string>
+    <string name="firewall_down_reason_vpn_conflict">Outra app VPN está a ocupar o slot de VPN. O Background Check tem de a substituir para o proteger.</string>
+    <string name="firewall_down_reason_start_failed">O Background Check não conseguiu iniciar a firewall. Nada está a bloquear o acesso à rede.</string>
+    <string name="firewall_down_reason_vpn_permission">O Background Check precisa da permissão de VPN para restaurar a proteção.</string>
+    <string name="firewall_down_action_choose_backend">Escolher backend</string>
+    <string name="firewall_down_action_retry">Tentar de novo</string>
+    <string name="firewall_down_action_enable_vpn">Ativar VPN</string>
+    <string name="firewall_down_action_replace_vpn">Substituir VPN</string>
+    <string name="firewall_switched_title">Backend alterado</string>
+    <string name="firewall_switched_message_auto">O backend %1$s falhou. O Background Check mudou para VPN e continua a protegê-lo.</string>
+    <string name="firewall_switched_message_manual">O backend %1$s falhou. O Background Check mudou para o modo AUTO e está a usar VPN.</string>
+    <string name="firewall_stop_failed_title">A firewall não parou</string>
+    <string name="firewall_stop_failed_message">O backend %1$s não conseguiu parar. Algumas aplicações podem continuar bloqueadas. Tente novamente ou reinicie o dispositivo.</string>
+    <string name="firewall_stop_failed_message_unknown">A firewall não conseguiu parar. Algumas aplicações podem continuar bloqueadas. Tente novamente ou reinicie o dispositivo.</string>
+    <string name="firewall_apply_failed_title">Algumas regras não foram aplicadas</string>
+    <string name="firewall_apply_failed_message">O backend %1$s não conseguiu aplicar todas as regras. Algumas aplicações podem não estar bloqueadas ou permitidas como indicado.</string>
+    <string name="firewall_stop_failed_action_retry">Parar novamente</string>
+    <string name="firewall_down_notifications_off">As notificações estão desativadas, por isso este aviso não o alcança quando o Background Check está fechado.</string>
+    <string name="firewall_down_action_enable_notifications">Ativar alertas</string>
+    <string name="firewall_status_down">FALHA</string>
+    <string name="firewall_status_stuck">PRESO</string>
+
+    <!-- VPN Conflict Notification -->
+    <string name="vpn_conflict_notification_title">Background Check Firewall Inativo - Conflito VPN</string>
+    <string name="vpn_conflict_notification_text">Outra VPN está ativa. Background Check precisa de permissão VPN para restaurar a proteção do firewall. Isso substituirá sua conexão VPN atual. Toque para conceder permissão.</string>
+    <string name="vpn_conflict_notification_action_text">Substituir VPN &amp; Ativar Firewall</string>
+
+
+
+    <!-- Language Switcher -->
+    <string name="language_title">Idioma do App</string>
+    <string name="language_description">Escolha seu idioma preferido para o app</string>
+    <string name="language_system_default">Padrão do Sistema</string>
+    <string name="language_english">English (Inglês)</string>
+    <string name="language_romanian">Română (Romeno)</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_chinese">中文 (Chinês)</string>
+    <string name="language_italian">Italiano (Italiano)</string>
+    <string name="language_french">Français (Francês)</string>
+    <string name="language_russian">Русский (Russo)</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_app_version">Versão %s</string>
+    <string name="settings_app_description">Controles de firewall e de aplicativos adaptados do De1984, criado por Doru Moraru sob a licença MIT. As doações por este botão apoiam o projeto original De1984.</string>
+
+    <string name="settings_options_title">Opções</string>
+    <string name="settings_options_description">Configurar comportamento e definições</string>
+
+    <string name="settings_firewall_policy_title">Firewall Bloqueia Tudo por Padrão</string>
+    <string name="settings_firewall_policy_description_block_all">Bloquear Tudo, Permitir Desejados</string>
+    <string name="settings_firewall_policy_description_allow_all">Permitir Tudo, Bloquear Indesejados</string>
+
+    <string name="settings_backend_title">Backend do Firewall</string>
+    <string name="settings_backend_description">Selecione qual backend usar para bloquear apps</string>
+    <string name="settings_backend_active">Ativo: %s</string>
+    <string name="settings_backend_not_running">Firewall não está executando.</string>
+    <string name="settings_backend_loading">Carregando...</string>
+
+    <!-- Backend Options -->
+    <string name="backend_auto_name">AUTO (Recomendado)</string>
+    <string name="backend_auto_description">Selecionar automaticamente o melhor backend disponível</string>
+    <string name="backend_vpn_name">VPN</string>
+    <string name="backend_vpn_description">Sempre usar backend VPN</string>
+    <string name="backend_connectivity_manager_name">ConnectivityManager</string>
+    <string name="backend_connectivity_manager_description">Bloqueio a nível de sistema (requer Shizuku + Android 13+)</string>
+    <string name="backend_requires_android_13">Requer Android 13+</string>
+    <string name="backend_requires_shizuku">Requer Shizuku</string>
+    <string name="backend_iptables_name">iptables</string>
+    <string name="backend_iptables_description">Bloqueio a nível de kernel (requer root)</string>
+    <string name="backend_iptables_requirement">Requer root ou Shizuku em modo root</string>
+    <string name="backend_network_policy_manager_name">NetworkPolicyManager (Legado)</string>
+    <string name="backend_network_policy_manager_description">Para Android 12 e inferior (use ConnectivityManager no Android 13+)</string>
+    <string name="backend_network_policy_manager_requirement">Requer Shizuku</string>
+    <string name="backend_not_available_title">%s Não Disponível</string>
+    <string name="backend_not_available_message">Este backend não está disponível no seu dispositivo.</string>
+
+    <string name="settings_show_icons_title">Mostrar Ícones de Apps</string>
+    <string name="settings_show_icons_description">Pode acelerar o app quando desativado</string>
+
+    <string name="settings_boot_protection_title">Proteção na Inicialização</string>
+    <string name="settings_boot_protection_description">Bloquear todo o tráfego de rede durante a inicialização do dispositivo até o firewall ativar (requer root e Magisk)</string>
+    <string name="settings_boot_protection_unavailable">Requer root e scripts de inicialização do Magisk</string>
+    <string name="settings_boot_protection_stuck">⚠️ A proteção de inicialização ainda está instalada e o Background Check perdeu o acesso root, portanto não pode removê-la. Cada inicialização bloqueia todos os aplicativos por até 2 minutos e depois o script se desativa sozinho. Tente removê-la abaixo — funciona se o root foi apenas negado, não perdido.</string>
+    <string name="settings_boot_protection_retry_remove">Tentar remover</string>
+    <string name="boot_protection_remove_no_root">Não foi possível remover. O Background Check ainda não tem acesso root, portanto não pode excluir um arquivo em /data/adb. Restaure o root e tente novamente. Até lá, cada inicialização bloqueia os aplicativos por até 2 minutos e depois se libera sozinha.</string>
+    <string name="boot_protection_rebooting">Proteção de inicialização removida. Reiniciando o telefone…</string>
+
+    <string name="settings_new_app_notifications_title">Notificações de Novos Apps</string>
+    <string name="settings_new_app_notifications_description">Mostrar notificações quando novos apps com permissões de rede são instalados</string>
+
+    <string name="settings_allow_uninstall_critical_title">Permitir Desinstalar Pacotes Críticos</string>
+    <string name="settings_allow_uninstall_critical_description">Mostrar opção de desinstalar para pacotes Essenciais e Importantes</string>
+
+    <string name="settings_allow_firewall_critical_title">Permitir Firewall de Pacotes Críticos</string>
+    <string name="settings_allow_firewall_critical_description">Permitir bloqueio de acesso à rede para pacotes críticos do sistema e VPN</string>
+
+    <string name="settings_show_firewall_prompt_title">Mostrar Prompt de Iniciar Firewall</string>
+    <string name="settings_show_firewall_prompt_description">Mostrar um prompt para iniciar o firewall quando o app abre e o firewall está inativo</string>
+
+    <string name="settings_confirm_rule_changes_title">Confirmar Alterações de Regras</string>
+    <string name="settings_confirm_rule_changes_description">Mostrar diálogo de confirmação ao tocar nos ícones de rede para alternar regras</string>
+
+    <string name="settings_dynamic_color_title">Usar Cor Dinâmica</string>
+    <string name="settings_dynamic_color_description">Adaptar cores do app para combinar com o papel de parede do seu dispositivo (Android 12+). Requer reiniciar o app.</string>
+
+    <string name="settings_backup_restore_title">Backup &amp; Restaurar</string>
+    <string name="settings_backup_restore_description">Salvar e restaurar suas regras de firewall</string>
+    <string name="settings_backup_button">Backup</string>
+    <string name="settings_restore_button">Restaurar</string>
+
+    <!-- Export/Import Uninstalled Apps -->
+    <string name="settings_uninstalled_apps_title">Apps desinstalados</string>
+    <string name="settings_uninstalled_apps_description">Exportar e importar a lista de pacotes do sistema desinstalados</string>
+    <string name="button_export_uninstalled_apps">Exportar</string>
+    <string name="button_import_uninstalled_apps">Importar</string>
+
+    <!-- Export Messages -->
+    <string name="success_export_uninstalled">✅ Exportação bem-sucedida: %d pacotes</string>
+    <string name="error_export_requires_privileges">❌ Root ou Shizuku necessário para exportar apps desinstalados</string>
+    <string name="error_export_no_uninstalled_apps">Nenhum pacote do sistema desinstalado encontrado</string>
+    <string name="error_export_failed">Exportação falhou: %s</string>
+
+    <!-- Import Messages -->
+    <string name="dialog_import_preview_title">Importar &amp; desinstalar apps</string>
+    <string name="dialog_import_preview_message">Encontrados %1$d pacotes para desinstalar:\n\n%2$s\n\n⚠️ Isso desinstalará todos os apps listados.</string>
+    <string name="dialog_import_warning_title">Alguns pacotes não encontrados</string>
+    <string name="dialog_import_warning_message">%1$d de %2$d pacotes encontrados.\n\nEncontrados:\n%3$s\n\nNão encontrados:\n%4$s\n\nContinuar com os pacotes encontrados?</string>
+    <string name="dialog_import_all_not_found">❌ Nenhum dos %d pacotes no arquivo está atualmente instalado</string>
+    <string name="dialog_import_protected_section">🛡️ Ignorados por serem protegidos (essenciais ou necessários ao Background Check):\n%1$s</string>
+    <string name="dialog_import_empty_file">❌ O arquivo está vazio ou não contém nomes de pacotes válidos</string>
+    <string name="dialog_import_confirm">Desinstalar tudo</string>
+    <string name="error_import_requires_privileges">❌ Root ou Shizuku necessário para desinstalar apps</string>
+    <string name="error_import_file_read_failed">Falha ao ler arquivo: %s</string>
+    <string name="error_import_failed">Importação falhou: %s</string>
+
+    <string name="settings_captive_portal_title">Controlador de Portal Cativo</string>
+    <string name="settings_captive_portal_description">Controlar sistema de detecção de portal cativo do Android</string>
+    <string name="settings_captive_portal_current_settings">Configurações Atuais</string>
+    <string name="settings_captive_portal_detection_mode">Modo de Detecção: %s</string>
+    <string name="settings_captive_portal_http_url">URL HTTP: %s</string>
+    <string name="settings_captive_portal_https_url">URL HTTPS: %s</string>
+    <string name="settings_captive_portal_preset">Predefinição: %s</string>
+    <string name="settings_captive_portal_loading">Carregando...</string>
+    <string name="settings_captive_portal_not_set">Não definido</string>
+
+    <!-- Captive Portal Mode Options -->
+    <string name="captive_portal_mode_forced_off">Forçado Desligado</string>
+    <string name="captive_portal_mode_forced_off_description">Detecção de portal cativo está completamente desativada</string>
+    <string name="captive_portal_mode_disabled">Desativado</string>
+    <string name="captive_portal_mode_disabled_description">Detecção de portal cativo está desativada</string>
+    <string name="captive_portal_mode_enabled">Ativado</string>
+    <string name="captive_portal_mode_enabled_description">Detecção de portal cativo está ativada (padrão)</string>
+
+    <!-- Captive Portal Preset Options -->
+    <string name="captive_portal_preset_google">Google (Padrão)</string>
+    <string name="captive_portal_preset_google_description">Servidores de detecção de portal cativo padrão do Google</string>
+    <string name="captive_portal_preset_grapheneos">GrapheneOS</string>
+    <string name="captive_portal_preset_grapheneos_description">Servidores focados em privacidade do projeto GrapheneOS</string>
+    <string name="captive_portal_preset_kuketz">Kuketz</string>
+    <string name="captive_portal_preset_kuketz_description">Servidores focados em privacidade de Mike Kuketz (Alemanha)</string>
+    <string name="captive_portal_preset_cloudflare">Cloudflare</string>
+    <string name="captive_portal_preset_cloudflare_description">Servidores de detecção de portal cativo da Cloudflare</string>
+    <string name="captive_portal_preset_custom">URLs Personalizadas</string>
+    <string name="captive_portal_preset_custom_description">Use suas próprias URLs de portal cativo personalizadas</string>
+
+    <!-- Captive Portal Success Messages -->
+    <string name="captive_portal_preset_applied">Predefinição %s aplicada com sucesso</string>
+    <string name="captive_portal_mode_set">Modo de detecção definido para %s</string>
+    <string name="settings_captive_portal_restore_original">Restaurar Original</string>
+    <string name="settings_captive_portal_reset_google">Redefinir para Google</string>
+    <string name="settings_captive_portal_no_privileges">Acesso root ou Shizuku necessário para modificar configurações</string>
+
+    <string name="settings_permissions_title">Permissões</string>
+    <string name="settings_permissions_description">Estado e configuração avançada</string>
+
+    <string name="settings_contribute_title">Perguntas, recursos, bugs?</string>
+    <string name="settings_contribute_description">Envolva-se e ajude a melhorar o Background Check</string>
+    <string name="settings_contribute_message">Contribua com código, reporte bugs ou sugira recursos para tornar este app melhor para todos.</string>
+    <string name="settings_contribute_button">Contribuir no GitHub</string>
+
+    <!-- Dialog Titles and Messages -->
+    <string name="dialog_success">Sucesso</string>
+    <string name="dialog_firewall_backends_title">Backends do Firewall</string>
+    <string name="dialog_firewall_backends_message">💡 Modo AUTO (Recomendado)\nSeleciona automaticamente o melhor backend disponível:\n1. iptables (se root/Shizuku disponível)\n2. ConnectivityManager (se Shizuku + Android 13+)\n3. VPN (fallback)\n\nBackground Check suporta quatro backends de firewall:\n\n🔹 Backend VPN\n• Sempre disponível (não requer root)\n• Usa API VpnService do Android\n• Suporta controle granular (WiFi/Móvel/Roaming)\n• Ocupa slot VPN (não pode usar outros apps VPN)\n• Filtragem de pacotes em espaço de usuário\n\n🔹 Backend iptables\n• Requer root ou Shizuku em modo root\n• Bloqueio a nível de kernel (mais eficiente)\n• Suporta controle granular (WiFi/Móvel/Roaming)\n• Não ocupa slot VPN\n• Funciona com outros apps VPN\n\n🔹 Backend ConnectivityManager\n• Requer Shizuku + Android 13+\n• Bloqueio a nível de sistema (bloqueia todas as redes de forma confiável)\n• Bloqueio tudo-ou-nada apenas (sem controle granular)\n• Não ocupa slot VPN\n• Funciona com outros apps VPN\n\n🔹 Backend NetworkPolicyManager (Legado)\n• Requer Shizuku\n• Para Android 12 e inferior\n• Pode não bloquear WiFi em alguns dispositivos\n• Use ConnectivityManager no Android 13+ em vez disso\n• Não ocupa slot VPN</string>
+    <string name="dialog_privileged_access_title">Acesso Privilegiado</string>
+    <string name="dialog_privileged_access_testing">🔄 Testando acesso privilegiado...\n\nPor favor, conceda permissão no diálogo popup se solicitado.</string>
+    <string name="dialog_privileged_access_failed">❌ Teste de root falhou.\n\nErro: %s</string>
+    <string name="dialog_restore_rules_title">Restaurar Regras de Firewall?</string>
+    <string name="dialog_restore_rules_message">📦 Informações do Backup:\n\n• Criado: %1$s\n• Versão do App: %2$s\n• Contagem de Regras: %3$d\n\nEscolha modo de restauração:\n\n• Mesclar: Manter regras existentes e adicionar/atualizar do backup\n• Substituir Tudo: Deletar todas as regras existentes primeiro (⚠️ destrutivo)</string>
+    <string name="dialog_restore_rules_merge">Mesclar</string>
+    <string name="dialog_restore_rules_replace">Substituir Tudo</string>
+    <string name="dialog_replace_all_title">⚠️ Substituir Todas as Regras?</string>
+    <string name="dialog_replace_all_message">Isto irá DELETAR todas as regras de firewall existentes e substituí-las com o backup.\n\nEsta ação não pode ser desfeita.\n\nTem certeza?</string>
+    <string name="dialog_replace_all_confirm">Substituir Tudo</string>
+    <string name="dialog_critical_uninstall_title">⚠️ Aviso</string>
+    <string name="dialog_critical_uninstall_message">Isto permite desinstalar pacotes críticos do sistema que podem danificar seu dispositivo. Ative apenas se souber o que está fazendo.\n\nTem certeza que deseja ativar isto?</string>
+    <string name="dialog_critical_uninstall_enable">Ativar</string>
+    <string name="dialog_critical_firewall_title">⚠️ Aviso</string>
+    <string name="dialog_critical_firewall_message">Isto permite bloquear o acesso à rede para pacotes críticos do sistema (WiFi, Bluetooth, Gerenciador de Downloads, etc.) e apps VPN.\n\nBloquear estes pacotes pode:\n• Quebrar a conectividade de rede\n• Impedir o funcionamento de WiFi/Bluetooth\n• Causar problemas de reconexão VPN\n• Exigir reset de fábrica ou ADB para corrigir\n\nAtive apenas se souber o que está fazendo.\n\nTem certeza de que deseja ativar isto?</string>
+    <string name="dialog_critical_firewall_enable">Ativar</string>
+    <string name="dialog_restart_title">Reinicialização Necessária</string>
+    <string name="dialog_restart_message">O app precisa reiniciar para aplicar o novo tema de cor. Reiniciar agora?</string>
+    <string name="dialog_restart_confirm">Reiniciar</string>
+    <string name="dialog_captive_portal_restore_title">Restaurar Configurações Originais?</string>
+    <string name="dialog_captive_portal_restore_message">Isto irá restaurar as configurações originais de portal cativo do seu dispositivo que foram capturadas quando você abriu este recurso pela primeira vez.</string>
+    <string name="dialog_captive_portal_restore_confirm">Restaurar</string>
+    <string name="dialog_captive_portal_reset_title">Redefinir para Padrões do Google?</string>
+    <string name="dialog_captive_portal_reset_message">Isto irá redefinir configurações de portal cativo para os servidores padrão do Google. Suas configurações originais permanecerão salvas e podem ser restauradas depois.</string>
+    <string name="dialog_captive_portal_reset_confirm">Redefinir</string>
+    <string name="dialog_backup_read_error">Falha ao ler arquivo de backup: %s</string>
+    <string name="dialog_backup_load_error">Falha ao carregar backup: %s</string>
+    <string name="dialog_loading_backup_title">Carregando Backup...</string>
+    <string name="dialog_loading_backup_message">Por favor, aguarde...</string>
+    <string name="dialog_vpn_permission_error_title">Erro de Permissão VPN</string>
+    <string name="dialog_vpn_permission_error_message">Falha ao solicitar permissão VPN: %s</string>
+
+    <!-- Licenses (unused but kept for future) -->
+
+    <!-- Packages Screen -->
+    <string name="packages_empty_state_title">Nenhum pacote encontrado</string>
+    <string name="packages_empty_state_subtitle">Tente ajustar seus filtros</string>
+    <string name="package_state_enabled">Ativado</string>
+    <string name="package_type_user">Usuário</string>
+
+    <!-- Firewall Screen -->
+    <string name="firewall_empty_state_title">Nenhum pacote encontrado</string>
+    <string name="firewall_empty_state_subtitle">Tente ajustar seus filtros</string>
+    <string name="firewall_vpn_info_message">Usando firewall baseado em VPN porque seu dispositivo não tem root ou não tem Shizuku. Você não pode usar outro app VPN enquanto o Background Check Firewall está ativo.</string>
+    <string name="firewall_network_label_wifi">WiFi</string>
+    <string name="firewall_network_label_mobile">Dados Móveis</string>
+    <string name="firewall_network_label_roaming">Roaming</string>
+    <string name="firewall_network_label_lan">Acesso LAN</string>
+    <string name="firewall_lan_requires_root">Requer acesso root</string>
+    <string name="firewall_backend_cannot_block_uid">Não pode ser bloqueada</string>
+    <string name="firewall_system_uid_info">⚠️ Faz parte do próprio Android, não é uma aplicação normal. O Shizuku não a consegue bloquear — o Android recusa regras de firewall para os seus próprios componentes. Com root é possível, mas onde o ID de utilizador é partilhado com uma aplicação protegida, como as Configurações, também é necessário \'Permitir Firewall de Pacotes Críticos\' ativado nas Configurações, e o bloqueio afetará também essas aplicações.</string>
+    <string name="firewall_unknown_uid_info">⚠️ O Background Check não conseguiu determinar o ID de utilizador desta aplicação no seu perfil, pelo que nenhuma regra de firewall lhe pode ser aplicada.</string>
+    <string name="firewall_other_profile_info">⚠️ Esta aplicação está noutro perfil. O modo atual da firewall trabalha com nomes de aplicações dentro do perfil onde o Background Check é executado, por isso não a consegue alcançar. O acesso root bloqueia por ID de utilizador e alcança todos os perfis.</string>
+    <string name="firewall_other_profile_follows_info">⚠️ Esta aplicação está noutro perfil. O modo atual da firewall bloqueia uma aplicação em todos os perfis ao mesmo tempo, por isso esta cópia segue os interruptores da mesma aplicação no perfil onde o Background Check é executado. O acesso root bloqueia cada perfil separadamente.</string>
+    <string name="firewall_other_profile_follows_subtitle">Definida no perfil do Background Check</string>
+    <string name="firewall_shared_uid_info">⚠️ Esta aplicação partilha um ID de utilizador com uma aplicação protegida, e o modo atual da firewall bloqueia por ID de utilizador, não por aplicação. Bloqueá-la cortaria também a aplicação protegida, por isso o Background Check deixa todo o ID de utilizador intacto. Para a bloquear mesmo assim, ative \'Permitir Firewall de Pacotes Críticos\' nas Configurações e depois ligue o interruptor desta aplicação.</string>
+    <string name="firewall_no_rule_protected_uid_info">⚠️ O Background Check protege o ID de utilizador desta aplicação, por isso a política predefinida Bloquear Tudo não lhe é aplicada — fazê-lo poderia cortar uma aplicação de sistema protegida. Com \'Permitir Firewall de Pacotes Críticos\' ativado pode bloqueá-la mesmo assim: ligue o interruptor desta aplicação.</string>
+    <string name="firewall_sibling_rule_info">⚠️ Outra aplicação partilha o ID de utilizador desta aplicação e tem uma regra de firewall própria. O modo atual bloqueia por ID de utilizador, por isso essa regra também se aplica a esta aplicação, incluindo qualquer bloqueio com a tela desligada. Os interruptores nesta janela são as definições próprias desta aplicação.</string>
+    <string name="firewall_network_label_background_access">Permitir com tela desligada</string>
+    <string name="firewall_network_label_internet_access">Acesso à Internet</string>
+    <string name="firewall_internet_access_subtitle">WiFi, Móvel, Roaming</string>
+    <string name="firewall_connectivity_manager_info">Seu dispositivo usa um firewall a nível de sistema que não suporta bloqueio por rede. Para controle granular, acesso root é necessário.</string>
+    <string name="firewall_system_critical_info">⚠️ Pacote Crítico do Sistema - Acesso à rede não pode ser modificado para prevenir instabilidade do sistema.</string>
+    <string name="firewall_vpn_app_info">🔒 App VPN - Sempre permitido para prevenir problemas de reconexão VPN após bloqueio/desbloqueio do dispositivo.</string>
+    <string name="firewall_critical_allowed_info">⚠️ A proteção de pacotes críticos está desativada nas Configurações. Bloquear o acesso à rede pode causar instabilidade do sistema ou problemas de VPN.</string>
+    <string name="firewall_badge_system_critical">Crítico do Sistema</string>
+    <string name="firewall_badge_vpn_app">App VPN</string>
+    <string name="firewall_badge_no_internet">Sem Permissão de Internet</string>
+    <string name="firewall_no_internet_info">ℹ️ Este app atualmente não tem permissão de internet declarada em seu manifesto.\n\nBloqueá-lo agora terá efeito se o app ganhar permissão de internet em uma atualização futura, fornecendo proteção proativa.</string>
+
+    <!-- Protection Warning Banner -->
+    <string name="protection_banner_title">🛡️ Pacote Protegido</string>
+    <string name="protection_banner_message_firewall_system">Este pacote crítico do sistema está protegido por padrão para prevenir instabilidade do sistema. Ative \'Permitir Firewall de Pacotes Críticos\' nas Configurações para modificar o acesso à rede.</string>
+    <string name="protection_banner_message_firewall_vpn">Este app VPN está protegido por padrão para prevenir problemas de reconexão VPN. Ative \'Permitir Firewall de Pacotes Críticos\' nas Configurações para modificar o acesso à rede.</string>
+    <string name="protection_banner_message_firewall">Este pacote está protegido por padrão. Ative \'Permitir Firewall de Pacotes Críticos\' nas Configurações para modificar o acesso à rede.</string>
+    <string name="protection_banner_message_uninstall">Este pacote crítico está protegido por padrão para prevenir instabilidade do sistema. Ative \'Permitir Desinstalação de Pacotes Críticos\' nas Configurações para desinstalá-lo.</string>
+    <string name="protection_banner_button">Configurações</string>
+
+    <!-- Snackbar Messages -->
+    <string name="snackbar_firewall_protected">Este pacote está protegido. Ative a configuração nas Configurações para modificar o acesso à rede.</string>
+    <string name="snackbar_uninstall_protected">Este pacote está protegido. Ative a configuração nas Configurações para desinstalar.</string>
+    <string name="snackbar_action_settings">CONFIGURAÇÕES</string>
+
+    <!-- Package Categories -->
+    <string name="category_system_core">Núcleo do Sistema</string>
+    <string name="category_system_ui">Interface do Sistema</string>
+    <string name="category_google_services">Serviços Google</string>
+    <string name="category_connectivity">Conectividade</string>
+    <string name="category_telephony">Telefonia</string>
+    <string name="category_media">Mídia</string>
+    <string name="category_social">Social</string>
+    <string name="category_assistant">Assistente</string>
+    <string name="category_vendor">Fornecedor</string>
+    <string name="category_unknown">Desconhecido</string>
+
+    <!-- Package Action Sheet -->
+    <string name="action_sheet_placeholder_app_name">Nome do App</string>
+    <string name="action_sheet_placeholder_package_name">com.exemplo.app</string>
+    <string name="action_sheet_safety_badge_essential">Essencial</string>
+    <string name="action_sheet_safety_badge_important">Importante</string>
+    <string name="action_sheet_safety_badge_optional">Opcional</string>
+    <string name="action_sheet_safety_badge_bloatware">Bloatware</string>
+    <string name="action_sheet_type_badge_user">Usuário</string>
+    <string name="action_sheet_type_badge_system">UI do Sistema</string>
+    <string name="action_sheet_action_force_stop">Forçar Parada</string>
+    <string name="action_sheet_action_force_stop_desc">Parar imediatamente todos os processos</string>
+    <string name="action_sheet_action_disable">Desativar</string>
+    <string name="action_sheet_action_disable_desc">Impedir este app de executar</string>
+    <string name="action_sheet_action_uninstall">Desinstalar</string>
+    <string name="action_sheet_action_uninstall_desc">Remover este app do dispositivo</string>
+    <string name="action_sheet_action_firewall">Regras de Firewall</string>
+    <string name="action_sheet_action_firewall_desc">Controlar acesso à rede</string>
+    <string name="action_sheet_section_network_access">Controle de Acesso à Rede</string>
+    <string name="action_sheet_section_package_control">Controle de Pacotes</string>
+    <string name="action_sheet_section_package_control_desc">Forçar parada, desativar ou desinstalar</string>
+    <string name="action_sheet_status_updating">Atualizando...</string>
+
+    <!-- Clipboard -->
+    <string name="clipboard_label_package_name">Nome do Pacote</string>
+
+    <!-- Uninstall Dialogs -->
+    <string name="uninstall_dialog_title_critical">🚨 AVISO CRÍTICO</string>
+    <string name="uninstall_dialog_message_essential">⚠️ PACOTE ESSENCIAL DO SISTEMA ⚠️\n\nDesinstalar %1$s IRÁ DANIFICAR SEU DISPOSITIVO!\n\nEste pacote é crítico para operação do sistema. Removê-lo tornará seu dispositivo inutilizável e pode requerer uma redefinição de fábrica ou reflash.\n\n%2$sDigite \"UNINSTALL\" para confirmar esta ação perigosa:</string>
+    <string name="uninstall_dialog_affects_prefix">Afeta:\n%s\n\n</string>
+    <string name="uninstall_dialog_confirm_word">UNINSTALL</string>
+    <string name="uninstall_dialog_button_uninstall">Desinstalar</string>
+
+    <string name="uninstall_dialog_title_important">⚠️ Aviso: Pacote Importante</string>
+    <string name="uninstall_dialog_message_important">Desinstalar %1$s fará com que recursos importantes do sistema parem de funcionar.\n\n%2$sIsto pode requerer uma redefinição de fábrica para restaurar funcionalidade.\n\nTem certeza?</string>
+
+    <string name="uninstall_dialog_title_optional">Desinstalar %s?</string>
+    <string name="uninstall_dialog_message_optional_with_affects">Isto pode afetar:\n%s\n\nTem certeza?</string>
+    <string name="uninstall_dialog_message_optional">Isto irá remover %s do seu dispositivo.\n\nTem certeza?</string>
+
+    <string name="uninstall_dialog_title_bloatware">Desinstalar %s?</string>
+    <string name="uninstall_dialog_message_bloatware">✓ Seguro para remover\n\nEste pacote é considerado bloatware e pode ser desinstalado com segurança.\n\nTem certeza?</string>
+
+    <string name="uninstall_dialog_title_unknown">Desinstalar %s?</string>
+    <string name="uninstall_dialog_message_unknown_system">⚠️ PERIGO: Este é um pacote do sistema. Desinstalá-lo pode danificar seu dispositivo ou causar instabilidade severa do sistema.\n\nEsta ação não pode ser facilmente desfeita.\n\nTem certeza absoluta?</string>
+    <string name="uninstall_dialog_message_unknown_user">Isto irá remover %s do seu dispositivo.\n\nTem certeza?</string>
+
+    <!-- Reinstall Dialog -->
+    <string name="reinstall_dialog_title">Reinstalar %s?</string>
+    <string name="reinstall_dialog_message">Isto irá restaurar o app do sistema no seu dispositivo.\n\nTem certeza?</string>
+    <string name="reinstall_dialog_button_reinstall">Reinstalar</string>
+
+    <!-- Batch Reinstall Dialog -->
+    <string name="batch_reinstall_dialog_title">Reinstalar %d Apps Selecionados?</string>
+    <plurals name="batch_reinstall_dialog_message_prefix">
+        <item quantity="one">Reinstalar %d app do sistema selecionado?\n\nOs seguintes apps serão reinstalados:\n\n</item>
+        <item quantity="many">Reinstalar %d apps do sistema selecionados?\n\nOs seguintes apps serão reinstalados:\n\n</item>
+        <item quantity="other">Reinstalar %d apps do sistema selecionados?\n\nOs seguintes apps serão reinstalados:\n\n</item>
+    </plurals>
+    <string name="batch_reinstall_dialog_message_item">• %s\n</string>
+    <string name="batch_reinstall_dialog_message_more">\n…e mais %d</string>
+    <string name="batch_reinstall_dialog_button_reinstall_all">Reinstalar Todos</string>
+
+    <!-- Batch Uninstall Dialog -->
+    <string name="batch_uninstall_dialog_message_question">Tem certeza que deseja desinstalar estes %d apps?</string>
+    <string name="batch_uninstall_dialog_category_user_apps">📱 Apps de Usuário (%d):</string>
+    <string name="batch_uninstall_dialog_category_bloatware">✓ Bloatware (%d):</string>
+    <string name="batch_uninstall_dialog_category_optional">⚠️ Apps Opcionais do Sistema (%d):</string>
+    <string name="batch_uninstall_dialog_and_more">... e mais %d</string>
+    <string name="batch_uninstall_results_and_more">... e mais %d</string>
+    <string name="batch_uninstall_results_error_prefix">  Erro: %s</string>
+    <string name="batch_uninstall_progress_title">Desinstalando apps</string>
+    <string name="batch_uninstall_progress_message">Desinstalando %1$d de %2$d apps…</string>
+    <string name="batch_uninstall_results_title">Resultados da desinstalação</string>
+    <string name="batch_uninstall_results_success">✅ Desinstalados com sucesso %d apps:</string>
+    <string name="batch_uninstall_results_failed">❌ Falha ao desinstalar %d apps:</string>
+
+    <!-- Common Dialog Strings -->
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_continue">Continuar</string>
+    <string name="dialog_error_title">Erro</string>
+    <string name="dialog_no_access_message">❌ Nenhum Acesso Privilegiado Disponível\n\nSeu dispositivo não parece ter root. Para ativar recursos avançados de gestão de pacotes:\n• Instale e configure Shizuku (recomendado - não requer root)\n• Ou faça root no seu dispositivo usando Magisk, KernelSU ou APatch</string>
+    <string name="dialog_root_denied_message">❌ Acesso Root Negado\n\nSeu dispositivo tem root mas o Background Check foi negado permissão de superusuário.\n\nPara conceder acesso:\n• Abra seu app de superusuário (Magisk, KernelSU, APatch, etc.) e conceda permissão ao Background Check\n• Se o prompt de permissão não aparecer, desinstale e reinstale o app, então conceda permissão quando solicitado no primeiro lançamento\n• Ou adicione manualmente o Background Check ao seu app de superusuário (Magisk, KernelSU, etc.)</string>
+    <string name="dialog_type_to_confirm_hint">Digite \"%s\" para confirmar</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_copied_to_clipboard">Copiado para área de transferência</string>
+
+    <!-- VPN Fallback -->
+    <string name="vpn_fallback_failed_title">Fallback VPN Falhou</string>
+    <string name="vpn_fallback_failed_message">Falha ao iniciar fallback VPN: %s</string>
+
+    <!-- Privileged Access Banner -->
+    <string name="privileged_access_banner_no_access">Nenhum acesso privilegiado disponível. Instale o Shizuku ou faça root no seu dispositivo para ativar gestão de pacotes.</string>
+    <string name="privileged_access_banner_shizuku_not_running">Shizuku está instalado mas não está executando. Inicie o Shizuku ou faça root no seu dispositivo para ativar gestão de pacotes.</string>
+    <string name="privileged_access_banner_permission_required">Shizuku ou acesso root necessário para gestão de pacotes</string>
+    <string name="privileged_access_banner_button_settings">Ir para Configurações</string>
+    <string name="privileged_access_banner_button_grant">Conceder</string>
+    <string name="privileged_access_dialog_title">Acesso Privilegiado</string>
+    <string name="privileged_access_tier_title">Gestão de Pacotes</string>
+    <string name="privileged_access_status_setup_required">Configuração Necessária</string>
+    <string name="privileged_access_status_permission_required">Permissão Necessária</string>
+
+    <!-- Firewall Service Notifications -->
+    <string name="privileged_firewall_notification_title">Background Check Firewall Ativo</string>
+    <string name="privileged_firewall_notification_text">Usando backend %s</string>
+    <string name="vpn_firewall_notification_title">Background Check Firewall Ativo</string>
+    <string name="vpn_firewall_notification_text">Protegendo sua privacidade</string>
+    <string name="vpn_failure_notification_title">VPN do Firewall Falhou</string>
+    <string name="vpn_failure_notification_text">Interface VPN falhou. Tentando novamente automaticamente...</string>
+    <string name="new_app_notification_title">Background Check Firewall detectou um novo app</string>
+    <string name="new_app_notification_text">%s foi instalado. Toque para configurar regras de firewall.</string>
+    <string name="new_app_notification_action_block">Bloquear Rede</string>
+    <string name="new_app_notification_action_allow">Permitir Rede</string>
+
+    <!-- Backup/Restore Error Messages -->
+    <string name="error_firewall_restart_failed">Falha ao reiniciar firewall com novo backend: %s</string>
+    <string name="error_no_rules_to_backup">Nenhuma regra de firewall para fazer backup</string>
+    <string name="error_backup_failed">Backup falhou: %s</string>
+    <string name="error_unsupported_backup_version">Versão de backup não suportada: %d</string>
+    <string name="error_backup_no_rules">Arquivo de backup não contém regras</string>
+    <string name="error_backup_file_unreadable">Não foi possível abrir esse arquivo. Se você o escolheu nos resultados da pesquisa, abra a pasta onde ele está e selecione-o de lá.</string>
+    <string name="error_invalid_backup_format">Formato de arquivo de backup inválido</string>
+    <string name="error_restore_failed">Restauração falhou: %s</string>
+
+    <!-- Package Management Error Messages -->
+    <string name="error_unable_to_enable_package">Não foi possível ativar pacote. Shizuku ou acesso root necessário para gestão de pacotes.</string>
+    <string name="error_unable_to_disable_package">Não foi possível desativar pacote. Shizuku ou acesso root necessário para gestão de pacotes.</string>
+    <string name="error_unable_to_uninstall_package">Não foi possível desinstalar pacote. Shizuku ou acesso root necessário para gestão de pacotes.</string>
+    <string name="error_unable_to_reinstall_package">Não foi possível reinstalar pacote. Shizuku ou acesso root necessário para gestão de pacotes.</string>
+    <string name="error_unable_to_force_stop_package">Não foi possível forçar parada do pacote. Shizuku ou acesso root necessário para gestão de pacotes.</string>
+    <string name="error_package_enable_failed">Não foi possível ativar pacote.</string>
+    <string name="error_package_disable_failed">Não foi possível desativar pacote.</string>
+    <string name="error_package_uninstall_failed">Não foi possível desinstalar pacote.</string>
+    <string name="error_package_reinstall_failed">Não foi possível reinstalar pacote.</string>
+    <string name="error_package_force_stop_failed">Não foi possível forçar parada do pacote.</string>
+    <string name="error_unknown">Erro desconhecido</string>
+
+    <!-- Firewall Error Messages -->
+    <string name="error_unable_to_allow_network">Não foi possível permitir acesso à rede. Acesso root necessário para operações de firewall.</string>
+    <string name="error_unable_to_block_network">Não foi possível bloquear acesso à rede. Acesso root necessário para operações de firewall.</string>
+    <string name="error_failed_to_block_mobile">Falha ao bloquear dados móveis: %s</string>
+    <string name="error_failed_to_block_roaming">Falha ao bloquear roaming: %s</string>
+    <string name="error_failed_to_unblock_roaming">Falha ao desbloquear roaming: %s</string>
+
+    <!-- Captive Portal Error Messages -->
+    <string name="error_failed_to_load_settings">Falha ao carregar configurações</string>
+    <string name="error_failed_to_apply_preset">Falha ao aplicar predefinição</string>
+    <string name="error_failed_to_set_detection_mode">Falha ao definir modo de detecção</string>
+    <string name="error_failed_to_set_custom_urls">Falha ao definir URLs personalizadas</string>
+    <string name="error_failed_to_restore_original_settings">Falha ao restaurar configurações originais</string>
+    <string name="error_failed_to_reset_to_google_defaults">Falha ao redefinir para padrões do Google</string>
+
+    <!-- Captive Portal Success Messages -->
+    <string name="success_custom_urls_applied">URLs personalizadas aplicadas com sucesso</string>
+    <string name="success_original_settings_restored">Configurações originais restauradas com sucesso</string>
+    <string name="success_reset_to_google_defaults">Redefinido para padrões do Google com sucesso</string>
+
+    <!-- Boot Protection Dialogs -->
+    <string name="boot_protection_enable_warning_title">Ativar Proteção na Inicialização?</string>
+    <string name="boot_protection_enable_warning_message">⚠️ Seu dispositivo será reiniciado imediatamente ao continuar.\n\nIsto bloqueará TODO o tráfego de rede durante a inicialização do dispositivo até o Background Check iniciar.\n\n⚠️ Se o Background Check falhar ao iniciar, seu dispositivo não terá rede.\n\nOpções de recuperação:\n1. Abra Background Check → Configurações → Desativar Proteção na Inicialização\n2. Se isso não funcionar, use ADB:\n   adb shell\n   su\n   rm %1$s\n   reboot</string>
+    <string name="boot_protection_disable_warning_title">Desativar Proteção na Inicialização?</string>
+    <string name="boot_protection_disable_warning_message">⚠️ Seu dispositivo será reiniciado imediatamente ao continuar.\n\nO tráfego de rede não será mais bloqueado durante a inicialização. Apps podem vazar dados antes do firewall iniciar.</string>
+    <string name="boot_protection_reboot_failed">A Proteção na Inicialização foi alterada, mas o dispositivo não pôde ser reiniciado automaticamente. Por favor, reinicie o dispositivo manualmente.</string>
+    <string name="boot_protection_enable_failed">Falha ao ativar proteção na inicialização: %s</string>
+    <string name="boot_protection_disable_failed">Falha ao desativar proteção na inicialização: %s</string>
+
+    <!-- Input Hints -->
+    <string name="hint_detection_mode">Modo de Detecção</string>
+    <string name="hint_server_preset">Predefinição de Servidor</string>
+    <string name="hint_custom_http_url">URL HTTP Personalizada</string>
+    <string name="hint_custom_https_url">URL HTTPS Personalizada</string>
+
+    <!-- App Logs -->
+    <string name="logs_title">Logs do aplicativo</string>
+    <string name="logs_menu_item">Logs do aplicativo</string>
+    <string name="logs_menu_description">Ver logs para solução de problemas</string>
+    <string name="logs_enable_title">Ativar registro</string>
+    <string name="logs_enable_description">Salvar logs em arquivo para depuração. Os logs não são enviados para lugar nenhum.</string>
+    <string name="logs_debug_mode_note">ℹ️ Build de debug - registro ativado por padrão</string>
+    <string name="logs_clear">Limpar</string>
+    <string name="logs_clear_confirm_title">Limpar logs?</string>
+    <string name="logs_clear_confirm_message">Isso excluirá as entradas de log existentes.</string>
+    <string name="logs_share">Compartilhar logs</string>
+    <string name="logs_count">%d entradas de log</string>
+    <string name="logs_file_info">%1$d linhas • %2$s</string>
+    <string name="logs_empty">Nenhum log ainda. Ative o registro e use o app para gerar logs.</string>
+    <string name="logs_cleared">Logs limpos</string>
+    <string name="logs_share_title">Compartilhar logs do Background Check</string>
+    <string name="logs_disabled_message">Registro desativado. Novos logs não serão gravados.</string>
+
+    <!-- Content Descriptions -->
+    <string name="cd_multiselect_icon">Vários pacotes selecionados</string>
+
+    <!-- VPN Conflict Dialog -->
+    <string name="dialog_vpn_conflict_title">Outra VPN está ativa</string>
+    <string name="dialog_vpn_conflict_message">Mudar para o backend VPN desconectará sua conexão VPN atual (ex: Proton VPN, NordVPN, etc.).\n\nDeseja continuar?</string>
+    <string name="dialog_vpn_conflict_confirm">Desconectar e mudar</string>
+    <string name="vpn_permission_denied">Permissão VPN negada. Revertendo para modo AUTO.</string>
+
+    <!-- Quick Settings Tile -->
+    <string name="tile_label_firewall">Background Check</string>
+    <string name="tile_label_firewall_loading">Iniciando firewall</string>
+    <string name="tile_label_firewall_on">Firewall ON</string>
+    <string name="tile_label_firewall_off">Firewall OFF</string>
+    <string name="tile_label_firewall_error">Erro</string>
+    <string name="tile_subtitle_active">Ativo</string>
+    <string name="tile_subtitle_inactive">Inativo</string>
+    <string name="tile_subtitle_starting">Iniciando…</string>
+    <string name="tile_description_firewall_on">Background Check firewall está ativo usando backend %s</string>
+    <string name="tile_description_firewall_off">Background Check firewall está parado</string>
+    <string name="tile_description_firewall_starting">Background Check firewall está iniciando</string>
+    <string name="tile_description_firewall_error">Background Check firewall encontrou um erro</string>
+
+    <!-- Home Screen Widget -->
+    <string name="widget_description">Alternância rápida para Background Check Firewall</string>
+
+    <!-- Notification Actions -->
+
+    <string name="backend_not_supported_on_device">Não suportado neste dispositivo</string>
+    <string name="backend_fell_back_to_auto">%1$s não conseguiu iniciar neste dispositivo. A firewall está a funcionar em modo Automático.</string>
+    <string name="backend_changed_title">Backend alterado</string>
+    <string name="settings_confirm_firewall_stop_title">Confirmar paragem da firewall</string>
+    <string name="settings_confirm_firewall_stop_description">Perguntar antes de parar a firewall a partir do mosaico ou widget</string>
+    <string name="firewall_stopped_notification_title">Firewall parada</string>
+    <string name="firewall_stopped_notification_text">Todas as aplicações podem agora aceder à internet. Toque para iniciar novamente.</string>
+    <string name="error_package_scan_failed_title">Não foi possível ler a lista de aplicações</string>
+    <string name="error_package_scan_failed_hint">Se acontecer de novo, feche e reabra o Background Check.</string>
+    <string name="error_package_scan_failed">Não foi possível ler a lista de aplicações deste dispositivo. Se continuar a acontecer, feche e reabra o Background Check.</string>
+</resources>

@@ -39,6 +39,10 @@ class MainActivity : ComponentActivity() {
                     onSetMonitorInterval = model::setMonitorInterval,
                     onMonitorVisible = model::setMonitorVisible,
                     onForceStop = model::forceStop,
+                    onOpenNetwork = { packageName ->
+                        open(Intent(this, dev.bgcheck.network.ui.MainActivity::class.java)
+                            .putExtra("dev.bgcheck.network.PACKAGE", packageName))
+                    },
                 )
             }
         }

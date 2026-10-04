@@ -1,0 +1,6 @@
+package dev.bgcheck.network.domain.model
+
+data class ReinstallBatchResult(
+    val succeeded: List<String>,
+    val failed: List<Pair<String, String>>
+)

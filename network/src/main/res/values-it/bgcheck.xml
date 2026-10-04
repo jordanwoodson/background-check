@@ -1,0 +1,8 @@
+<resources>
+    <string name="network_policy_limited">Protezione limitata: questa modalità limita i dati in background sulle reti a consumo finché il blocco completo non è confermato. Il Wi-Fi e il traffico in primo piano possono restare consentiti. Scegli VPN, ConnectivityManager o iptables per bloccare completamente Internet.</string>
+    <string name="network_policy_background_data">Dati in background su reti a consumo</string>
+    <string name="network_policy_restricted">Dati in background su reti a consumo limitati</string>
+    <string name="network_policy_allowed">Dati in background su reti a consumo consentiti</string>
+    <string name="network_policy_restrict_action">Limita dati in background</string>
+    <string name="network_policy_allow_action">Consenti dati in background</string>
+</resources>

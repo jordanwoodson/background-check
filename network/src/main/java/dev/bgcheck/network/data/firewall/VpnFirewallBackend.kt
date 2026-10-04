@@ -1,0 +1,202 @@
+package dev.bgcheck.network.data.firewall
+
+import android.content.Context
+import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
+import dev.bgcheck.network.data.service.FirewallVpnService
+import dev.bgcheck.network.domain.firewall.FirewallBackend
+import dev.bgcheck.network.domain.firewall.FirewallBackendType
+import dev.bgcheck.network.domain.model.FirewallRule
+import dev.bgcheck.network.domain.model.NetworkType
+import dev.bgcheck.network.utils.AppLogger
+
+/**
+ * VPN-based firewall backend.
+ *
+ * Wraps the existing FirewallVpnService implementation.
+ * Uses Android VpnService API with inverted logic (addAllowedApplication to block).
+ *
+ * Features:
+ * - No root required
+ * - Per-app blocking
+ * - Granular network type-specific rules (WiFi/Mobile/Roaming)
+ * - Screen state-specific rules
+ * - Automatically reconfigures when network type changes
+ *
+ * Limitations:
+ * - Occupies VPN slot (cannot use real VPN alongside)
+ * - Requires VPN permission from user
+ */
+class VpnFirewallBackend(
+    private val context: Context
+) : FirewallBackend {
+
+    companion object {
+        private const val TAG = "VpnFirewall"
+    }
+
+    override suspend fun start(): Result<Unit> {
+        return try {
+            val intent = Intent(context, FirewallVpnService::class.java).apply {
+                action = FirewallVpnService.ACTION_START
+            }
+            context.startService(intent)
+
+            AppLogger.d(TAG, "VPN firewall start intent sent, waiting for service to become active...")
+
+            // Wait for VPN service to become active by polling isActive()
+            // The service sets KEY_VPN_SERVICE_RUNNING=true immediately, then
+            // KEY_VPN_INTERFACE_ACTIVE=true after VPN interface is established.
+            // This typically takes 500ms-2s depending on device/Android version.
+            val startTime = System.currentTimeMillis()
+            val timeout = 10000L
+            var attempts = 0
+
+            while (!isActive()) {
+                val elapsed = System.currentTimeMillis() - startTime
+                if (elapsed >= timeout) {
+                    AppLogger.e(TAG, "VPN service failed to become active after ${elapsed}ms (timeout)")
+                    return Result.failure(Exception("VPN service failed to become active within ${timeout}ms"))
+                }
+                attempts++
+                if (attempts % 10 == 0) {
+                    AppLogger.d(TAG, "Waiting for VPN to become active... (${elapsed}ms elapsed)")
+                }
+                kotlinx.coroutines.delay(50)
+            }
+
+            val totalTime = System.currentTimeMillis() - startTime
+            AppLogger.i(TAG, "✅ VPN firewall started successfully (${totalTime}ms, $attempts checks)")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "❌ Failed to start VPN firewall", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun stop(): Result<Unit> {
+        return try {
+            val intent = Intent(context, FirewallVpnService::class.java).apply {
+                action = FirewallVpnService.ACTION_STOP
+            }
+            context.startService(intent)
+
+            AppLogger.d(TAG, "VPN stop intent sent, waiting for service to stop...")
+
+            // Wait for service to actually stop by polling isActive()
+            // The SharedPreferences flag is updated immediately (in-memory) when stopVpn() is called,
+            // so this should be very fast (usually 1-2 checks, ~10-50ms)
+            val startTime = System.currentTimeMillis()
+            val timeout = 2000L
+            var attempts = 0
+            var timedOut = false
+
+            while (isActive()) {
+                val elapsed = System.currentTimeMillis() - startTime
+                if (elapsed >= timeout) {
+                    AppLogger.w(TAG, "VPN service still active after ${elapsed}ms (timeout)")
+                    timedOut = true
+                    break
+                }
+                attempts++
+                kotlinx.coroutines.delay(50)
+            }
+
+            val totalTime = System.currentTimeMillis() - startTime
+            if (attempts > 0) {
+                AppLogger.d(TAG, "VPN service stopped after ${totalTime}ms ($attempts checks)")
+            } else {
+                AppLogger.d(TAG, "VPN service already stopped (${totalTime}ms)")
+            }
+
+            // Additional small delay to ensure VPN interface is fully closed
+            // ParcelFileDescriptor.close() might take 100-500ms even after service stops
+            kotlinx.coroutines.delay(200)
+
+            // The old code logged "Continuing anyway" here and returned success. It should not: the
+            // tunnel is what blocks traffic, so a tunnel that refused to close means apps are still
+            // being blocked while every control in the app reads OFF. isActive() is not a guess - it
+            // reads the service flags AND checks our own service in the running list - so a true
+            // after the settle delay is real. Report it, and let FirewallManager raise StopFailed.
+            if (timedOut && isActive()) {
+                AppLogger.e(TAG, "❌ VPN firewall did not stop - the tunnel is still up")
+                return Result.failure(
+                    IllegalStateException("VPN service did not stop after ${timeout}ms - traffic may still be blocked")
+                )
+            }
+
+            AppLogger.i(TAG, "✅ VPN firewall stopped")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "❌ Failed to stop VPN firewall", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun applyRules(
+        rules: List<FirewallRule>,
+        networkType: NetworkType,
+        screenOn: Boolean
+    ): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    override fun isActive(): Boolean {
+        return try {
+            val prefs = context.getSharedPreferences(
+                dev.bgcheck.network.utils.Constants.Settings.PREFS_NAME,
+                Context.MODE_PRIVATE
+            )
+
+            val isServiceRunning = prefs.getBoolean(
+                dev.bgcheck.network.utils.Constants.Settings.KEY_VPN_SERVICE_RUNNING,
+                false
+            )
+
+            if (!isServiceRunning) {
+                return false
+            }
+
+            val isInterfaceActive = prefs.getBoolean(
+                dev.bgcheck.network.utils.Constants.Settings.KEY_VPN_INTERFACE_ACTIVE,
+                false
+            )
+
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+            if (activityManager != null) {
+                @Suppress("DEPRECATION")
+                val runningServices = activityManager.getRunningServices(Integer.MAX_VALUE)
+                val serviceClassName = "dev.bgcheck.network.data.service.FirewallVpnService"
+                val isServiceActuallyRunning = runningServices.any { service ->
+                    service.service.className == serviceClassName
+                }
+
+                if (!isServiceActuallyRunning) {
+                    AppLogger.w(TAG, "Service not actually running. Clearing flags.")
+                    prefs.edit()
+                        .putBoolean(dev.bgcheck.network.utils.Constants.Settings.KEY_VPN_SERVICE_RUNNING, false)
+                        .putBoolean(dev.bgcheck.network.utils.Constants.Settings.KEY_VPN_INTERFACE_ACTIVE, false)
+                        .apply()
+                    return false
+                }
+
+                return isInterfaceActive
+            }
+
+            return isServiceRunning && isInterfaceActive
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to check if VPN is active", e)
+            false
+        }
+    }
+
+    override fun getType(): FirewallBackendType = FirewallBackendType.VPN
+
+    override suspend fun checkAvailability(): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    override fun supportsGranularControl(): Boolean = true
+}

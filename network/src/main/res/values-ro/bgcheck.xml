@@ -1,0 +1,8 @@
+<resources>
+    <string name="network_policy_limited">Protecție limitată: acest mod restricționează datele în fundal pe rețele contorizate până la confirmarea blocării complete. Wi-Fi și traficul în prim-plan pot rămâne permise. Alegeți VPN, ConnectivityManager sau iptables pentru blocarea completă a accesului la internet.</string>
+    <string name="network_policy_background_data">Date în fundal pe rețele contorizate</string>
+    <string name="network_policy_restricted">Date în fundal pe rețele contorizate restricționate</string>
+    <string name="network_policy_allowed">Date în fundal pe rețele contorizate permise</string>
+    <string name="network_policy_restrict_action">Restricționează datele în fundal</string>
+    <string name="network_policy_allow_action">Permite datele în fundal</string>
+</resources>

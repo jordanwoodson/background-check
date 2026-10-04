@@ -1,0 +1,8 @@
+<resources>
+    <string name="network_policy_limited">保护有限：在确认支持完全阻止之前，此模式仅限制按流量计费网络中的后台数据。Wi-Fi 和前台流量可能仍被允许。请选择 VPN、ConnectivityManager 或 iptables 以完全阻止互联网访问。</string>
+    <string name="network_policy_background_data">按流量计费网络的后台数据</string>
+    <string name="network_policy_restricted">已限制按流量计费网络的后台数据</string>
+    <string name="network_policy_allowed">已允许按流量计费网络的后台数据</string>
+    <string name="network_policy_restrict_action">限制后台数据</string>
+    <string name="network_policy_allow_action">允许后台数据</string>
+</resources>

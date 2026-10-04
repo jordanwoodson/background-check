@@ -1,0 +1,8 @@
+<resources>
+    <string name="network_policy_limited">Ограниченная защита: этот режим ограничивает фоновую передачу данных в тарифицируемых сетях, пока не подтверждена полная блокировка. Wi-Fi и трафик активных приложений могут оставаться разрешёнными. Для полной блокировки интернета выберите VPN, ConnectivityManager или iptables.</string>
+    <string name="network_policy_background_data">Фоновые данные в тарифицируемых сетях</string>
+    <string name="network_policy_restricted">Фоновые данные в тарифицируемых сетях ограничены</string>
+    <string name="network_policy_allowed">Фоновые данные в тарифицируемых сетях разрешены</string>
+    <string name="network_policy_restrict_action">Ограничить фоновые данные</string>
+    <string name="network_policy_allow_action">Разрешить фоновые данные</string>
+</resources>

@@ -1,0 +1,435 @@
+package dev.bgcheck.network.data.common
+
+import dev.bgcheck.network.utils.AppLogger
+import dev.bgcheck.network.utils.ShellRunner
+import android.content.Context
+import android.content.SharedPreferences
+import android.os.Build
+import dev.bgcheck.network.domain.model.CaptivePortalMode
+import dev.bgcheck.network.domain.model.CaptivePortalPreset
+import dev.bgcheck.network.domain.model.CaptivePortalSettings
+import dev.bgcheck.network.utils.Constants
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+class CaptivePortalManager(
+    private val context: Context,
+    private val rootManager: RootManager,
+    private val shizukuManager: ShizukuManager
+) {
+    companion object {
+        private const val TAG = "CaptivePortalManager"
+
+        /** Characters with meaning to a POSIX shell. A URL never legitimately contains these. */
+        private val SHELL_METACHARACTERS = charArrayOf(
+            '$', '`', '\\', '"', '\'', ';', '&', '|', '<', '>', '(', ')', '{', '}', '[', ']', '\n', '\r'
+        )
+    }
+
+    private val prefs: SharedPreferences by lazy {
+        context.getSharedPreferences(Constants.CaptivePortal.PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    fun hasPrivileges(): Boolean {
+        return rootManager.hasRootPermission || shizukuManager.hasShizukuPermission
+    }
+
+    suspend fun getCurrentSettings(): Result<CaptivePortalSettings> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val mode = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_MODE)?.toIntOrNull()
+                ?: Constants.CaptivePortal.DEFAULT_MODE
+            val httpUrl = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTP_URL)
+            val httpsUrl = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTPS_URL)
+            val fallbackUrl = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_FALLBACK_URL)
+            val otherFallbackUrls = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_OTHER_FALLBACK_URLS)
+            val useHttps = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_USE_HTTPS)?.toIntOrNull() == 1
+
+            val settings = CaptivePortalSettings(
+                mode = CaptivePortalMode.fromValue(mode),
+                httpUrl = httpUrl,
+                httpsUrl = httpsUrl,
+                fallbackUrl = fallbackUrl,
+                otherFallbackUrls = otherFallbackUrls,
+                useHttps = useHttps
+            )
+
+            AppLogger.d(TAG, "Current settings: mode=$mode, httpUrl=$httpUrl, httpsUrl=$httpsUrl")
+            Result.success(settings)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to get current settings", e)
+            Result.failure(Exception("Failed to read captive portal settings: ${e.message}"))
+        }
+    }
+
+    fun hasOriginalSettings(): Boolean {
+        return prefs.getBoolean(Constants.CaptivePortal.KEY_ORIGINAL_CAPTURED, false)
+    }
+
+    suspend fun captureOriginalSettings(): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            if (hasOriginalSettings()) {
+                AppLogger.d(TAG, "Original settings already captured, skipping")
+                return@withContext Result.success(Unit)
+            }
+
+            // Capturing without privileges would record a lie. getSystemSetting returns null for a
+            // failed read exactly as it does for a key that is genuinely unset, and without root or
+            // Shizuku the `settings get global` command cannot run at all, so every key would read
+            // as null. The backup would say "all six unset", and a later restore - which does
+            // require privileges - deletes a key recorded as unset. That would wipe the user's real
+            // captive portal configuration.
+            if (!hasPrivileges()) {
+                AppLogger.w(TAG, "No root or Shizuku - not capturing originals, because a failed " +
+                        "read cannot be told apart from an unset key")
+                return@withContext Result.failure(
+                    Exception("Root or Shizuku access required to capture original settings")
+                )
+            }
+
+            // Read the raw system values, not getCurrentSettings(). That helper substitutes a
+            // default for an unset key, and storing the substitute as the "original" meant restore
+            // would later write a setting the device never had. Verified on a device where
+            // captive_portal_mode was genuinely unset and the app had recorded it as 1.
+            val rawMode = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_MODE)
+            val rawHttpUrl = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTP_URL)
+            val rawHttpsUrl = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTPS_URL)
+            val rawFallbackUrl = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_FALLBACK_URL)
+            val rawOtherFallbackUrls = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_OTHER_FALLBACK_URLS)
+            val rawUseHttps = getSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_USE_HTTPS)
+
+            AppLogger.d(TAG, "Capturing originals: mode=$rawMode, httpUrl=$rawHttpUrl, " +
+                    "httpsUrl=$rawHttpsUrl, fallbackUrl=$rawFallbackUrl, useHttps=$rawUseHttps " +
+                    "(null means the key is unset)")
+
+            prefs.edit()
+                .putBoolean(Constants.CaptivePortal.KEY_ORIGINAL_CAPTURED, true)
+                .putInt(Constants.CaptivePortal.KEY_ORIGINAL_RAW_FORMAT, 1)
+                .putString(Constants.CaptivePortal.KEY_ORIGINAL_MODE_RAW, rawMode)
+                .putString(Constants.CaptivePortal.KEY_ORIGINAL_HTTP_URL, rawHttpUrl)
+                .putString(Constants.CaptivePortal.KEY_ORIGINAL_HTTPS_URL, rawHttpsUrl)
+                .putString(Constants.CaptivePortal.KEY_ORIGINAL_FALLBACK_URL, rawFallbackUrl)
+                .putString(Constants.CaptivePortal.KEY_ORIGINAL_OTHER_FALLBACK_URLS, rawOtherFallbackUrls)
+                .putString(Constants.CaptivePortal.KEY_ORIGINAL_USE_HTTPS_RAW, rawUseHttps)
+                .putString(Constants.CaptivePortal.KEY_ORIGINAL_DEVICE_MODEL, Build.MODEL)
+                .putInt(Constants.CaptivePortal.KEY_ORIGINAL_SDK_INT, Build.VERSION.SDK_INT)
+                .putString(Constants.CaptivePortal.KEY_ORIGINAL_ROM_NAME, Build.DISPLAY)
+                .apply()
+
+            AppLogger.d(TAG, "Original settings captured successfully")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to capture original settings", e)
+            Result.failure(Exception("Failed to capture original settings: ${e.message}"))
+        }
+    }
+
+    suspend fun applyPreset(preset: CaptivePortalPreset): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            if (!hasPrivileges()) {
+                return@withContext Result.failure(Exception("Root or Shizuku access required"))
+            }
+
+            if (preset == CaptivePortalPreset.CUSTOM) {
+                return@withContext Result.failure(Exception("Cannot apply CUSTOM preset directly. Use setCustomUrls() instead."))
+            }
+
+            AppLogger.d(TAG, "Applying preset: ${preset.name}")
+
+            val httpResult = setSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTP_URL, preset.httpUrl)
+            if (httpResult.first != 0) {
+                return@withContext Result.failure(Exception("Failed to set HTTP URL: ${httpResult.second}"))
+            }
+
+            val httpsResult = setSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTPS_URL, preset.httpsUrl)
+            if (httpsResult.first != 0) {
+                return@withContext Result.failure(Exception("Failed to set HTTPS URL: ${httpsResult.second}"))
+            }
+
+            AppLogger.d(TAG, "Preset applied successfully: ${preset.name}")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to apply preset", e)
+            Result.failure(Exception("Failed to apply preset: ${e.message}"))
+        }
+    }
+
+    suspend fun setDetectionMode(mode: CaptivePortalMode): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            if (!hasPrivileges()) {
+                return@withContext Result.failure(Exception("Root or Shizuku access required"))
+            }
+
+            AppLogger.d(TAG, "Setting detection mode: ${mode.name} (${mode.value})")
+
+            val result = setSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_MODE, mode.value.toString())
+            if (result.first != 0) {
+                return@withContext Result.failure(Exception("Failed to set detection mode: ${result.second}"))
+            }
+
+            AppLogger.d(TAG, "Detection mode set successfully")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to set detection mode", e)
+            Result.failure(Exception("Failed to set detection mode: ${e.message}"))
+        }
+    }
+
+    suspend fun setCustomUrls(httpUrl: String, httpsUrl: String): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            if (!hasPrivileges()) {
+                return@withContext Result.failure(Exception("Root or Shizuku access required"))
+            }
+
+            if (!isValidUrl(httpUrl)) {
+                return@withContext Result.failure(Exception("Invalid HTTP URL: must start with http://"))
+            }
+            if (!isValidUrl(httpsUrl)) {
+                return@withContext Result.failure(Exception("Invalid HTTPS URL: must start with https://"))
+            }
+
+            AppLogger.d(TAG, "Setting custom URLs: http=$httpUrl, https=$httpsUrl")
+
+            val httpResult = setSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTP_URL, httpUrl)
+            if (httpResult.first != 0) {
+                return@withContext Result.failure(Exception("Failed to set HTTP URL: ${httpResult.second}"))
+            }
+
+            val httpsResult = setSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTPS_URL, httpsUrl)
+            if (httpsResult.first != 0) {
+                return@withContext Result.failure(Exception("Failed to set HTTPS URL: ${httpsResult.second}"))
+            }
+
+            AppLogger.d(TAG, "Custom URLs set successfully")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to set custom URLs", e)
+            Result.failure(Exception("Failed to set custom URLs: ${e.message}"))
+        }
+    }
+
+    suspend fun restoreOriginalSettings(): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            if (!hasPrivileges()) {
+                return@withContext Result.failure(Exception("Root or Shizuku access required"))
+            }
+
+            if (!hasOriginalSettings()) {
+                return@withContext Result.failure(Exception("No original settings found. Cannot restore."))
+            }
+
+            AppLogger.d(TAG, "Restoring original settings")
+
+            // All six keys, not three. The other three were captured into the backup but no code
+            // path ever wrote them, which made the backup look more complete than it was.
+            //
+            // A null recorded value means the key was unset when we captured it, so the key is
+            // deleted rather than written. Restore used to skip nulls entirely and always write the
+            // mode, so it left De1984's own URLs in place while reporting success, and created a
+            // captive_portal_mode on devices that never had one.
+            // A backup written before the raw keys existed cannot describe these three: the old
+            // capture stored useHttps as a Boolean, so an unset key became `false`, and the old
+            // restore never wrote fallback_url, other_fallback_urls or use_https at all. Writing
+            // them now would push `captive_portal_use_https=0` onto a device that never had the key
+            // and turn off the HTTPS portal probe. Legacy backups therefore restore exactly the
+            // three keys the old code did.
+            // Keyed on an explicit marker, not on whether the raw keys are present. SharedPreferences
+            // REMOVES a key when the stored value is null, so a correct fresh capture on a device
+            // where mode and use_https are both unset leaves neither raw key behind and would be
+            // misread as a pre-raw backup. Verified on hardware: a fresh capture produced exactly
+            // that shape.
+            val isLegacyBackup = !prefs.contains(Constants.CaptivePortal.KEY_ORIGINAL_RAW_FORMAT)
+            if (isLegacyBackup) {
+                AppLogger.d(TAG, "Legacy backup - restoring mode, HTTP and HTTPS URL only")
+            }
+
+            val toRestore = listOfNotNull(
+                Constants.CaptivePortal.SYSTEM_KEY_MODE to originalRawMode(),
+                Constants.CaptivePortal.SYSTEM_KEY_HTTP_URL to
+                        prefs.getString(Constants.CaptivePortal.KEY_ORIGINAL_HTTP_URL, null),
+                Constants.CaptivePortal.SYSTEM_KEY_HTTPS_URL to
+                        prefs.getString(Constants.CaptivePortal.KEY_ORIGINAL_HTTPS_URL, null),
+                (Constants.CaptivePortal.SYSTEM_KEY_FALLBACK_URL to
+                        prefs.getString(Constants.CaptivePortal.KEY_ORIGINAL_FALLBACK_URL, null))
+                        .takeUnless { isLegacyBackup },
+                (Constants.CaptivePortal.SYSTEM_KEY_OTHER_FALLBACK_URLS to
+                        prefs.getString(Constants.CaptivePortal.KEY_ORIGINAL_OTHER_FALLBACK_URLS, null))
+                        .takeUnless { isLegacyBackup },
+                (Constants.CaptivePortal.SYSTEM_KEY_USE_HTTPS to originalRawUseHttps())
+                        .takeUnless { isLegacyBackup }
+            )
+
+            toRestore.forEach { (key, value) ->
+                val result = if (value == null) {
+                    AppLogger.d(TAG, "Restoring $key: was unset, deleting")
+                    deleteSystemSetting(key)
+                } else {
+                    AppLogger.d(TAG, "Restoring $key: $value")
+                    setSystemSetting(key, value)
+                }
+
+                if (result.first != 0) {
+                    return@withContext Result.failure(
+                        Exception("Failed to restore $key: ${result.second}")
+                    )
+                }
+            }
+
+            AppLogger.d(TAG, "Original settings restored successfully")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to restore original settings", e)
+            Result.failure(Exception("Failed to restore original settings: ${e.message}"))
+        }
+    }
+
+    /**
+     * The captured `captive_portal_mode`, or null if the key was unset when captured.
+     *
+     * Backups written before the raw keys existed stored an Int, which could not express "unset".
+     * Those are read verbatim, which is exactly what the old restore would have written for this
+     * key. The three keys the old restore never wrote are skipped entirely for such a backup - see
+     * `isLegacyBackup` in [restoreOriginalSettings].
+     */
+    private fun originalRawMode(): String? {
+        if (prefs.contains(Constants.CaptivePortal.KEY_ORIGINAL_RAW_FORMAT)) {
+            return prefs.getString(Constants.CaptivePortal.KEY_ORIGINAL_MODE_RAW, null)
+        }
+        if (!prefs.contains(Constants.CaptivePortal.KEY_ORIGINAL_MODE)) return null
+        return prefs.getInt(
+            Constants.CaptivePortal.KEY_ORIGINAL_MODE,
+            Constants.CaptivePortal.DEFAULT_MODE
+        ).toString()
+    }
+
+    private fun originalRawUseHttps(): String? {
+        if (prefs.contains(Constants.CaptivePortal.KEY_ORIGINAL_RAW_FORMAT)) {
+            return prefs.getString(Constants.CaptivePortal.KEY_ORIGINAL_USE_HTTPS_RAW, null)
+        }
+        if (!prefs.contains(Constants.CaptivePortal.KEY_ORIGINAL_USE_HTTPS)) return null
+        return if (prefs.getBoolean(Constants.CaptivePortal.KEY_ORIGINAL_USE_HTTPS, true)) "1" else "0"
+    }
+
+    suspend fun resetToGoogleDefaults(): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            if (!hasPrivileges()) {
+                return@withContext Result.failure(Exception("Root or Shizuku access required"))
+            }
+
+            AppLogger.d(TAG, "Resetting to Google defaults")
+
+            val modeResult = setSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_MODE, Constants.CaptivePortal.DEFAULT_MODE.toString())
+            if (modeResult.first != 0) {
+                return@withContext Result.failure(Exception("Failed to set mode: ${modeResult.second}"))
+            }
+
+            val httpResult = setSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTP_URL, Constants.CaptivePortal.DEFAULT_HTTP_URL)
+            if (httpResult.first != 0) {
+                return@withContext Result.failure(Exception("Failed to set HTTP URL: ${httpResult.second}"))
+            }
+
+            val httpsResult = setSystemSetting(Constants.CaptivePortal.SYSTEM_KEY_HTTPS_URL, Constants.CaptivePortal.DEFAULT_HTTPS_URL)
+            if (httpsResult.first != 0) {
+                return@withContext Result.failure(Exception("Failed to set HTTPS URL: ${httpsResult.second}"))
+            }
+
+            AppLogger.d(TAG, "Reset to Google defaults successfully")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to reset to Google defaults", e)
+            Result.failure(Exception("Failed to reset to Google defaults: ${e.message}"))
+        }
+    }
+
+    /**
+     * Read a system setting value.
+     * Works WITHOUT root/Shizuku (read-only operation).
+     */
+    private suspend fun getSystemSetting(key: String): String? = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val command = "settings get global $key"
+
+            val result = when {
+                shizukuManager.hasShizukuPermission -> shizukuManager.executeShellCommand(command)
+                rootManager.hasRootPermission -> rootManager.executeRootCommand(command)
+                else -> {
+                    // Reading a global setting needs no privilege, so this runs as the app's own
+                    // uid. Bounded and drained like every other process the app starts. stdout
+                    // only, as before: a setting value must never be answered with stderr.
+                    val plain = ShellRunner.run("shell: $command") {
+                        Runtime.getRuntime().exec(command)
+                    }
+                    Pair(plain.exitCode, plain.stdout.trim())
+                }
+            }
+
+            if (result.first == 0 && result.second.isNotBlank() && result.second != "null") {
+                result.second.trim()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to get system setting: $key", e)
+            null
+        }
+    }
+
+    private suspend fun setSystemSetting(key: String, value: String): Pair<Int, String> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            // Single-quote the value and escape any embedded single quote. Inside single quotes the
+            // shell expands nothing, so $(...) or backticks in a user-supplied URL cannot execute.
+            //
+            // This runs as root. With the previous double-quoted form, a URL of
+            // http://example.com$(touch /data/local/tmp/INJECTED) created a root-owned file while the
+            // stored setting still read back as a plain URL, leaving no trace in the UI. Verified.
+            val quotedValue = "'" + value.replace("'", "'\\''") + "'"
+            val command = "settings put global $key $quotedValue"
+
+            when {
+                rootManager.hasRootPermission -> rootManager.executeRootCommand(command)
+                shizukuManager.hasShizukuPermission -> shizukuManager.executeShellCommand(command)
+                else -> Pair(-1, "No root or Shizuku access")
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to set system setting: $key", e)
+            Pair(-1, e.message ?: "Unknown error")
+        }
+    }
+
+    private suspend fun deleteSystemSetting(key: String): Pair<Int, String> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val command = "settings delete global $key"
+
+            when {
+                rootManager.hasRootPermission -> rootManager.executeRootCommand(command)
+                shizukuManager.hasShizukuPermission -> shizukuManager.executeShellCommand(command)
+                else -> Pair(-1, "No root or Shizuku access")
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to delete system setting: $key", e)
+            Pair(-1, e.message ?: "Unknown error")
+        }
+    }
+
+    private fun isValidUrl(url: String): Boolean {
+        if (url.isBlank()) return false
+
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return false
+        }
+
+        val withoutProtocol = url.substringAfter("://")
+        if (withoutProtocol.isBlank() || withoutProtocol.startsWith("/")) {
+            return false
+        }
+
+        // Reject anything that could be meaningful to a shell. setSystemSetting already single-quotes
+        // the value, so this is a second line of defence rather than the only one - but a URL has no
+        // legitimate reason to contain these, and this value is passed to a command running as root.
+        if (url.any { it in SHELL_METACHARACTERS } || url.any { it.isWhitespace() }) {
+            AppLogger.w(TAG, "Rejected URL containing shell metacharacters or whitespace")
+            return false
+        }
+
+        return true
+    }
+}

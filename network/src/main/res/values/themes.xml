@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme for Background Check - Light Mode -->
+    <style name="Theme.De1984" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/lineage_teal</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/white</item>
+
+        <!-- Window background for splash/loading screen with logo -->
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+
+    <!-- Truly transparent theme for VPN permission activity - no visual impact -->
+    <style name="Theme.De1984.Transparent" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowDisablePreview">true</item>
+    </style>
+
+    <!-- AppCompat theme for Views-based activities -->
+    <style name="Theme.De1984.Views" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:fontFamily">@font/network_mono</item>
+        <item name="fontFamily">@font/network_mono</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">@color/network_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="colorPrimary">#BD93F9</item>
+        <item name="colorOnPrimary">#282A36</item>
+        <item name="colorPrimaryContainer">#282A36</item>
+        <item name="colorOnPrimaryContainer">#F8F8F2</item>
+        <item name="colorSurface">#282A36</item>
+        <item name="colorOnSurface">#F8F8F2</item>
+        <item name="colorOnSurfaceVariant">#B9BCD0</item>
+        <item name="colorSecondary">#50FA7B</item>
+        <item name="colorError">#FF5555</item>
+        <item name="android:colorBackground">#282A36</item>
+    </style>
+
+    <!-- Compact TextInputLayout for search boxes -->
+    <style name="Widget.De1984.TextInputLayout.Compact" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCollapsedPaddingTop">0dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="suffixTextAppearance">@style/TextAppearance.De1984.SuffixText</item>
+        <!-- Disable border color change on focus - keep same color as unfocused -->
+        <item name="boxStrokeColor">@color/search_box_stroke</item>
+    </style>
+
+    <!-- Text appearance for suffix text in search boxes - match hint text size -->
+    <style name="TextAppearance.De1984.SuffixText" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <!-- Material Design 3 Bottom Navigation -->
+    <style name="Widget.De1984.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.De1984.BottomNavigationView</item>
+        <item name="android:background">?attr/colorPrimaryContainer</item>
+        <item name="elevation">8dp</item>
+        <item name="itemIconSize">28dp</item>
+        <!-- itemIconTint and itemTextColor are set programmatically in MainActivity -->
+        <item name="itemRippleColor">@null</item>
+        <item name="itemBackground">@drawable/bottom_nav_item_background</item>
+        <item name="labelVisibilityMode">labeled</item>
+        <item name="android:minHeight">60dp</item>
+        <item name="itemActiveIndicatorStyle">@null</item>
+        <item name="itemPaddingTop">10dp</item>
+        <item name="itemPaddingBottom">0dp</item>
+    </style>
+
+    <!-- Bottom Navigation Theme Overlay -->
+    <style name="ThemeOverlay.De1984.BottomNavigationView" parent="">
+        <item name="colorOnSurface">?attr/colorOnPrimaryContainer</item>
+        <item name="colorOnSurfaceVariant">?attr/colorOnPrimaryContainer</item>
+        <item name="colorSurface">?attr/colorPrimaryContainer</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.De1984.BottomNavigation.Label</item>
+    </style>
+
+    <!-- Custom text appearance for bottom navigation labels with reduced spacing -->
+    <style name="TextAppearance.De1984.BottomNavigation.Label" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <!-- Custom Button Style - Primary color background with white text (like selected chips) -->
+    <style name="Widget.De1984.Button" parent="Widget.Material3.Button">
+        <item name="backgroundTint">?attr/colorPrimary</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+    </style>
+</resources>

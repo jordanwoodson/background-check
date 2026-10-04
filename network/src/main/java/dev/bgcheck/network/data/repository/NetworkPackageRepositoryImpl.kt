@@ -1,0 +1,244 @@
+package dev.bgcheck.network.data.repository
+
+import android.content.Context
+import dev.bgcheck.network.R
+import dev.bgcheck.network.data.datasource.PackageDataSource
+import dev.bgcheck.network.domain.model.NetworkPackage
+import dev.bgcheck.network.domain.model.PackageType
+import dev.bgcheck.network.domain.model.NetworkAccessState
+import dev.bgcheck.network.domain.repository.NetworkPackageRepository
+import dev.bgcheck.network.utils.Constants
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+class NetworkPackageRepositoryImpl(
+    private val context: Context,
+    private val packageDataSource: PackageDataSource
+) : NetworkPackageRepository {
+
+    override fun invalidatePackageCache() = packageDataSource.invalidateCache()
+
+    override fun getNetworkPackages(): Flow<List<NetworkPackage>> {
+        return packageDataSource.getPackages()
+            .map { entities ->
+                entities
+                    // Show ALL apps (including those without network permissions)
+                    // This allows users to proactively block apps before they gain internet permission via updates
+                    .filter { it.isEnabled }
+                    .map { entity ->
+                        entity.toNetworkDomain().copy(
+                            isSystemCritical = Constants.Firewall.isSystemCritical(entity.packageName)
+                        )
+                    }
+                    .sortedBy { it.name.lowercase() }
+            }
+    }
+
+    override fun getNetworkPackagesByType(type: PackageType): Flow<List<NetworkPackage>> {
+        return getNetworkPackages()
+            .map { packages -> packages.filter { it.type == type } }
+    }
+
+    override fun getNetworkPackagesByAccessState(state: NetworkAccessState): Flow<List<NetworkPackage>> {
+        return getNetworkPackages()
+            .map { packages ->
+                packages.filter {
+                    when (state) {
+                        NetworkAccessState.ALLOWED -> it.isFullyAllowed
+                        NetworkAccessState.BLOCKED -> it.isFullyBlocked
+                        NetworkAccessState.PARTIAL -> it.isPartiallyBlocked
+                    }
+                }
+            }
+    }
+
+    override suspend fun setNetworkAccess(packageName: String, userId: Int, allowed: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+        return try {
+            val success = packageDataSource.setNetworkAccess(packageName, userId, allowed, stampDefaultOnUntouched)
+            if (success) {
+                Result.success(Unit)
+            } else {
+                val errorMessage = if (allowed) {
+                    context.getString(R.string.error_unable_to_allow_network)
+                } else {
+                    context.getString(R.string.error_unable_to_block_network)
+                }
+                Result.failure(SecurityException(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getNetworkPackage(packageName: String, userId: Int): Result<NetworkPackage> {
+        return try {
+            val entity = packageDataSource.getPackage(packageName, userId)
+            if (entity != null) {
+                Result.success(
+                    entity.toNetworkDomain().copy(
+                        isSystemCritical = Constants.Firewall.isSystemCritical(entity.packageName)
+                    )
+                )
+            } else {
+                Result.failure(Exception("Package not found: $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun isNetworkBlocked(packageName: String, userId: Int): Result<Boolean> {
+        return try {
+            val entity = packageDataSource.getPackage(packageName, userId)
+            if (entity != null) {
+                Result.success(entity.isNetworkBlocked)
+            } else {
+                Result.failure(Exception("Package not found: $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override fun getBlockedPackages(): Flow<List<NetworkPackage>> {
+        return getNetworkPackagesByAccessState(NetworkAccessState.BLOCKED)
+    }
+
+    override fun getAllowedPackages(): Flow<List<NetworkPackage>> {
+        return getNetworkPackagesByAccessState(NetworkAccessState.ALLOWED)
+    }
+
+    override suspend fun setWifiBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+        return try {
+            val success = packageDataSource.setWifiBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            if (success) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to set WiFi blocking for $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun setMobileBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+        return try {
+            val success = packageDataSource.setMobileBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            if (success) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to set Mobile blocking for $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun setRoamingBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+        return try {
+            val success = packageDataSource.setRoamingBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            if (success) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to set Roaming blocking for $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun setBackgroundBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+        return try {
+            val success = packageDataSource.setBackgroundBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            if (success) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to set Background blocking for $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun setLanBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+        return try {
+            val success = packageDataSource.setLanBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            if (success) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to set LAN blocking for $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun setAllNetworkBlocking(packageName: String, userId: Int, blocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+        return try {
+            val success = packageDataSource.setAllNetworkBlocking(packageName, userId, blocked, stampDefaultOnUntouched)
+            if (success) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to set all network blocking for $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun setMobileAndRoaming(packageName: String, userId: Int, mobileBlocked: Boolean, roamingBlocked: Boolean, stampDefaultOnUntouched: Boolean): Result<Unit> {
+        return try {
+            val success = packageDataSource.setMobileAndRoaming(packageName, userId, mobileBlocked, roamingBlocked, stampDefaultOnUntouched)
+            if (success) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to set mobile and roaming blocking for $packageName"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
+
+/**
+ * The ONLY PackageEntity -> NetworkPackage mapper. Private, and deliberately the only one.
+ *
+ * There used to be a second, public one in data/model/PackageEntity.kt. This file never imported it,
+ * so Kotlin silently resolved both call sites above to this local copy and the other was dead - which
+ * is exactly how two new fields were added to the wrong function and every row came out carrying the
+ * default. It looked like a working change and reversed the meaning of "Allow Firewall Critical
+ * Packages" for every critical app. The duplicate is gone; keep it that way.
+ */
+private fun dev.bgcheck.network.data.model.PackageEntity.toNetworkDomain(): NetworkPackage {
+    return NetworkPackage(
+        packageName = packageName,
+        userId = userId,
+        uid = uid,
+        name = name,
+        icon = icon,
+        isEnabled = isEnabled,
+        type = when (type) {
+            Constants.Packages.TYPE_SYSTEM -> PackageType.SYSTEM
+            Constants.Packages.TYPE_USER -> PackageType.USER
+            else -> PackageType.USER
+        },
+        isNetworkBlocked = isNetworkBlocked,
+        wifiBlocked = wifiBlocked,
+        mobileBlocked = mobileBlocked,
+        roamingBlocked = roamingBlocked,
+        roamingBlockedUnderived = roamingBlocked,
+        backgroundBlocked = backgroundBlocked,
+        lanBlocked = lanBlocked,
+        networkPermissions = permissions,
+        versionName = versionName,
+        versionCode = versionCode,
+        installTime = installTime,
+        updateTime = updateTime,
+        isVpnApp = isVpnApp,
+        hasExplicitRule = hasExplicitRule,
+        paintedAllowCritical = paintedAllowCritical,
+        paintedBlockAllDefault = paintedBlockAllDefault,
+        isWorkProfile = isWorkProfile,
+        isCloneProfile = isCloneProfile
+    )
+}

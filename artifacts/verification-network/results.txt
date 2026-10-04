@@ -1,0 +1,16 @@
+2026-10-03–04 network integration verification
+JDK 21 / SDK 36 required test, release lint, signed assembleRelease: PASS
+Unit tests: {'tests': 115, 'failures': 0, 'errors': 0, 'skipped': 0}
+Release lint (including network library): 0 errors, 288 warnings
+API35 regression: OK (53 tests)
+IPTABLES recovery, screen-off, LAN and package/UI: OK (4 tests)
+API36 VPN screen-off and UI: OK (3 tests)
+CONNECTIVITY_MANAGER shell Shizuku: OK (1 test)
+NETWORK_POLICY_MANAGER final limited mode: OK (1 test)
+API36 boot preparation: OK (1 test)
+API36 boot cleanup: OK (1 test)
+API36 external reboot: fixture probe BLOCKED before host app reopened; BootWorker logged FIREWALL RESTORED SUCCESSFULLY, backend VPN.
+Release certificate SHA-256: 3d770ebfa7c2eacd7735adc9fadca193b62e59424659aed58afe2243c1879951
+Default local version preserved: 1.1.1 / code 3. CI assigns the next release version.
+Package shortcut regression: package-row assertion failed before package-ID search matching; fixed run OK (2 tests).
+Minified signed release on API36: installed as an update, launched, package-ID search returned the fixture, Wi-Fi block dropped fixture traffic after asynchronous application, and stopping restored traffic.

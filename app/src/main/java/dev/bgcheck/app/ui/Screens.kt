@@ -124,6 +124,7 @@ private enum class Page(val label: String, val icon: ImageVector) {
     OVERVIEW("Overview", Icons.Rounded.Insights),
     APPS("Apps", Icons.Rounded.Apps),
     MONITOR("Monitor", Icons.Rounded.Memory),
+    NETWORK("Network", Icons.Rounded.Shield),
     ACCESS("Access", Icons.Rounded.Key),
 }
 
@@ -146,6 +147,7 @@ fun BackgroundCheckApp(
     onSetMonitorInterval: (Long) -> Unit,
     onMonitorVisible: (Boolean) -> Unit,
     onForceStop: () -> Unit,
+    onOpenNetwork: (String?) -> Unit = {},
 ) {
     var page by rememberSaveable { mutableStateOf(Page.OVERVIEW) }
     val pageState = rememberSaveableStateHolder()
@@ -175,7 +177,7 @@ fun BackgroundCheckApp(
                                     Modifier.weight(1f).heightIn(min = 56.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(if (selected) Panel else Color.Transparent)
-                                        .selectable(selected, role = Role.Tab, onClick = { page = item })
+                                        .selectable(selected, role = Role.Tab, onClick = { if (item == Page.NETWORK) onOpenNetwork(null) else page = item })
                                         .padding(horizontal = 8.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center,
@@ -193,7 +195,7 @@ fun BackgroundCheckApp(
                 Page.entries.forEach { item ->
                     NavigationBarItem(
                         selected = page == item,
-                        onClick = { page = item },
+                        onClick = { if (item == Page.NETWORK) onOpenNetwork(null) else page = item },
                         icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(23.dp)) },
                         label = { Text(item.label) },
                         colors = NavigationBarItemDefaults.colors(selectedIconColor = Purple, selectedTextColor = Purple, indicatorColor = Panel, unselectedIconColor = Muted, unselectedTextColor = Muted),
@@ -214,6 +216,7 @@ fun BackgroundCheckApp(
                     Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo)
                     Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS })
                     Page.MONITOR -> MonitorScreen(state, onRefreshResources, onRefreshEnergy, onSetMonitorPaused, onSetMonitorInterval, onSelect, onAccess = { page = Page.ACCESS })
+                    Page.NETWORK -> Unit
                     Page.ACCESS -> AccessScreen(state, onConnect, onOpenShizuku, onOpenWirelessSettings)
                 }
             }
@@ -224,7 +227,8 @@ fun BackgroundCheckApp(
         detailState.SaveableStateProvider(app.packageName) {
             AppDetailSheet(state, app, onDismissDetail, onAction, onOpenAppSettings,
                 onConnect = { onDismissDetail(); page = Page.ACCESS }, onForceStop = onForceStop,
-                onRetry = { onClearMessage(); onRefresh() }, onSelectPackage = onSelect)
+                onRetry = { onClearMessage(); onRefresh() }, onSelectPackage = onSelect,
+                onOpenNetwork = { onOpenNetwork(app.packageName) })
         }
     }
 }

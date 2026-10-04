@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Mode - Identical to light mode except background color -->
+
+    <!-- Base application theme for Background Check - Dark Mode -->
+    <style name="Theme.De1984" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/lineage_teal</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/white</item>
+
+        <!-- Window background for splash/loading screen with logo -->
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+
+    <!-- AppCompat theme for Views-based activities - Dark Mode -->
+    <style name="Theme.De1984.Views" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:fontFamily">@font/network_mono</item>
+        <item name="fontFamily">@font/network_mono</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">@color/network_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="colorPrimary">#BD93F9</item>
+        <item name="colorOnPrimary">#282A36</item>
+        <item name="colorPrimaryContainer">#282A36</item>
+        <item name="colorOnPrimaryContainer">#F8F8F2</item>
+        <item name="colorSurface">#282A36</item>
+        <item name="colorOnSurface">#F8F8F2</item>
+        <item name="colorOnSurfaceVariant">#B9BCD0</item>
+        <item name="colorSecondary">#50FA7B</item>
+        <item name="colorError">#FF5555</item>
+        <item name="android:colorBackground">#282A36</item>
+    </style>
+</resources>

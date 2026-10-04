@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "app/**"
+      - "network/**"
       - "gradle/**"
       - "*.gradle.kts"
       - "gradle.properties"

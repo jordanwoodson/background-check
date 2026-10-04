@@ -1,6 +1,6 @@
 # Background Check
 
-A native Android app for inspecting running processes, CPU, memory and battery use, and managing background app activity. A Dracula terminal interface brings monospace typography, purple controls, cyan readings, green live status and dark bordered panels to every screen. Includes independent list sorting, resource monitoring, app diagnostics, confirmed force stop, background-access and Doze controls. Designed for the Motorola Edge, with automatic signed updates through Obtainium.
+A native Android app for inspecting running processes, CPU, memory and battery use, and managing background app activity. A Dracula terminal interface brings monospace typography, purple controls, cyan readings, green live status and dark bordered panels to every screen. Includes independent list sorting, resource monitoring, app diagnostics, confirmed force stop, background-access and Doze controls, plus a complete firewall and package-management workspace adapted from De1984. Designed for the Motorola Edge, with automatic signed updates through Obtainium.
 
 ## Use
 
@@ -11,9 +11,21 @@ A native Android app for inspecting running processes, CPU, memory and battery u
 5. Open **Monitor → Battery use** for current battery flow, component estimates and Android UID measurements, initially ranked by estimated mAh. Tap a UID for cumulative CPU time, traffic, partial wakelocks and related apps.
 6. Browse **Apps** or open a related app from Monitor. App controls appear first; expand **Resource diagnostics** for processes, UID battery estimates, package memory and running services. Background-policy changes require confirmation and Android readback. Undo is available in **Overview → Your changes**.
 
-Shizuku may need to be started again after a reboot. Background Check does not run a background monitor, upload data, or require an internet permission. Tailscale is used only to deliver and test the APK from the development machine; normal use is local on the phone. Direct in-app ADB pairing is not implemented; Shizuku is the supported privilege backend.
+7. Open **Network** for firewall rules, package management and network settings. An app’s **Network and internet access** button opens its matching firewall entry.
+
+Shizuku may need to be started again after a reboot. Resource monitoring runs only while its screen is open. When enabled, the firewall runs a foreground service with a status notification and restores its saved configuration after reboot. Background Check does not upload data or require an internet permission. Tailscale is used only to deliver and test the APK from the development machine; normal use is local on the phone. Direct in-app ADB pairing is not implemented; Shizuku is the supported privilege backend.
 
 See the [Dracula terminal identity and screenshots](docs/dracula-theme.md), [Dracula verification](docs/dracula-verification.md), and [verified private GitHub / Obtainium setup](docs/release-setup-verification.md).
+
+## Network and internet controls
+
+The **Network** workspace retains De1984’s four firewall backends, per-app and batch rules, Wi-Fi/mobile/roaming and screen-off controls, LAN blocking with root, allow-by-default/block-by-default policies, profile-aware app lists, package enable/disable/force-stop/uninstall/restore, rule backup and restore, captive-portal settings, Quick Settings tile, widget, installation notifications, logs, appearance and language settings. The MIT source and attribution are included; see [provenance](network/UPSTREAM.md) and the [feature and verification matrix](docs/network-controls-verification.md).
+
+**AUTO** selects iptables with real root, then ConnectivityManager with Shizuku on supported Android versions, then the local VPN. NetworkPolicyManager is manually selectable. On standard Android it restricts metered background data only; the app labels that limitation and does not claim full internet blocking. Full NPM protection depends on the ROM.
+
+VPN mode occupies Android’s single VPN slot. It drops traffic from blocked apps locally; allowed apps bypass the tunnel. Keep Android’s **Block connections without VPN** disabled for this mode. Other VPNs require a privileged backend or an explicit switch. ConnectivityManager and NPM offer one combined internet control; independent network controls are available where the backend supports them. Shared-UID apps share enforcement, and the UI explains protected apps and profile/backend limits.
+
+Saved rules persist across restarts. Ordinary boot restoration happens after unlock; optional early-boot protection requires a supported root environment. Some AUTO privilege-change transitions retain upstream’s short stop-before-start gap. No gap-free protection is promised during those transitions.
 
 ## Sorting lists
 
@@ -91,7 +103,7 @@ Keep that keystore and its credentials private and backed up; updates must use t
 
 ## Device verification
 
-The test suite covers shell validation, resource and battery parsing, unavailable-versus-zero readings, sorting fields and directions, policy changes and recovery, and force-stop identity/readback safeguards. Compose tests exercise rendered sort order, search/filter retention, page navigation, preview limits, Undo targeting and force-stop confirmation. Device tests use only `dev.bgcheck.fixture`, a disposable APK with a test activity, a separate worker service and no requested permissions, for mutations. They exercise the Shizuku transport, resource reads, restrictions, Doze exemptions, restoration and force stop.
+The test suite covers shell validation, resource and battery parsing, unavailable-versus-zero readings, sorting fields and directions, policy changes and recovery, and force-stop identity/readback safeguards. Compose tests exercise rendered sort order, search/filter retention, page navigation, preview limits, Undo targeting and force-stop confirmation. Device tests use only `dev.bgcheck.fixture`, a disposable APK with a test activity, a separate worker service and a bounded HTTP traffic probe with INTERNET permission, for mutations. They exercise the Shizuku transport, resource reads, restrictions, Doze exemptions, restoration and force stop.
 
 See the [UI polish verification record](docs/ui-polish-verification.md) for the current release sweep and the [1.1.1 list-sorting verification record](docs/list-sorting-verification.md) for build, test, device and delivery evidence and outstanding limitations. The historical [1.1.0 resource-monitor verification record](docs/resource-monitor-verification.md) and [1.0.0 verification record](docs/verification.md) document earlier versions and do not establish verification of the new sorting features.
 
@@ -112,6 +124,7 @@ Do not run the fixture mutation test against any other package.
 - `data/`: models, inventory, resource/battery collectors and parsers, diagnostics, policy/force-stop operations and local history
 - `shell/`: bounded, validated Shizuku UserService transport
 - `BackgroundViewModel.kt`: foreground sampling, bounded session history, selection and action lifecycle
+- `network/`: MIT-attributed firewall, package management and network settings library
 - `fixture/`: disposable package used exclusively for tests
 - `docs/`: design, plan and verification record
 

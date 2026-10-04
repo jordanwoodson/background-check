@@ -80,6 +80,7 @@ internal fun AppDetailSheet(
     onForceStop: () -> Unit,
     onRetry: () -> Unit = {},
     onSelectPackage: (AppEntry) -> Unit = {},
+    onOpenNetwork: () -> Unit = {},
 ) {
     val windowHeight = LocalWindowInfo.current.containerSize.height
     val compactHeight = with(LocalDensity.current) { windowHeight.toDp() < 480.dp }
@@ -246,6 +247,9 @@ internal fun AppDetailSheet(
                     }
                     sheetMessage?.let { message ->
                         SelectionContainer { InfoCard("Update", message, Icons.Rounded.Info, accent = Green) }
+                    }
+                    OutlinedButton(onClick = onOpenNetwork, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
+                        Text("Network and internet access")
                     }
                     OutlinedButton(onClick = { onOpenAppSettings(app.packageName) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
                         Icon(Icons.Rounded.Settings, null, modifier = Modifier.size(19.dp))

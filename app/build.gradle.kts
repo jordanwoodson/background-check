@@ -22,6 +22,7 @@ android {
         versionName = providers.gradleProperty("releaseVersionName").getOrElse("1.1.1")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    lint { checkDependencies = true }
     buildFeatures { compose = true; aidl = true; buildConfig = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
@@ -50,6 +51,7 @@ android {
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
 dependencies {
+    implementation(project(":network"))
     implementation("androidx.core:core-ktx:1.18.0")
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
@@ -65,6 +67,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.vaadin.external.google:android-json:0.0.20131108.vaadin1")
+    androidTestImplementation("androidx.room:room-runtime:2.8.4")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation(platform("androidx.compose:compose-bom:2026.05.01"))
