@@ -156,4 +156,15 @@ class NetworkLogicTest {
         assertEquals("Mixed", batchStatus(listOf(true, false)))
         assertEquals("No apps selected", batchStatus(emptyList()))
     }
+
+    @Test fun firewallOperationsNeedATrustedSender() {
+        listOf(NetworkDestination.START, NetworkDestination.VPN_FALLBACK, NetworkDestination.TOGGLE).forEach { destination ->
+            val request = NetworkRequest(destination, userId = 0)
+            assertEquals(request, request.gatedBy(trustedSender = true))
+            assertEquals(NetworkRequest(NetworkDestination.OPEN), request.gatedBy(trustedSender = false))
+        }
+        val open = NetworkRequest(NetworkDestination.OPEN, "app.chrome", 10)
+        assertEquals(open, open.gatedBy(trustedSender = false))
+        assertEquals(NetworkRequest(NetworkDestination.SETTINGS), NetworkRequest(NetworkDestination.SETTINGS).gatedBy(trustedSender = false))
+    }
 }

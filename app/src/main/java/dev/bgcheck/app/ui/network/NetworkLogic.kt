@@ -16,6 +16,16 @@ enum class NetworkDestination { OPEN, START, VPN_FALLBACK, TOGGLE, SETTINGS }
 
 data class NetworkRequest(val destination: NetworkDestination, val packageName: String? = null, val userId: Int = 0)
 
+/**
+ * The main activity is exported, so a request that changes firewall state is honoured only when the intent
+ * proves it came from this app; anything else just opens the Network tab.
+ */
+internal fun NetworkRequest.gatedBy(trustedSender: Boolean): NetworkRequest = when (destination) {
+    NetworkDestination.START, NetworkDestination.VPN_FALLBACK, NetworkDestination.TOGGLE ->
+        if (trustedSender) this else NetworkRequest(NetworkDestination.OPEN)
+    NetworkDestination.OPEN, NetworkDestination.SETTINGS -> this
+}
+
 /** Android Intent extraction stays in the activity; routing itself is testable without Android. */
 internal fun parseNetworkRequest(action: String?, legacyPackage: String?, legacyUser: Int?,
     actionPackage: String?, actionUser: Int?, ownUser: Int): NetworkRequest? {

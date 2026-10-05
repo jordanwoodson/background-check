@@ -158,9 +158,10 @@ class MainActivity : ComponentActivity() {
             if (intent.hasExtra("user_id")) intent.getIntExtra("user_id", 0) else null, Process.myUid() / 100000)
             ?: if (intent.getBooleanExtra(NetworkEntryIntents.EXTRA_OPEN_NETWORK, false)) NetworkRequest(NetworkDestination.OPEN) else null
         if (request != null) {
-            networkRequest = request
+            networkRequest = request.gatedBy(NetworkEntryIntents.isTrusted(this, intent))
             intent.action = null
-            listOf("dev.bgcheck.network.PACKAGE", "dev.bgcheck.network.USER_ID", "package_name", "user_id", NetworkEntryIntents.EXTRA_OPEN_NETWORK).forEach(intent::removeExtra)
+            listOf("dev.bgcheck.network.PACKAGE", "dev.bgcheck.network.USER_ID", "package_name", "user_id",
+                NetworkEntryIntents.EXTRA_OPEN_NETWORK, NetworkEntryIntents.EXTRA_TOKEN).forEach(intent::removeExtra)
         }
     }
     private fun startFirewall() = requestFirewallStart(fallback = false)
