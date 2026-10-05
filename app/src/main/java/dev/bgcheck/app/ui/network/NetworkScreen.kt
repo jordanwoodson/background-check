@@ -237,10 +237,10 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("Firewall", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                            Text(if (state.isFirewallEnabled) "On" else "Off", style = MaterialTheme.typography.bodySmall, color = Muted)
                             Switch(checked = state.isFirewallEnabled, onCheckedChange = { if (it) { suggestionDismissed = true; onStartFirewall() } else stop() },
                                 modifier = Modifier.heightIn(min = 48.dp).testTag("network-firewall-switch").semantics { contentDescription = "Firewall ${if (state.isFirewallEnabled) "on" else "off"}" }, colors = SwitchDefaults.colors(checkedThumbColor = Green, checkedTrackColor = Green.copy(alpha = 0.2f)))
                         }
-                        ResourceValue("State", firewallStatus(state.isFirewallEnabled, health))
                         ResourceValue("Active backend", mainState.protection.backend)
                         ResourceValue("Profiles in scope", mainState.protection.profileScope)
                         Text(mainState.protection.detail, color = Muted, style = MaterialTheme.typography.bodySmall)
@@ -297,20 +297,20 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
             }
             item {
                 Disclosure("Filters", networkFilterSummary(state.filterState, profileChoices, compact)) {
-                    NetworkChips(listOf("All", "User", "System").map { ProfileChoice(it, it) }, state.filterState.packageType, model::setPackageTypeFilter)
-                    NetworkChips(listOf(ProfileChoice("Any", "Any"), ProfileChoice("Allowed", "Allowed"), ProfileChoice("Blocked", "Blocked")), state.filterState.networkState ?: "Any") {
-                        model.setNetworkStateFilter(it.takeUnless { value -> value == "Any" })
+                    NetworkChips(networkPackageTypeChoices, state.filterState.packageType, model::setPackageTypeFilter)
+                    NetworkChips(networkAccessChoices, state.filterState.networkState ?: "Any") {
+                        model.setNetworkStateFilter(it.takeUnless { value -> networkFilterMatches(value, "Any") })
                     }
                     FilterChip(selected = state.filterState.internetOnly, onClick = { model.setInternetOnlyFilter(!state.filterState.internetOnly) },
                         label = { Text("Internet-capable only") }, modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors())
                     NetworkChips(profileChoices, state.filterState.profileFilter, model::setProfileFilter)
                     NetworkChips(listOf(ProfileChoice("comfortable", "Comfortable"), ProfileChoice("compact", "Compact")), if (compact) "compact" else "comfortable") {
-                        compact = it == "compact"
+                        compact = networkFilterMatches(it, "compact")
                         CompactListPreferences.save(context, NetworkList.FIREWALL, compact)
                     }
                 }
             }
-            item { Text("${apps.size} ${if (apps.size == 1) "app" else "apps"} · ${if (state.filterState.internetOnly) "internet-capable" else "all permissions"}", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(vertical = 6.dp)) }
+            item { Text("${apps.size} ${if (apps.size == 1) "app" else "apps"}${if (state.filterState.internetOnly) " · internet-capable only" else ""}", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(vertical = 6.dp)) }
             if (state.isLoadingData && apps.isEmpty()) item { InfoCard("Finding your apps", "Reading network permissions and saved firewall rules.", Icons.Rounded.Apps) }
             else if (apps.isEmpty()) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -387,7 +387,7 @@ private data class RuleChange(val pkg: NetworkPackage, val control: NetworkContr
 private fun NetworkChips(choices: List<ProfileChoice>, selected: String, onSelect: (String) -> Unit) {
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         choices.forEach { choice ->
-            FilterChip(selected = selected == choice.value, onClick = { onSelect(choice.value) }, label = { Text(choice.label) },
+            FilterChip(selected = networkFilterMatches(selected, choice.value), onClick = { onSelect(choice.value) }, label = { Text(choice.label) },
                 modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors())
         }
     }

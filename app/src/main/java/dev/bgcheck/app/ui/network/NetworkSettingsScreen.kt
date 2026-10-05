@@ -151,7 +151,7 @@ internal fun NetworkSettingsScreen(onBack: () -> Unit) {
                     }
                 }
                 item(key = "behaviour") {
-                    NetworkSettingsCard("Behaviour") {
+                    NetworkSettingsCard("Behavior") {
                         NetworkSettingsToggle("New-app notifications", "Notify when a newly installed app needs a firewall rule.", state.newAppNotifications, "network-settings-new-apps", onChange = model::setNewAppNotifications)
                         NetworkSettingsToggle("Suggest turning on the firewall", "Show a start suggestion when protection is off.", state.showFirewallStartPrompt, "network-settings-start-prompt", onChange = model::setShowFirewallStartPrompt)
                         NetworkSettingsToggle("Confirm quick rule changes", "Ask before changing a rule from an app row.", state.confirmRuleChanges, "network-settings-confirm-rules", onChange = model::setConfirmRuleChanges)

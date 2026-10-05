@@ -40,20 +40,35 @@ internal fun firewallStatus(enabled: Boolean, health: FirewallHealth): String = 
 
 internal data class ProfileChoice(val value: String, val label: String)
 
+internal val networkPackageTypeChoices = listOf(ProfileChoice(Constants.Packages.TYPE_ALL, "All"),
+    ProfileChoice(Constants.Packages.TYPE_USER, "User"), ProfileChoice(Constants.Packages.TYPE_SYSTEM, "System"))
+
+internal val networkAccessChoices = listOf(ProfileChoice("Any", "Any"),
+    ProfileChoice(Constants.Firewall.STATE_ALLOWED, "Allowed"), ProfileChoice(Constants.Firewall.STATE_BLOCKED, "Blocked"))
+
+internal fun networkFilterMatches(selected: String, value: String): Boolean = selected.equals(value, ignoreCase = true)
+
 internal fun networkProfileChoices(discovered: List<ProfileChoice>, saved: String): List<ProfileChoice> = buildList {
     add(ProfileChoice("All", "All profiles"))
     addAll(discovered)
-    if (saved != "All" && none { it.value == saved }) {
+    if (!networkFilterMatches(saved, "All") && none { networkFilterMatches(it.value, saved) }) {
         if (size == 1) add(ProfileChoice("Personal", "Personal"))
-        if (none { it.value == saved }) add(ProfileChoice(saved,
-            if (saved.startsWith("user:")) "Unavailable profile (${saved.substringAfter("user:").substringBefore(':')})" else saved))
+        if (none { networkFilterMatches(it.value, saved) }) add(ProfileChoice(saved,
+            if (saved.startsWith("user:", ignoreCase = true)) "Unavailable profile (${saved.split(':')[1]})"
+            else listOf("Personal", "Work", "Clone").firstOrNull { networkFilterMatches(it, saved) } ?: saved))
     }
 }
 
 internal fun networkFilterSummary(filter: FirewallFilterState, profiles: List<ProfileChoice>, compact: Boolean): String =
-    (listOf(filter.packageType, filter.networkState ?: "Any access") +
-        listOfNotNull("Internet-capable only".takeIf { filter.internetOnly },
-            profiles.firstOrNull { it.value == filter.profileFilter }?.label) +
+    (listOf(when {
+        networkFilterMatches(filter.packageType, Constants.Packages.TYPE_USER) -> "User apps"
+        networkFilterMatches(filter.packageType, Constants.Packages.TYPE_SYSTEM) -> "System apps"
+        else -> "All apps"
+    }, networkAccessChoices.firstOrNull { networkFilterMatches(it.value, filter.networkState ?: "Any") }
+        ?.label?.takeUnless { networkFilterMatches(it, "Any") } ?: "Any access",
+        profiles.firstOrNull { networkFilterMatches(it.value, filter.profileFilter) }?.label
+            ?: if (networkFilterMatches(filter.profileFilter, "All")) "All profiles" else filter.profileFilter) +
+        listOfNotNull("Internet-capable only".takeIf { filter.internetOnly }) +
         if (compact) listOf("Compact") else emptyList()).joinToString(" · ")
 
 internal enum class NetworkControl(val label: String) {

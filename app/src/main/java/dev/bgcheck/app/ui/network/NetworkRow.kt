@@ -1,6 +1,7 @@
 package dev.bgcheck.app.ui.network
 
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -10,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
@@ -34,7 +36,7 @@ internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean,
         .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = "Select app")
         .alpha(if (enabled) 1f else 0.6f)) {
         @Composable fun Toggles() {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 val controls = if (limited) listOf(NetworkControl.ALL) else
                     listOf(NetworkControl.WIFI, NetworkControl.MOBILE) + if (hasCellular) listOf(NetworkControl.ROAMING) else emptyList()
                 controls.forEach { control ->
@@ -62,22 +64,41 @@ internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean,
                     modifier = Modifier.size(48.dp), colors = CheckboxDefaults.colors(checkedColor = Purple))
                 AppIcon(pkg.packageName, if (compact) 36.dp else 46.dp, pkg.userId, pkg.userSerial)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(pkg.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(pkg.name, style = MaterialTheme.typography.titleMedium, maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis)
                     if (!compact) {
-                        Text(pkg.packageName, style = MaterialTheme.typography.bodySmall, color = Muted)
-                        Text("Internet advice: ${rememberInternetRecommendation(pkg).advice.label}", style = MaterialTheme.typography.bodySmall, color = Cyan)
-                    }
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (pkg.isWorkProfile) StatusPill("Work")
-                        if (pkg.isCloneProfile) StatusPill("Clone")
-                        if (pkg.isSystemCritical) StatusPill("System-critical")
-                        if (pkg.isVpnApp) StatusPill("VPN")
-                        if (pkg.permissionsKnown && !pkg.hasInternetPermission) StatusPill("No internet")
+                        Text(pkg.packageName, style = MaterialTheme.typography.bodySmall, color = Muted,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
-                if (!large && !selecting) Toggles()
+                if (compact && !selecting) Toggles()
             }
-            if (large && !selecting) Toggles()
+            if (!compact) {
+                Text("Internet advice: ${rememberInternetRecommendation(pkg).advice.label}",
+                    style = MaterialTheme.typography.bodySmall, color = Cyan, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = if (large) 1 else 2) {
+                    FlowRow(Modifier.weight(1f).align(Alignment.CenterVertically),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (pkg.isWorkProfile) NetworkBadge("Work")
+                        if (pkg.isCloneProfile) NetworkBadge("Clone")
+                        if (pkg.isSystemCritical) NetworkBadge("System-critical")
+                        if (pkg.isVpnApp) NetworkBadge("VPN")
+                        if (pkg.permissionsKnown && !pkg.hasInternetPermission) NetworkBadge("No internet")
+                    }
+                    if (!selecting) Box(Modifier.align(Alignment.CenterVertically)) { Toggles() }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun NetworkBadge(text: String) {
+    Row(Modifier.clip(RoundedCornerShape(50)).background(PanelRaised).padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(5.dp).clip(RoundedCornerShape(50)).background(Muted))
+        Spacer(Modifier.width(6.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = Muted,
+            maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
     }
 }

@@ -45,14 +45,51 @@ class NetworkLogicTest {
         assertEquals(listOf("All", "Personal", "Work"), networkProfileChoices(emptyList(), "Work").map { it.value })
         assertEquals(listOf("All", "Personal"), networkProfileChoices(emptyList(), "Personal").map { it.value })
         assertEquals(listOf("All"), networkProfileChoices(emptyList(), "All").map { it.value })
+        assertEquals(listOf("All"), networkProfileChoices(emptyList(), "all").map { it.value })
+        assertEquals(listOf("All", "Personal"), networkProfileChoices(emptyList(), "personal").map { it.value })
+        assertEquals("Work", networkProfileChoices(emptyList(), "work").last().label)
+        assertEquals(listOf("All", "user:10:9"), networkProfileChoices(
+            listOf(ProfileChoice("user:10:9", "Work (user 10)")), "USER:10:9").map { it.value })
     }
 
     @Test fun summaryReflectsEveryFilterAndDensity() {
         val choices = listOf(ProfileChoice("user:10:9", "Work (user 10)"))
-        assertEquals("System · Blocked · Internet-capable only · Work (user 10) · Compact",
+        assertEquals("System apps · Blocked · Work (user 10) · Internet-capable only · Compact",
             networkFilterSummary(FirewallFilterState("System", "Blocked", true, "user:10:9"), choices, true))
-        assertEquals("All · Any access · All profiles", networkFilterSummary(FirewallFilterState("All", null, false),
+        assertEquals("All apps · Any access · All profiles", networkFilterSummary(FirewallFilterState("All", null, false),
             networkProfileChoices(emptyList(), "All"), false))
+    }
+
+    @Test fun storedFiltersSelectChipsRegardlessOfCaseAndSendCanonicalValues() {
+        mapOf("aLL" to Constants.Packages.TYPE_ALL, "USER" to Constants.Packages.TYPE_USER,
+            "System" to Constants.Packages.TYPE_SYSTEM).forEach { (stored, expected) ->
+            assertEquals(expected, networkPackageTypeChoices.single { networkFilterMatches(stored, it.value) }.value)
+        }
+        mapOf("any" to "Any", "ALLOWED" to Constants.Firewall.STATE_ALLOWED,
+            "blocked" to Constants.Firewall.STATE_BLOCKED).forEach { (stored, expected) ->
+            assertEquals(expected, networkAccessChoices.single { networkFilterMatches(stored, it.value) }.value)
+        }
+        val profiles = networkProfileChoices(listOf(ProfileChoice("user:10:9", "Work (user 10)")), "all")
+        assertEquals("All", profiles.single { networkFilterMatches("all", it.value) }.value)
+        assertEquals("user:10:9", profiles.single { networkFilterMatches("USER:10:9", it.value) }.value)
+        assertFalse(networkFilterMatches("user:10:9", "user:10:99"))
+    }
+
+    @Test fun summaryMapsStoredCaseVariantsToReadableLabels() {
+        val profiles = networkProfileChoices(listOf(ProfileChoice("user:10:9", "Work (user 10)")), "all")
+        listOf("all", "All", "ALL").forEach { value ->
+            assertEquals("All apps · Any access · All profiles",
+                networkFilterSummary(FirewallFilterState(value, null, false, value), profiles, false))
+        }
+        assertEquals("User apps · Blocked · Work (user 10) · Internet-capable only · Compact",
+            networkFilterSummary(FirewallFilterState("user", "blocked", true, "USER:10:9"), profiles, true))
+        assertEquals("System apps · Allowed · All profiles",
+            networkFilterSummary(FirewallFilterState("SYSTEM", "allowed", false, "all"), profiles, false))
+        assertEquals("All apps · Any access · All profiles",
+            networkFilterSummary(FirewallFilterState("all", "ANY", false, "all"), emptyList(), false))
+        assertEquals("User apps · Any access · Unavailable profile (12)",
+            networkFilterSummary(FirewallFilterState("User", null, false, "user:12:99"),
+                networkProfileChoices(emptyList(), "user:12:99"), false))
     }
 
     @Test fun togglePresentationUsesEnforcedFlagsAndRefusesProtectedApps() {

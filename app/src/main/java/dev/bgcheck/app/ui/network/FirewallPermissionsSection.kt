@@ -29,6 +29,7 @@ import dev.bgcheck.network.De1984Dependencies
 import dev.bgcheck.network.data.common.RootStatus
 import dev.bgcheck.network.data.common.ShizukuStatus
 import dev.bgcheck.network.domain.firewall.FirewallBackendType
+import dev.bgcheck.network.domain.firewall.FirewallMode
 import kotlinx.coroutines.launch
 
 @Composable
@@ -38,6 +39,7 @@ internal fun rememberFirewallPermissionsContent(onShowShizuku: () -> Unit): @Com
     val model = networkSettingsPermissionViewModel()
     val settings = networkSettingsViewModel()
     val state by model.uiState.collectAsStateWithLifecycle()
+    val settingsState by settings.uiState.collectAsStateWithLifecycle()
     val root by settings.rootStatus.collectAsStateWithLifecycle()
     val shizuku by settings.shizukuStatus.collectAsStateWithLifecycle()
     val backend by settings.activeBackendType.collectAsStateWithLifecycle()
@@ -115,23 +117,27 @@ internal fun rememberFirewallPermissionsContent(onShowShizuku: () -> Unit): @Com
     val content: @Composable ColumnScope.() -> Unit = {
         if (state.isLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
         state.errorMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Red) }
-        FirewallPermissionsRow("Notifications", "New-app alerts and warnings when protection needs attention.", firewallPermissionRowState(notificationsGranted, openSettings = needsSettings), "firewall-permission-notifications", !state.isLoading) {
+        FirewallPermissionsRow("Notifications", "New-app alerts and warnings when protection needs attention.", firewallPermissionRowState(notificationsGranted, openSettings = needsSettings), "firewall-permission-notifications", !state.isLoading, optional = true) {
             if (needsSettings) openNotifications()
             else if (showRationale) rationale = true
             else requestNotifications()
         }
-        FirewallPermissionsRow("Battery optimization", "Keep firewall protection running when Android limits background activity.", firewallPermissionRowState(state.hasBatteryOptimizationExemption), "firewall-permission-battery", !state.isLoading, ::requestBattery)
-        FirewallPermissionsRow("VPN", if (state.isUsingPrivilegedBackend) "The active backend works without Android’s VPN slot." else "Required when using the VPN backend. Android allows one VPN at a time.", firewallPermissionRowState(state.hasVpnPermission, state.isUsingPrivilegedBackend), "firewall-permission-vpn", !state.isLoading) {
+        FirewallPermissionsRow("Battery optimization", "Keep firewall protection running when Android limits background activity.", firewallPermissionRowState(state.hasBatteryOptimizationExemption), "firewall-permission-battery", !state.isLoading, optional = true, onGrant = ::requestBattery)
+        FirewallPermissionsRow("VPN", if (state.isUsingPrivilegedBackend) "The active backend works without Android’s VPN slot." else "Required when using the VPN backend. Android allows one VPN at a time.", firewallPermissionRowState(state.hasVpnPermission, state.isUsingPrivilegedBackend), "firewall-permission-vpn", !state.isLoading,
+            optional = backend != FirewallBackendType.VPN && settingsState.firewallMode != FirewallMode.VPN) {
             if (deps.firewallManager.isAnotherVpnActive()) vpnConflict = true else requestVpn()
         }
-        FirewallPermissionsRow("Advanced access", "Root, Shizuku or system permissions enable privileged firewall controls.", firewallPermissionRowState(state.hasAdvancedPermissions, openSettings = true), "firewall-permission-advanced", !state.isLoading, onShowShizuku)
-        FirewallPermissionsRow("Root access (optional)", when (root) {
+        FirewallPermissionsRow("Advanced access", "Root, Shizuku or system permissions enable privileged firewall controls.", firewallPermissionRowState(state.hasAdvancedPermissions, openSettings = true), "firewall-permission-advanced", !state.isLoading,
+            optional = !state.isUsingPrivilegedBackend && settingsState.firewallMode in listOf(FirewallMode.AUTO, FirewallMode.VPN),
+            detail = "Shizuku unlocks ConnectivityManager on supported Android 13+ devices and the legacy NetworkPolicyManager backend. Shizuku in root mode can also unlock iptables. Use the Shizuku connection controls above.", onGrant = onShowShizuku)
+        FirewallPermissionsRow(if (settingsState.bootProtection) "Root access" else "Root access (optional)", when (root) {
             RootStatus.ROOTED_WITH_PERMISSION -> "Root enables iptables and boot protection when boot scripts are supported."
             RootStatus.CHECKING -> "Checking root access…"
             RootStatus.ROOTED_NO_PERMISSION -> if (settings.hasRequestedRootPermission()) "Root permission was denied. Allow Background Check in your root manager (Magisk, KernelSU or APatch), then try again." else "Grant superuser permission in your root manager when prompted."
-            RootStatus.NOT_ROOTED -> "No root detected. Magisk, KernelSU and APatch provide root on supported devices; installing a manager alone does not root a phone. Shizuku is available through the connection controls above."
-        }, firewallPermissionRowState(root == RootStatus.ROOTED_WITH_PERMISSION), "firewall-permission-root", root != RootStatus.CHECKING, rootTest::start)
-        Text("Shizuku unlocks ConnectivityManager on supported Android 13+ devices and the legacy NetworkPolicyManager backend. Shizuku in root mode can also unlock iptables. Use the Shizuku connection controls above.", style = MaterialTheme.typography.bodySmall, color = Muted)
+            RootStatus.NOT_ROOTED -> "No root detected. Shizuku is available through the connection controls above."
+        }, firewallPermissionRowState(root == RootStatus.ROOTED_WITH_PERMISSION), "firewall-permission-root", root != RootStatus.CHECKING,
+            optional = !settingsState.bootProtection,
+            detail = "Magisk, KernelSU and APatch provide root on supported devices; installing a manager alone does not root a phone. Root enables iptables and boot protection when boot scripts are supported.", onGrant = rootTest::start)
     }
 
     if (rationale) NetworkSettingsDialog("Allow firewall notifications?", "Notifications report new apps and warn when firewall protection is down or a backend needs access. Allow them so these changes remain visible when the app is closed.", { rationale = false }, confirm = "Grant", cancel = "Cancel", onConfirm = { rationale = false; requestNotifications() })
@@ -171,23 +177,38 @@ internal fun FirewallPermissionsSection(content: @Composable ColumnScope.() -> U
 }
 
 @Composable
-private fun FirewallPermissionsRow(title: String, description: String, state: FirewallPermissionRowState, tag: String, enabled: Boolean = true, onGrant: () -> Unit) {
+private fun FirewallPermissionsRow(title: String, description: String, state: FirewallPermissionRowState, tag: String, enabled: Boolean = true,
+    optional: Boolean = false, detail: String? = null, onGrant: () -> Unit) {
+    val presentation = optionalFirewallPermissionState(state, optional)
     val details: @Composable () -> Unit = {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(state.label, style = MaterialTheme.typography.labelMedium, color = if (state.label == "Granted") Green else if (state.label == "Not required") Cyan else Orange)
+            Text(presentation.label, style = MaterialTheme.typography.labelMedium, color = when (presentation.label) {
+                "Granted" -> Green
+                "Needed" -> Orange
+                "Not required" -> Cyan
+                else -> Muted
+            })
             Text(description, style = MaterialTheme.typography.bodySmall, color = Muted)
         }
     }
-    if (LocalDensity.current.fontScale > 1.3f) {
-        Column(Modifier.fillMaxWidth().testTag(tag), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            details()
-            state.action?.let { OutlinedButton(onGrant, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(it) } }
+    Column(Modifier.fillMaxWidth().testTag(tag), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (LocalDensity.current.fontScale > 1.3f) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                details()
+                presentation.action?.let { OutlinedButton(onGrant, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(it) } }
+            }
+        } else {
+            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.weight(1f)) { details() }
+                presentation.action?.let { OutlinedButton(onGrant, enabled = enabled, modifier = Modifier.heightIn(min = 48.dp)) { Text(it) } }
+            }
         }
-    } else {
-        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(tag), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.weight(1f)) { details() }
-            state.action?.let { OutlinedButton(onGrant, enabled = enabled, modifier = Modifier.heightIn(min = 48.dp)) { Text(it) } }
+        detail?.let {
+            Disclosure("Details") { Text(it, style = MaterialTheme.typography.bodySmall, color = Muted) }
         }
     }
 }
+
+internal fun optionalFirewallPermissionState(state: FirewallPermissionRowState, optional: Boolean): FirewallPermissionRowState =
+    if (optional && state.label == "Needed") state.copy(label = "Optional · not set up") else state

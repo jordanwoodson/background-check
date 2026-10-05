@@ -37,10 +37,12 @@ internal fun NetworkSettingsCard(title: String, content: @Composable ColumnScope
 @Composable
 internal fun NetworkSettingsHeader(title: String, backDescription: String, onBack: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        IconButton(onBack, modifier = Modifier.testTag("network-page-back")) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, backDescription)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            IconButton(onBack, modifier = Modifier.testTag("network-page-back")) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, backDescription)
+            }
+            Eyebrow("network / settings")
         }
-        Eyebrow("network / settings")
         Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
     }
 }
