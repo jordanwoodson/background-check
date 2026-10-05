@@ -70,14 +70,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
     val settingsModel: SettingsViewModel = viewModel(factory = remember(application) { settingsViewModelFactory(application) })
     val state by model.uiState.collectAsStateWithLifecycle()
     val settings by settingsModel.uiState.collectAsStateWithLifecycle()
-    var previousPolicy by remember { mutableStateOf(settings.defaultFirewallPolicy) }
-    var previousAllowCritical by remember { mutableStateOf(settings.allowCriticalPackageFirewall) }
-    LaunchedEffect(settings.defaultFirewallPolicy, settings.allowCriticalPackageFirewall) {
-        if (previousPolicy != settings.defaultFirewallPolicy) model.refreshDefaultPolicy()
-        else if (previousAllowCritical != settings.allowCriticalPackageFirewall) model.repaintForCriticalPackagesSetting()
-        previousPolicy = settings.defaultFirewallPolicy
-        previousAllowCritical = settings.allowCriticalPackageFirewall
-    }
+    RefreshNetworkOnSettingsChange(model, settings)
     val health by model.firewallHealth.collectAsStateWithLifecycle()
     val backend by deps.firewallManager.activeBackendType.collectAsStateWithLifecycle()
     val npmFull by NetworkPolicySupport.fullBlocking.collectAsStateWithLifecycle()
@@ -144,15 +137,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
     }
     fun apply(change: RuleChange, undo: Boolean = false) {
         val blocked = if (undo) !change.blocked else change.blocked
-        val pkg = change.pkg
-        when (change.control) {
-            NetworkControl.WIFI -> model.setWifiBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-            NetworkControl.MOBILE -> model.setMobileBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-            NetworkControl.ROAMING -> model.setRoamingBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-            NetworkControl.LAN -> model.setLanBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-            NetworkControl.BACKGROUND -> model.setBackgroundBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-            NetworkControl.ALL -> model.setAllNetworkBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-        }
+        model.applyNetworkControl(change.pkg, change.control, blocked)
     }
     fun quickToggle(pkg: NetworkPackage, control: NetworkControl) {
         if (limited) { selectedSheet = NetworkSelection(pkg.id, pkg.identity).encode(); return }
@@ -344,15 +329,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
     }
     if (batchOpen && selectedPackages.isNotEmpty()) NetworkBatchSheet(selectedPackages, granular, limited, hasCellular,
         backend == FirewallBackendType.IPTABLES, onDismiss = { batchOpen = false }, onChange = { control, blocked ->
-            val pairs = selectedPackages.map { it.packageName to it.userId }
-            val expected = selectedPackages.associate { it.id to it.identity }
-            when (control) {
-                NetworkControl.WIFI -> model.batchSetWifiBlocking(pairs, blocked, expected)
-                NetworkControl.MOBILE -> model.batchSetMobileBlocking(pairs, blocked, expected)
-                NetworkControl.ROAMING -> model.batchSetRoamingBlocking(pairs, blocked, expected)
-                NetworkControl.LAN -> model.batchSetLanBlocking(pairs, blocked, expected)
-                else -> model.batchSetAllNetworkBlocking(pairs, blocked, expected)
-            }
+            model.applyBatchNetworkControl(selectedPackages, control, blocked)
         }, onAllowAll = {
             model.batchAllowPackages(selectedPackages.map { it.id }, selectedPackages.associate { it.id to it.identity }); exitSelection()
         }, onBlockAll = {

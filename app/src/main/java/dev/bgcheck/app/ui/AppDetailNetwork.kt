@@ -10,9 +10,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -24,7 +22,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bgcheck.app.data.AppEntry
 import dev.bgcheck.app.ui.network.InternetAdviceCard
 import dev.bgcheck.app.ui.network.NetworkAccessControls
-import dev.bgcheck.app.ui.network.NetworkControl
+import dev.bgcheck.app.ui.network.RefreshNetworkOnSettingsChange
+import dev.bgcheck.app.ui.network.applyNetworkControl
 import dev.bgcheck.app.ui.network.firewallViewModelFactory
 import dev.bgcheck.app.ui.network.rememberInternetRecommendation
 import dev.bgcheck.app.ui.network.settingsViewModelFactory
@@ -60,14 +59,7 @@ internal fun AppDetailNetwork(app: AppEntry, onNetwork: () -> Unit, onSeeInNetwo
         ?.takeIf { app.installed && it.uid == app.uid && it.userSerial == app.profile.serialNumber }
     LaunchedEffect(model) { model.loadNetworkPackages(); model.setUIReady() }
     LaunchedEffect(state.isRenderingUI) { if (state.isRenderingUI) model.setUIReady() }
-    var previousPolicy by remember { mutableStateOf(settings.defaultFirewallPolicy) }
-    var previousAllowCritical by remember { mutableStateOf(settings.allowCriticalPackageFirewall) }
-    LaunchedEffect(settings.defaultFirewallPolicy, settings.allowCriticalPackageFirewall) {
-        if (previousPolicy != settings.defaultFirewallPolicy) model.refreshDefaultPolicy()
-        else if (previousAllowCritical != settings.allowCriticalPackageFirewall) model.repaintForCriticalPackagesSetting()
-        previousPolicy = settings.defaultFirewallPolicy
-        previousAllowCritical = settings.allowCriticalPackageFirewall
-    }
+    RefreshNetworkOnSettingsChange(model, settings)
     LaunchedEffect(state.error) {
         state.error?.let { onMessage(it); model.clearError() }
     }
@@ -84,16 +76,7 @@ internal fun AppDetailNetwork(app: AppEntry, onNetwork: () -> Unit, onSeeInNetwo
                 TextButton(onClick = onNetwork) { Text("Go to Network") }
             }
             NetworkAccessControls(pkg, backend, state.blockingContext, granular, limited, hasCellular,
-                onChange = { control, blocked ->
-                    when (control) {
-                        NetworkControl.WIFI -> model.setWifiBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-                        NetworkControl.MOBILE -> model.setMobileBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-                        NetworkControl.ROAMING -> model.setRoamingBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-                        NetworkControl.LAN -> model.setLanBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-                        NetworkControl.BACKGROUND -> model.setBackgroundBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-                        NetworkControl.ALL -> model.setAllNetworkBlocking(pkg.packageName, pkg.userId, blocked, pkg.identity)
-                    }
-                }, onSettings = onSettings)
+                onChange = { control, blocked -> model.applyNetworkControl(pkg, control, blocked) }, onSettings = onSettings)
         }
         if (app.installed) TextButton(onClick = onSeeInNetwork) { Text("See in Network") }
     }

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -113,6 +114,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -149,6 +151,9 @@ private enum class Page(val label: String, val icon: ImageVector) {
     MONITOR("Monitor", Icons.Rounded.Memory),
     ACCESS("Access", Icons.Rounded.Key),
 }
+
+internal fun largeFontNavigationColumns(labelWidths: List<Int>, availableWidth: Int, horizontalPadding: Int): Int =
+    if (labelWidths.all { it <= availableWidth / 3 - horizontalPadding * 2 }) 3 else 2
 
 @Composable
 fun BackgroundCheckApp(
@@ -214,23 +219,40 @@ fun BackgroundCheckApp(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             if (!wide && LocalDensity.current.fontScale > 1.3f) {
-                Column(Modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).clip(RoundedCornerShape(24.dp)).background(Panel)) {
-                    Page.entries.chunked(2).forEach { row ->
-                        Row(Modifier.fillMaxWidth()) {
-                            row.forEach { item ->
-                                val selected = page == item
-                                Row(
-                                    Modifier.weight(1f).heightIn(min = 56.dp)
-                                        .clip(RoundedCornerShape(24.dp))
-                                        .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                                        .selectable(selected, role = Role.Tab, onClick = { page = item })
-                                        .padding(horizontal = 8.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center,
-                                ) {
-                                    Icon(item.icon, null, Modifier.size(20.dp), tint = if (selected) Purple else Muted)
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(item.label, style = MaterialTheme.typography.labelMedium, color = if (selected) Purple else Muted)
+                val density = LocalDensity.current
+                val labelStyle = MaterialTheme.typography.labelMedium
+                val textMeasurer = rememberTextMeasurer()
+                BoxWithConstraints(Modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).clip(RoundedCornerShape(24.dp)).background(Panel)) {
+                    val labelWidths = Page.entries.map { textMeasurer.measure(it.label, style = labelStyle, softWrap = false).size.width }
+                    val columns = largeFontNavigationColumns(labelWidths, constraints.maxWidth, with(density) { 8.dp.roundToPx() })
+                    Column {
+                        Page.entries.chunked(columns).forEach { row ->
+                            Row(Modifier.fillMaxWidth()) {
+                                row.forEach { item ->
+                                    val selected = page == item
+                                    val color = if (selected) Purple else Muted
+                                    Box(
+                                        Modifier.weight(1f).heightIn(min = 56.dp)
+                                            .clip(RoundedCornerShape(24.dp))
+                                            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                            .selectable(selected, role = Role.Tab, onClick = { page = item })
+                                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        if (columns == 3) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(item.icon, null, Modifier.size(20.dp), tint = color)
+                                                Spacer(Modifier.height(4.dp))
+                                                Text(item.label, style = labelStyle, color = color)
+                                            }
+                                        } else {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                                Icon(item.icon, null, Modifier.size(20.dp), tint = color)
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(item.label, style = labelStyle, color = color)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -630,7 +652,9 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             }.joinToString(" · ")
             Disclosure("Filters", summary) {
                 SortControls("apps", AppSort.entries, sort, direction, onSort = { sort = it }, onDirection = { direction = it })
+                Text("Profile", style = MaterialTheme.typography.labelMedium, color = Muted)
                 ProfileFilters("apps", profiles, profileId) { profileId = it }
+                Text("Type", style = MaterialTheme.typography.labelMedium, color = Muted)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PackageType.entries.forEach { item ->
                         FilterChip(selected = type == item, onClick = { type = item }, label = { Text(item.label) },
