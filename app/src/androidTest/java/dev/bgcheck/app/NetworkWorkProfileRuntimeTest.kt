@@ -22,6 +22,7 @@ import dev.bgcheck.network.utils.openAppSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
+import org.junit.Assume.assumeTrue
 import org.junit.rules.TestRule
 import org.junit.rules.RuleChain
 import org.junit.Rule
@@ -48,10 +49,10 @@ class NetworkWorkProfileRuntimeTest {
     private suspend fun prepare() {
         check(android.os.Build.MODEL.contains("sdk")) { "Disposable emulator only" }
         deps.shizukuManager.checkShizukuStatus()
-        assertTrue("Authorize Shizuku in the app", deps.shizukuManager.hasShizukuPermission)
+        assumeTrue("Work-profile tests require authorized Shizuku", deps.shizukuManager.hasShizukuPermission)
         HiddenApiHelper.awaitCrossUserPermission(context)
         HiddenApiHelper.clearUserCache()
-        assertTrue(HiddenApiHelper.currentProfile(context, 10)?.available == true)
+        assumeTrue("Work-profile tests require an available work profile", HiddenApiHelper.currentProfile(context, 10)?.available == true)
     }
 
     private fun info(user: Int, flags: Int = 0) = requireNotNull(

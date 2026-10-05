@@ -195,7 +195,9 @@ class WorkProfileUiTest {
                     onSetMonitorInterval = {}, onMonitorVisible = {}, onForceStop = {}, onOpenNetwork = { opened = it })
             }
         }
-        compose.onNodeWithText("Network and internet access").performScrollTo().performClick()
+        compose.onNodeWithTag("app-detail-network-heading").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("See in Network") and hasAnyAncestor(hasTestTag("app-detail-network")))
+            .performScrollTo().performClick()
         compose.runOnIdle { assertEquals(workApp.key, opened?.key) }
     }
 

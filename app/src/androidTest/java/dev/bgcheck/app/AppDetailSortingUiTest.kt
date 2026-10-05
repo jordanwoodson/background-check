@@ -90,7 +90,10 @@ class AppDetailSortingUiTest {
         compose.onNodeWithText("Set up access").assertIsEnabled()
         compose.runOnIdle { value.value = value.value.copy(access = AccessState.NEEDS_PERMISSION) }
         compose.onNodeWithText("Permission needed").assertExists()
-        compose.onNodeWithText("Review access").assertIsEnabled()
+        compose.onNode(hasText("Review access") and !hasAnyAncestor(hasTestTag("app-detail-package")))
+            .assertIsEnabled()
+        compose.onNode(hasText("Review access") and hasAnyAncestor(hasTestTag("app-detail-package")))
+            .assertIsEnabled()
         compose.onNodeWithText("Set up access").assertDoesNotExist()
         compose.runOnIdle { value.value = value.value.copy(access = AccessState.CONNECTING) }
         compose.onNodeWithText("Connecting to Shizuku").assertExists()

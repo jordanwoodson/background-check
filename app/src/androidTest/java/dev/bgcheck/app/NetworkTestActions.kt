@@ -8,6 +8,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.pressBack
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import dev.bgcheck.network.utils.Constants
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -74,7 +76,7 @@ internal fun ComposeContentTestRule.openFirewallSettings() {
 
 internal fun ComposeContentTestRule.openTaggedFilters(listTag: String, tag: String) {
     onNodeWithTag(listTag).performScrollToNode(hasTestTag(tag))
-    val header = onNode(hasAnyAncestor(hasTestTag(tag)) and
+    val header = onNode(hasText("Filters") and hasAnyAncestor(hasTestTag(tag)) and
         SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription))
     if (header.fetchSemanticsNode().config[SemanticsProperties.StateDescription] == "Collapsed") header.performClick()
 }
@@ -95,13 +97,31 @@ internal fun SemanticsNodeInteraction.assertCompleteText(text: String) {
     performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
     check(results.isNotEmpty()) { "No text layout for $text" }
     results.forEach { layout ->
-        org.junit.Assert.assertFalse("$text must fit its layout", layout.hasVisualOverflow)
         org.junit.Assert.assertEquals(text.length, layout.getLineEnd(layout.lineCount - 1))
-        for (line in 0 until layout.lineCount) org.junit.Assert.assertFalse(layout.isLineEllipsized(line))
+        // Paragraph width can retain the parent's constraint even when Text wraps its content.
+        // Check the drawn lines, allowing one pixel for rounded fractional font metrics.
+        for (line in 0 until layout.lineCount) {
+            org.junit.Assert.assertFalse(layout.isLineEllipsized(line))
+            org.junit.Assert.assertTrue("$text must fit its width", layout.getLineLeft(line) >= -1f &&
+                layout.getLineRight(line) <= layout.size.width + 1f)
+            org.junit.Assert.assertTrue("$text must fit its height", layout.getLineBottom(line) <= layout.size.height + 1f)
+        }
     }
 }
 
 /** Deliver through Android so the real onNewIntent/consumption path is exercised. */
 internal fun MainActivity.deliverNetworkIntent(intent: Intent) {
+    // ActivityScenario matches lifecycle callbacks against the original launcher intent.
+    val launcher = this.intent
+    var paused = false
+    lateinit var observer: LifecycleEventObserver
+    observer = LifecycleEventObserver { _, event ->
+        if (event == Lifecycle.Event.ON_PAUSE) paused = true
+        if (paused && event == Lifecycle.Event.ON_RESUME) {
+            this.intent = launcher
+            lifecycle.removeObserver(observer)
+        }
+    }
+    lifecycle.addObserver(observer)
     startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
 }

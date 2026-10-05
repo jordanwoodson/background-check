@@ -52,7 +52,8 @@ class NetworkRecommendationsUiTest {
             .putExtra("dev.bgcheck.network.PACKAGE", "com.google.android.gms")) }
         compose.awaitNetworkNode("network-sheet")
         compose.onNode(hasText("com.google.android.gms") and hasAnyAncestor(hasTestTag("network-sheet"))).assertExists()
-        compose.onNodeWithText("Keep internet allowed", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Keep internet allowed", substring = true) and hasAnyAncestor(hasTestTag("network-sheet")))
+            .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Internet advice").performScrollTo().performClick()
         compose.onNodeWithText("not the current firewall status", substring = true).performScrollTo().assertIsDisplayed()
         compose.closeNetworkAppSheet()
@@ -68,7 +69,8 @@ class NetworkRecommendationsUiTest {
             showAdvice(unknown.internetRecommendation(), unknown, granular)
             expandAdvice()
             compose.onNodeWithText("Review before blocking", substring = true).assertExists()
-            compose.onNodeWithText("could not be verified", substring = true).assertExists()
+            compose.onNode(hasText("could not be verified", substring = true) and hasAnyAncestor(hasTestTag("internet-advice")))
+                .assertExists()
             compose.onNodeWithText("No direct internet permission", substring = true).assertDoesNotExist()
         }
         val retained = Package("com.google.android.calculator", uid = 1000, name = "Calculator", icon = "",
@@ -95,7 +97,8 @@ class NetworkRecommendationsUiTest {
             isEnabled = true, type = PackageType.USER, versionCode = 1)
         showAdvice(unknown.internetRecommendation(), unknown)
         expandAdvice()
-        compose.onNodeWithText("could not be verified", substring = true).assertExists()
+        compose.onNode(hasText("could not be verified", substring = true) and hasAnyAncestor(hasTestTag("internet-advice")))
+            .assertExists()
         compose.onNodeWithText("No direct internet permission", substring = true).assertDoesNotExist()
     }
 

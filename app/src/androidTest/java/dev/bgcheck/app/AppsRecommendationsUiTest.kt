@@ -52,7 +52,9 @@ class AppsRecommendationsUiTest {
             screenshot.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
         }
         screenshot.recycle()
-        compose.onNodeWithText("Network and internet access").performScrollTo().performClick()
+        compose.onNodeWithTag("app-detail-network-heading").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("See in Network") and hasAnyAncestor(hasTestTag("app-detail-network")))
+            .performScrollTo().performClick()
         assertEquals(browser.key, opened?.key)
     }
 

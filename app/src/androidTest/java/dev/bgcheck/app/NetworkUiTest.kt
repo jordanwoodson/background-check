@@ -2,6 +2,8 @@ package dev.bgcheck.app
 
 import android.content.Context
 import android.content.Intent
+import android.app.Instrumentation
+import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.ViewModelProvider
 import androidx.compose.ui.test.*
@@ -18,6 +20,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class NetworkUiTest {
@@ -121,5 +124,58 @@ class NetworkUiTest {
         assertFalse(prefs.getBoolean(Constants.Settings.KEY_FIREWALL_ENABLED, false))
         assertNull((context as De1984Application).dependencies.firewallManager.activeBackendType.value)
         androidx.test.espresso.Espresso.pressBack()
+    }
+
+    @Test fun externalMainActivityCannotOperateFirewallWithUntrustedActions() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val manager = (context as De1984Application).dependencies.firewallManager
+        val enabled = prefs.getBoolean(Constants.Settings.KEY_FIREWALL_ENABLED, false)
+        val state = manager.firewallState.value
+        val backend = manager.activeBackendType.value
+        val active = manager.isActive()
+        val consentComponent = VpnService.prepare(context)?.resolveActivity(context.packageManager)
+        val consentRequests = AtomicInteger()
+        val activity = compose.activity
+        val launcher = activity.intent
+        val monitor = object : Instrumentation.ActivityMonitor() {
+            override fun onStartActivity(intent: Intent): Instrumentation.ActivityResult? {
+                val component = intent.resolveActivity(context.packageManager)
+                if (component != null && (component == consentComponent ||
+                        component.className == "dev.bgcheck.network.ui.VpnPermissionActivity")) {
+                    consentRequests.incrementAndGet()
+                    return Instrumentation.ActivityResult(android.app.Activity.RESULT_CANCELED, null)
+                }
+                return null
+            }
+        }
+        instrumentation.addMonitor(monitor)
+        try {
+            val requests = listOf(
+                Constants.Firewall.ACTION_TOGGLE_FIREWALL to "",
+                Constants.Firewall.ACTION_REQUEST_VPN_PERMISSION to "",
+                Constants.Notifications.ACTION_ENABLE_VPN_FALLBACK to "",
+                Constants.Firewall.ACTION_REQUEST_VPN_PERMISSION to
+                    " --es ${NetworkEntryIntents.EXTRA_TOKEN} wrong-token",
+            )
+            requests.forEach { (action, token) ->
+                compose.onNodeWithTag("nav-overview").performClick()
+                ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(
+                    "am start -W -n dev.bgcheck.app/.MainActivity -f 0x24000000 -a $action$token"
+                )).use { it.readBytes() }
+                compose.awaitNetworkNode("network-screen")
+                compose.onNodeWithTag("nav-network").assertIsSelected()
+                compose.waitForIdle()
+                instrumentation.runOnMainSync { activity.intent = launcher }
+                assertEquals(action, enabled, prefs.getBoolean(Constants.Settings.KEY_FIREWALL_ENABLED, false))
+                assertEquals(action, state, manager.firewallState.value)
+                assertEquals(action, backend, manager.activeBackendType.value)
+                assertEquals(action, active, manager.isActive())
+                assertEquals("$action must not request VPN consent", 0, consentRequests.get())
+                compose.onNodeWithText("Turn off the firewall?").assertDoesNotExist()
+            }
+        } finally {
+            instrumentation.runOnMainSync { activity.intent = launcher }
+            instrumentation.removeMonitor(monitor)
+        }
     }
 }

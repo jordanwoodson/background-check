@@ -118,7 +118,9 @@ class AccessUxTest {
         ))
         compose.onNodeWithText("Apps").performClick()
         compose.openAppFilters()
-        compose.onNodeWithText("Active").performScrollTo().performClick()
+        scrollAppsTo("Active")
+        compose.onNodeWithText("Active").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Active").assertIsSelected()
         scrollAppsTo("Active fixture")
         compose.onNodeWithText("Active fixture").assertIsDisplayed()
         compose.onNodeWithText("Cached fixture").assertDoesNotExist()
@@ -190,7 +192,7 @@ class AccessUxTest {
     }
 
     private fun scrollAppsTo(text: String) {
-        compose.onNodeWithTag("apps-list").performScrollToNode(hasText(text))
+        compose.scrollListToNode("apps-list", hasText(text))
     }
 
     private fun app(name: String, uid: Int, process: ProcessState, system: Boolean = false) = AppEntry(

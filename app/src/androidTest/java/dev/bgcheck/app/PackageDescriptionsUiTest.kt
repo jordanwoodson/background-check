@@ -65,7 +65,11 @@ class PackageDescriptionsUiTest {
         compose.onNodeWithText("Uninstalled for this user").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Allow background work").assertDoesNotExist()
         compose.onNodeWithText("Force stop app").assertDoesNotExist()
-        compose.onNodeWithText("Open Android app settings").assertDoesNotExist()
+        compose.onNode(hasText("Reinstall") and hasAnyAncestor(hasTestTag("app-detail-package")))
+            .performScrollTo().assertIsDisplayed().assertIsNotEnabled()
+        compose.onNodeWithText("Open Android app settings").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("See in Network").assertDoesNotExist()
+        compose.onNode(isToggleable() and hasAnyAncestor(hasTestTag("app-detail-network"))).assertDoesNotExist()
         compose.onNodeWithText("Resource diagnostics").assertDoesNotExist()
     }
 

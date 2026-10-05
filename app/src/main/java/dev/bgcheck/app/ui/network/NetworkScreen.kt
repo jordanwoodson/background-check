@@ -195,7 +195,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
         }
     }
     LaunchedEffect(selectedSheet, state.packages, state.isLoadingData) {
-        if (selectedSheet != null && !state.isLoadingData && sheetPackage == null) {
+        if (sheetIdentity != null && !state.isLoadingData && sheetPackage == null) {
             selectedSheet = null
             message("This app's installation changed or is unavailable. Refresh the list before changing its rules.")
         }

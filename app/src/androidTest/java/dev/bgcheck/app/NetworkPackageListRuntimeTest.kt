@@ -16,6 +16,7 @@ import dev.bgcheck.network.presentation.viewmodel.PackagesViewModel
 import dev.bgcheck.network.presentation.viewmodel.SettingsViewModel
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.rules.RuleChain
 import org.junit.Before
@@ -31,6 +32,10 @@ class NetworkPackageListRuntimeTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
 
     @Before fun allowNotificationsOnTheDisposableEmulator() {
+        runBlocking { app.dependencies.shizukuManager.checkShizukuStatus() }
+        assumeTrue("Package-list profile tests require authorized Shizuku", app.dependencies.shizukuManager.hasShizukuPermission)
+        assumeTrue("Package-list profile tests require an available work profile",
+            dev.bgcheck.network.data.multiuser.HiddenApiHelper.currentProfile(app, 10)?.available == true)
         if (android.os.Build.VERSION.SDK_INT >= 33) instrumentation.uiAutomation.grantRuntimePermission(
             app.packageName, android.Manifest.permission.POST_NOTIFICATIONS)
     }

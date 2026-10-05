@@ -134,7 +134,7 @@ class CompactNetworkUiTest {
                 assertTrue(node.boundsInRoot.height >= minimum && node.boundsInRoot.width >= minimum)
             }
         } else {
-            compose.onNode(hasText("User", substring = true) and hasAnyAncestor(hasTestTag(tag)), useUnmergedTree = true).assertExists()
+            compose.onNode(hasText("User ·", substring = true) and hasAnyAncestor(hasTestTag(tag)), useUnmergedTree = true).assertExists()
         }
         val title = context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(fixture, 0)).toString()
         compose.onNode(hasText(title) and hasAnyAncestor(hasTestTag(tag)), useUnmergedTree = true).assertCompleteText(title)
@@ -167,8 +167,7 @@ class CompactNetworkUiTest {
         if (network) "network-list" else "apps-list", if (network) "network-filters" else "apps-filters")
     private fun scrollToDensity(network: Boolean, label: String) {
         val tag = densityTag(network, label)
-        compose.onNodeWithTag(if (network) "network-list" else "apps-list").performScrollToNode(hasTestTag(tag))
-        compose.onNodeWithTag(tag).performScrollTo()
+        compose.scrollListToNode(if (network) "network-list" else "apps-list", hasTestTag(tag))
     }
     private fun densityTag(network: Boolean, label: String) = if (network) "network-filter-${label.lowercase()}" else "apps-density-$label"
     private fun chooseDensity(network: Boolean, label: String) {
