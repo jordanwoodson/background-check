@@ -136,7 +136,7 @@ internal fun InfoCard(title: String, message: String, icon: ImageVector, modifie
 @Composable
 internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort = AppSort.NAME,
     onLongClick: (() -> Unit)? = null, selectionMode: Boolean = false, selected: Boolean = false,
-    compact: Boolean = false, showIcon: Boolean = true, protectionLabel: String? = null,
+    compact: Boolean = false, protectionLabel: String? = null,
     selectionRefusal: String? = null, onClick: () -> Unit) {
     val shape = RoundedCornerShape(24.dp)
     Surface(modifier = modifier.testTag("app-row-${app.key}").alpha(if (selectionMode && selectionRefusal != null && !selected) 0.6f else 1f).clip(shape)
@@ -152,8 +152,7 @@ internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort 
         Row(Modifier.fillMaxWidth().padding(if (compact) 10.dp else 14.dp).heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (selectionMode) Icon(if (selected) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
                 null, tint = if (selected) Purple else Muted, modifier = Modifier.size(24.dp))
-            if (showIcon) AppIcon(app.packageName, size = if (compact) 36.dp else 46.dp, userId = app.userId, userSerial = app.profile.serialNumber)
-            else Icon(Icons.Rounded.Apps, null, tint = Muted, modifier = Modifier.size(if (compact) 36.dp else 46.dp))
+            AppIcon(app.packageName, size = if (compact) 36.dp else 46.dp, userId = app.userId, userSerial = app.profile.serialNumber)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(app.label, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 ProfileLabel(app.profile)
@@ -161,15 +160,10 @@ internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort 
                     maxLines = 3, overflow = TextOverflow.Ellipsis)
                 Text("Cana: ${app.debloatRecommendation.rating.label}",
                     style = MaterialTheme.typography.bodySmall, color = Cyan)
-                protectionLabel?.let {
-                    Text("${if (!app.installed) "Uninstalled" else if (app.enabled) "Enabled" else "Disabled"} · $it",
-                        style = MaterialTheme.typography.bodySmall, color = Muted)
-                    if (!compact && sort != AppSort.PACKAGE) Text(app.packageName, style = MaterialTheme.typography.bodySmall,
-                        color = Muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                }
                 Text(
                     buildString {
                         append(if (app.system) "System" else "User")
+                        protectionLabel?.let { append(" · $it") }
                         if (!app.installed) append(" · Uninstalled") else {
                             append(" · ${app.processState.label}")
                             if (!app.enabled) append(" · Disabled")

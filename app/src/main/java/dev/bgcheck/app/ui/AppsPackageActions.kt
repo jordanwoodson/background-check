@@ -60,7 +60,6 @@ internal data class AppsPackageActions(
     val profileWarnings: List<String>,
     val scanFailed: Boolean,
     val retry: () -> Unit,
-    val showIcons: Boolean,
 )
 
 @Composable
@@ -240,7 +239,7 @@ internal fun rememberAppsPackageActions(mainState: UiState, visible: List<AppEnt
         else exportLauncher.launch(appsExportFileName())
     }, privilegeMessage = privilegeMessage,
         profileWarnings = state.profileWarnings, scanFailed = state.scanFailed,
-        retry = { model.loadPackages(forceRefresh = true); onRefresh() }, showIcons = settings.showAppIcons)
+        retry = { model.loadPackages(forceRefresh = true); onRefresh() })
 }
 
 @Composable

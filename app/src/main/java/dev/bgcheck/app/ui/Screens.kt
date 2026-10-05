@@ -695,8 +695,8 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
         } else {
             items(apps, key = { "${it.key}:${it.profile.serialNumber}" }) { app ->
                 val level = protection?.get(app.packageName)
-                AppRow(app, sort = sort, modifier = Modifier.animateItem(), compact = compact, showIcon = actions.showIcons,
-                    protectionLabel = if (!app.system) "User" else level?.name?.lowercase()?.replaceFirstChar { it.titlecase() } ?: "Unknown protection",
+                AppRow(app, sort = sort, modifier = Modifier.animateItem(), compact = compact,
+                    protectionLabel = level?.name?.lowercase()?.replaceFirstChar { it.titlecase() },
                     selectionMode = actions.selectionMode, selected = actions.selection.any { it == AppsSelection.from(app) },
                     selectionRefusal = actions.selectionRefusal(app),
                     onLongClick = { focusManager.clearFocus(); actions.select(app) },
