@@ -32,16 +32,25 @@ class NetworkLogicTest {
 
     @Test fun pendingDeepLinkWaitsForRealScanCompletionEvenAfterFilterReset() {
         val initial = dev.bgcheck.network.presentation.viewmodel.FirewallUiState()
-        val reset = initial.copy(isLoadingData = false, isRenderingUI = false)
-        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(reset.hasCompletedPackageScan, reset.isLoading, null))
-        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(false, false, pkg(user = 10)))
+        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(initial.hasCompletedPackageScan, null))
+        val reset = initial.copy(isLoadingData = false, isRenderingUI = false, searchQuery = "app.0")
+        assertFalse(reset.isLoading)
+        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(reset.hasCompletedPackageScan, null))
+        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(reset.hasCompletedPackageScan, pkg(user = 10)))
         val failed = reset.copy(scanFailed = true)
-        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(failed.hasCompletedPackageScan, failed.isLoading, null))
-        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(true, true, pkg(user = 10)))
-        val completed = reset.copy(hasCompletedPackageScan = true)
+        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(failed.hasCompletedPackageScan, null))
+    }
+
+    @Test fun completedDeepLinkDoesNotWaitForRenderingOrLaterRefreshes() {
+        val completed = dev.bgcheck.network.presentation.viewmodel.FirewallUiState(
+            hasCompletedPackageScan = true, isLoadingData = false, isRenderingUI = true)
         val work = pkg(user = 10)
-        assertEquals(PendingNetworkPackageDecision.Open(work), pendingNetworkPackageDecision(completed.hasCompletedPackageScan, completed.isLoading, work))
-        assertEquals(PendingNetworkPackageDecision.Unavailable, pendingNetworkPackageDecision(completed.hasCompletedPackageScan, completed.isLoading, null))
+        assertTrue(completed.isLoading)
+        assertEquals(PendingNetworkPackageDecision.Open(work), pendingNetworkPackageDecision(completed.hasCompletedPackageScan, work))
+        assertEquals(PendingNetworkPackageDecision.Unavailable, pendingNetworkPackageDecision(completed.hasCompletedPackageScan, null))
+        val refreshing = completed.copy(isLoadingData = true, isRenderingUI = false)
+        assertTrue(refreshing.isLoading)
+        assertEquals(PendingNetworkPackageDecision.Open(work), pendingNetworkPackageDecision(refreshing.hasCompletedPackageScan, work))
     }
 
     @Test fun operationalActionsDoNotOpenAnInjectedPackage() {

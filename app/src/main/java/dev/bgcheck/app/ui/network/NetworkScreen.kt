@@ -178,9 +178,9 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
             onRequestHandled()
         }
     }
-    LaunchedEffect(pendingPackage, pendingUser, state.hasCompletedPackageScan, state.isLoading, state.packages) {
+    LaunchedEffect(pendingPackage, pendingUser, state.hasCompletedPackageScan, state.packages) {
         val name = pendingPackage ?: return@LaunchedEffect
-        when (val decision = pendingNetworkPackageDecision(state.hasCompletedPackageScan, state.isLoading,
+        when (val decision = pendingNetworkPackageDecision(state.hasCompletedPackageScan,
             model.enforcedPackage(PackageId(name, pendingUser)))) {
             PendingNetworkPackageDecision.Wait -> return@LaunchedEffect
             PendingNetworkPackageDecision.Unavailable -> message("This app is unavailable in User $pendingUser. Refresh the list or check the profile.")

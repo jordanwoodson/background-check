@@ -48,9 +48,11 @@ internal sealed interface PendingNetworkPackageDecision {
     data class Open(val pkg: NetworkPackage) : PendingNetworkPackageDecision
 }
 
-internal fun pendingNetworkPackageDecision(hasCompletedScan: Boolean, loading: Boolean,
+// Resolve against the unfiltered cache once a successful scan has populated it. Filter changes,
+// rendering and later refreshes do not invalidate that completed scan.
+internal fun pendingNetworkPackageDecision(hasCompletedScan: Boolean,
     pkg: NetworkPackage?): PendingNetworkPackageDecision = when {
-    !hasCompletedScan || loading -> PendingNetworkPackageDecision.Wait
+    !hasCompletedScan -> PendingNetworkPackageDecision.Wait
     pkg == null -> PendingNetworkPackageDecision.Unavailable
     else -> PendingNetworkPackageDecision.Open(pkg)
 }
