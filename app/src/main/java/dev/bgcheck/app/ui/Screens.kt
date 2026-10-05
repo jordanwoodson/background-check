@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -89,6 +90,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -106,6 +108,7 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import dev.bgcheck.app.R
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
@@ -129,6 +132,10 @@ import dev.bgcheck.app.data.ListSorting
 import dev.bgcheck.app.data.ProcessState
 import dev.bgcheck.app.data.SortDirection
 import dev.bgcheck.app.data.UiState
+import dev.bgcheck.app.data.PackageProtection
+import dev.bgcheck.network.domain.model.PackageCriticality
+import dev.bgcheck.network.utils.CompactListPreferences
+import dev.bgcheck.network.utils.NetworkList
 import java.util.Locale
 import dev.bgcheck.app.ui.network.NetworkRequest
 import dev.bgcheck.app.ui.network.NetworkDestination
@@ -263,7 +270,7 @@ fun BackgroundCheckApp(
                         when (currentPage) {
                             Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo,
                                 onOpenNetwork = { openNetwork(null) }, onUndoNetwork = onUndoNetwork, onExportChanges = onExportChanges)
-                            Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS })
+                            Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS }, onRefresh = onRefresh, snackbar = snackbar)
                             Page.NETWORK -> NetworkScreen(state, snackbar, networkRequest ?: localNetworkRequest,
                                 onRequestHandled = { localNetworkRequest = null; onNetworkRequestHandled() },
                                 onStartFirewall = onStartFirewall, onEnableVpn = onEnableVpn,
@@ -538,11 +545,14 @@ private fun HistoryCard(record: ChangeRecord, canUndo: Boolean, onUndo: (ChangeR
     )
 }
 
-private enum class ProcessFilter(val label: String) { ALL("Any state"), ACTIVE("Active"), CACHED("Cached"), NOT_OBSERVED("Not observed") }
+private enum class ProcessFilter(val label: String) { ALL("Any process"), ACTIVE("Active"), CACHED("Cached"), NOT_OBSERVED("Not observed") }
 
 @Composable
-private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: () -> Unit) {
+private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: () -> Unit, onRefresh: () -> Unit, snackbar: SnackbarHostState) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val listState = rememberLazyListState()
+    LaunchedEffect(listState.isScrollInProgress) { if (listState.isScrollInProgress) focusManager.clearFocus() }
     var profileId by rememberIntPreference("apps.profile", ALL_PROFILES)
     val profiles = state.visibleProfiles()
     androidx.compose.runtime.LaunchedEffect(profileId, profiles, state.loading) {
@@ -550,13 +560,18 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
     }
     var query by rememberSaveable { mutableStateOf("") }
     var type by rememberEnumPreference("apps.type", PackageType.USER)
+    var packageState by rememberAppsStateFilter()
+    var protectionFilter by rememberEnumPreference("apps.protection", AppsProtectionFilter.ANY)
+    val protection by produceState<Map<String, PackageCriticality>?>(null) { value = PackageProtection.load(context) }
+    var compact by rememberSaveable { mutableStateOf(CompactListPreferences.isCompact(context, NetworkList.PACKAGES)) }
     var process by rememberEnumPreference("apps.process", ProcessFilter.ALL)
     var sort by rememberEnumPreference("apps.sort", AppSort.NAME)
     var direction by rememberEnumPreference("apps.direction", SortDirection.ASCENDING)
     val effectiveProcess = if (state.access == AccessState.READY && type != PackageType.UNINSTALLED) process else ProcessFilter.ALL
-    val apps = remember(state.apps, state.uninstalledApps, profileId, query, type, effectiveProcess, sort, direction) {
+    val apps = remember(state.apps, state.uninstalledApps, profileId, query, type, effectiveProcess, sort, direction, packageState, protectionFilter, protection) {
         ListSorting.apps((state.apps + state.uninstalledApps).filter { app ->
             (profileId == ALL_PROFILES || app.userId == profileId) && matchesPackage(app, type, query) &&
+                matchesAppsState(app, type, packageState) && matchesAppsProtection(protection?.get(app.packageName), protectionFilter) &&
                 when (effectiveProcess) {
                     ProcessFilter.ALL -> true
                     ProcessFilter.ACTIVE -> app.processState in setOf(ProcessState.FOREGROUND, ProcessState.SERVICE, ProcessState.BACKGROUND)
@@ -565,15 +580,29 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 }
         }, sort, direction)
     }
-    LazyColumn(modifier = Modifier.testTag("apps-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val actions = rememberAppsPackageActions(state, apps, type, protection.orEmpty(), protection != null, snackbar, onRefresh)
+    LazyColumn(state = listState, modifier = Modifier.testTag("apps-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.padding(bottom = 10.dp)) {
                 Text("Your apps", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
             }
         }
         item {
-            OutlinedTextField(
-                value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+            if (actions.selectionMode) {
+                val actionButtons: @Composable () -> Unit = {
+                    TextButton(onClick = actions.startBatch, enabled = actions.selection.isNotEmpty(),
+                        modifier = Modifier.heightIn(min = 48.dp).testTag("apps-batch-action")) { Text(appsBatchAction(type)) }
+                    IconButton(onClick = actions.exitSelection, modifier = Modifier.testTag("apps-close-selection")) { Icon(Icons.Rounded.Close, "Close selection") }
+                }
+                if (LocalDensity.current.fontScale > 1.3f) Column(Modifier.fillMaxWidth().testTag("apps-selection-bar")) {
+                    Text("${actions.selection.size} selected", style = MaterialTheme.typography.titleMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) { actionButtons() }
+                } else Row(Modifier.fillMaxWidth().testTag("apps-selection-bar"), verticalAlignment = Alignment.CenterVertically) {
+                    Text("${actions.selection.size} selected", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                    actionButtons()
+                }
+            } else OutlinedTextField(
+                value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth().testTag("apps-search"), singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 label = { Text("Search apps") },
@@ -584,8 +613,17 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Panel, focusedContainerColor = Panel, unfocusedBorderColor = Comment, focusedBorderColor = Purple),
             )
         }
+        actions.privilegeMessage?.let { message -> item { AppsPrivilegeCard(message, onAccess) } }
         item {
-            Disclosure("Filters", "${type.label} · ${effectiveProcess.label}" + if (profileId == ALL_PROFILES) "" else " · ${profiles.firstOrNull { it.userId == profileId }?.name ?: "User $profileId"}") {
+            val summary = buildList {
+                add(type.label)
+                add(effectiveProcess.label)
+                if (type != PackageType.UNINSTALLED) add(packageState.label)
+                add("Protection: ${protectionFilter.label}")
+                if (profileId != ALL_PROFILES) add(profiles.firstOrNull { it.userId == profileId }?.name ?: "User $profileId")
+                if (compact) add("Compact")
+            }.joinToString(" · ")
+            Disclosure("Filters", summary) {
                 SortControls("apps", AppSort.entries, sort, direction, onSort = { sort = it }, onDirection = { direction = it })
                 ProfileFilters("apps", profiles, profileId) { profileId = it }
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -594,9 +632,23 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                             modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors())
                     }
                 }
+                if (type != PackageType.UNINSTALLED) {
+                    Text("State", style = MaterialTheme.typography.labelMedium, color = Muted)
+                    AppsFilterChips("apps-state-filter", AppsStateFilter.entries, packageState, { it.label }) { packageState = it }
+                }
+                Text("Protection level", style = MaterialTheme.typography.labelMedium, color = Muted)
+                AppsFilterChips("apps-protection-filter", AppsProtectionFilter.entries, protectionFilter, { it.label }) { protectionFilter = it }
+                Text("Protection level controls which packages can be uninstalled.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                AppsFilterChips("apps-density", listOf(false, true), compact, { if (it) "Compact" else "Comfortable" }) {
+                    compact = it
+                    CompactListPreferences.save(context, NetworkList.PACKAGES, it)
+                }
+                TextButton(onClick = actions.export, enabled = apps.isNotEmpty(),
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("apps-export-list")) { Text("Export list") }
                 if (type == PackageType.UNINSTALLED) {
                     Text("Not installed for the shown profile. Only packages Android still has a record of are shown; this is not a complete uninstall history.", style = MaterialTheme.typography.bodySmall, color = Muted)
                 } else if (state.access == AccessState.READY) {
+                    Text("Process state", style = MaterialTheme.typography.labelMedium, color = Muted)
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ProcessFilter.entries.forEach { item ->
                             FilterChip(selected = process == item, onClick = { process = item }, label = { Text(item.label) },
@@ -614,6 +666,9 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 }
             }
         }
+        if (actions.profileWarnings.isNotEmpty()) item {
+            InfoCard("Profile access", actions.profileWarnings.joinToString("\n"), Icons.Rounded.WarningAmber, accent = Orange)
+        }
         item {
             val scope = when {
                 type == PackageType.UNINSTALLED -> "Retained by Android"
@@ -623,17 +678,30 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
             }
             Text("${apps.size} ${if (apps.size == 1) "app" else "apps"} · $scope", style = MaterialTheme.typography.bodySmall, color = Muted, modifier = Modifier.padding(vertical = 6.dp))
         }
-        if (state.loading && state.apps.isEmpty()) {
-            item { InfoCard("Finding your apps", "Reading the apps installed on this device.", Icons.Rounded.Apps) }
+        if (state.loading && state.apps.isEmpty() || protection == null && protectionFilter != AppsProtectionFilter.ANY) {
+            item { InfoCard("Finding your apps", "Reading apps and package protection levels on this device.", Icons.Rounded.Apps) }
         } else if (apps.isEmpty()) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    InfoCard("No matching apps", "Try another app name or reset your search and filters.", Icons.Rounded.Search)
-                    TextButton(onClick = { query = ""; type = PackageType.ALL; process = ProcessFilter.ALL; profileId = ALL_PROFILES; focusManager.clearFocus() }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Reset filters") }
+                    InfoCard(if (actions.scanFailed) "Couldn't read apps" else if (type == PackageType.UNINSTALLED && state.uninstalledApps.isEmpty()) "No retained apps" else "No matching apps",
+                        if (actions.scanFailed) "The app scan failed. Check profile access and try again."
+                        else "Try another app name or reset your search and filters.", Icons.Rounded.Search)
+                    if (actions.scanFailed) TextButton(onClick = actions.retry, modifier = Modifier.heightIn(min = 48.dp)) { Text("Retry") }
+                    TextButton(onClick = { query = ""; type = PackageType.ALL; process = ProcessFilter.ALL; profileId = ALL_PROFILES;
+                        packageState = AppsStateFilter.ANY; protectionFilter = AppsProtectionFilter.ANY; focusManager.clearFocus() },
+                        modifier = Modifier.heightIn(min = 48.dp).testTag("apps-reset-filters")) { Text("Reset filters") }
                 }
             }
         } else {
-            items(apps, key = { it.key }) { app -> AppRow(app, sort = sort, modifier = Modifier.animateItem(), onClick = { focusManager.clearFocus(); onSelect(app) }) }
+            items(apps, key = { "${it.key}:${it.profile.serialNumber}" }) { app ->
+                val level = protection?.get(app.packageName)
+                AppRow(app, sort = sort, modifier = Modifier.animateItem(), compact = compact, showIcon = actions.showIcons,
+                    protectionLabel = if (!app.system) "User" else level?.name?.lowercase()?.replaceFirstChar { it.titlecase() } ?: "Unknown protection",
+                    selectionMode = actions.selectionMode, selected = actions.selection.any { it == AppsSelection.from(app) },
+                    selectionRefusal = actions.selectionRefusal(app),
+                    onLongClick = { focusManager.clearFocus(); actions.select(app) },
+                    onClick = { focusManager.clearFocus(); if (actions.selectionMode) actions.select(app) else onSelect(app) })
+            }
         }
     }
 }

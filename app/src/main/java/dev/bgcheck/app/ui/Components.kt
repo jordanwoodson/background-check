@@ -5,6 +5,8 @@ import android.os.UserHandle
 import dev.bgcheck.network.utils.PackageUtils
 import androidx.collection.LruCache
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.CheckBox
+import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -45,10 +49,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -126,17 +134,39 @@ internal fun InfoCard(title: String, message: String, icon: ImageVector, modifie
 }
 
 @Composable
-internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort = AppSort.NAME, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier.testTag("app-row-${app.key}"), color = Panel, shape = RoundedCornerShape(24.dp), border = null) {
-        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            AppIcon(app.packageName, userId = app.userId, userSerial = app.profile.serialNumber)
+internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort = AppSort.NAME,
+    onLongClick: (() -> Unit)? = null, selectionMode: Boolean = false, selected: Boolean = false,
+    compact: Boolean = false, showIcon: Boolean = true, protectionLabel: String? = null,
+    selectionRefusal: String? = null, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(24.dp)
+    Surface(modifier = modifier.testTag("app-row-${app.key}").alpha(if (selectionMode && selectionRefusal != null && !selected) 0.6f else 1f).clip(shape)
+        .combinedClickable(role = if (selectionMode) Role.Checkbox else Role.Button, onClick = onClick,
+            onLongClick = onLongClick, onLongClickLabel = if (onLongClick != null) "Select app" else null)
+        .semantics {
+            if (selectionMode) {
+                toggleableState = if (selected) ToggleableState.On else ToggleableState.Off
+                selectionRefusal?.let { stateDescription = it }
+            }
+        },
+        color = Panel, shape = shape, border = if (selected) BorderStroke(1.dp, Purple) else null) {
+        Row(Modifier.fillMaxWidth().padding(if (compact) 10.dp else 14.dp).heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (selectionMode) Icon(if (selected) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank,
+                null, tint = if (selected) Purple else Muted, modifier = Modifier.size(24.dp))
+            if (showIcon) AppIcon(app.packageName, size = if (compact) 36.dp else 46.dp, userId = app.userId, userSerial = app.profile.serialNumber)
+            else Icon(Icons.Rounded.Apps, null, tint = Muted, modifier = Modifier.size(if (compact) 36.dp else 46.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(app.label, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 ProfileLabel(app.profile)
-                Text(app.description.text, style = MaterialTheme.typography.bodySmall, color = Foreground,
+                if (!compact) Text(app.description.text, style = MaterialTheme.typography.bodySmall, color = Foreground,
                     maxLines = 3, overflow = TextOverflow.Ellipsis)
                 Text("Cana: ${app.debloatRecommendation.rating.label}",
                     style = MaterialTheme.typography.bodySmall, color = Cyan)
+                protectionLabel?.let {
+                    Text("${if (!app.installed) "Uninstalled" else if (app.enabled) "Enabled" else "Disabled"} · $it",
+                        style = MaterialTheme.typography.bodySmall, color = Muted)
+                    if (!compact && sort != AppSort.PACKAGE) Text(app.packageName, style = MaterialTheme.typography.bodySmall,
+                        color = Muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
                 Text(
                     buildString {
                         append(if (app.system) "System" else "User")
@@ -154,9 +184,9 @@ internal fun AppRow(app: AppEntry, modifier: Modifier = Modifier, sort: AppSort 
                     AppSort.STANDBY -> "Standby: ${bucketLabel(app.standbyBucket)}"
                     else -> null
                 }
-                sortValue?.let { Text(it, style = MaterialTheme.typography.bodySmall.copy(fontFamily = ReadingFont), color = Muted) }
+                sortValue?.takeUnless { compact && sort == AppSort.PACKAGE }?.let { Text(it, style = MaterialTheme.typography.bodySmall.copy(fontFamily = ReadingFont), color = Muted) }
             }
-            Icon(Icons.Rounded.ChevronRight, null, tint = Muted, modifier = Modifier.size(20.dp))
+            if (!selectionMode) Icon(Icons.Rounded.ChevronRight, null, tint = Muted, modifier = Modifier.size(20.dp))
         }
     }
 }
