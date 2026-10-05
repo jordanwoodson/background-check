@@ -1,5 +1,10 @@
 package dev.bgcheck.app.ui
 
+import android.app.Application
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
@@ -49,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
@@ -58,6 +65,8 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.bgcheck.app.data.AccessState
 import dev.bgcheck.app.data.AppEntry
 import dev.bgcheck.app.data.ControlAction
@@ -67,6 +76,8 @@ import dev.bgcheck.app.data.ServiceSort
 import dev.bgcheck.app.data.SortDirection
 import dev.bgcheck.app.data.UiState
 import dev.bgcheck.app.data.bucketLabel
+import dev.bgcheck.app.ui.network.settingsViewModelFactory
+import dev.bgcheck.network.presentation.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,9 +91,20 @@ internal fun AppDetailSheet(
     onForceStop: () -> Unit,
     onRetry: () -> Unit = {},
     onSelectPackage: (AppEntry) -> Unit = {},
-    onOpenNetwork: () -> Unit = {},
+    onGoToNetwork: () -> Unit = {},
+    onSeeInNetwork: () -> Unit = {},
+    onFirewallSettings: () -> Unit = {},
     onTogglePin: (AppEntry) -> Unit = {},
 ) {
+    val packagesModel = appDetailPackagesViewModel()
+    val packageActionsModel = appDetailPackageActionsViewModel(packagesModel)
+    val packageActions by packageActionsModel.state.collectAsStateWithLifecycle()
+    val packagesState by packagesModel.uiState.collectAsStateWithLifecycle()
+    val packageBusy = packageActions.pending != null
+    val context = LocalContext.current
+    val application = context.applicationContext as Application
+    val settingsModel: SettingsViewModel = viewModel(factory = remember(application) { settingsViewModelFactory(application) })
+    val firewallSettings by settingsModel.uiState.collectAsStateWithLifecycle()
     val windowHeight = LocalWindowInfo.current.containerSize.height
     val compactHeight = with(LocalDensity.current) { windowHeight.toDp() < 480.dp }
     val confirmationModifier = if (compactHeight) Modifier.widthIn(max = 560.dp).fillMaxWidth() else Modifier
@@ -97,9 +119,22 @@ internal fun AppDetailSheet(
     var confirmation by remember(app.key) { mutableStateOf<ControlAction?>(null) }
     var confirmForceStop by remember(app.key) { mutableStateOf(false) }
     // Keep the full result available after the global snackbar has timed out.
-    var sheetMessage by remember(app.key) { mutableStateOf(state.message) }
+    var sheetMessage by rememberSaveable(app.key, app.profile.serialNumber) { mutableStateOf(state.message) }
     LaunchedEffect(app.key, state.message) {
         state.message?.let { sheetMessage = it }
+    }
+    LaunchedEffect(packageActions.result, app.key, app.profile.serialNumber) {
+        packageActions.result?.takeIf {
+            it.id.packageName == app.packageName && it.id.userId == app.userId &&
+                it.identity.uid == app.uid && it.identity.userSerial == app.profile.serialNumber
+        }?.let { result ->
+            sheetMessage = result.message
+            packageActionsModel.clearResult(result)
+        }
+    }
+    LaunchedEffect(packagesState.isRenderingUI) { if (packagesState.isRenderingUI) packagesModel.setUIReady() }
+    LaunchedEffect(packagesState.error, packageBusy) {
+        if (!packageBusy) packagesState.error?.let { sheetMessage = it; packagesModel.clearError() }
     }
     // Keep these in the caller's saveable registry, above the sheet's dialog composition.
     val preferenceKey = "detail.${app.key}:${app.profile.serialNumber}:${app.firstInstallTime}"
@@ -119,9 +154,9 @@ internal fun AppDetailSheet(
         else -> null
     }
     val ready = state.access == AccessState.READY
-    val canForceStop = ready && !state.busy && !state.detailLoading && forceStopRestriction == null
+    val canForceStop = ready && !state.busy && !packageBusy && !state.detailLoading && forceStopRestriction == null
     val writableModes = setOf("allow", "ignore", "deny", "default")
-    val canChange = profileAvailable && ready && !state.busy && !state.detailLoading && policy != null && policy.error == null && app.protectedReason == null &&
+    val canChange = profileAvailable && ready && !state.busy && !packageBusy && !state.detailLoading && policy != null && policy.error == null && app.protectedReason == null &&
         policy.uidOverride == false && policy.backgroundMode in writableModes && policy.userExempt != null &&
         (app.targetSdk >= 26 || policy.legacyMode in writableModes)
     val legacyRelevant = app.targetSdk < 26
@@ -146,13 +181,14 @@ internal fun AppDetailSheet(
                     }
                     IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) { Icon(Icons.Rounded.Close, "Close app details", tint = Muted) }
                 }
-                if (state.detailLoading || state.busy) {
+                if (state.detailLoading || state.busy || packageBusy) {
                     Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }, verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                        Text(if (state.busy) "Applying and checking your change…" else "Reading current settings…", style = MaterialTheme.typography.bodySmall, color = Muted)
+                        Text(packageActions.pending?.let { packageActionProgress(it.action, it.pkg.name) }
+                            ?: if (state.busy) "Applying and checking your change…" else "Reading current settings…", style = MaterialTheme.typography.bodySmall, color = Muted)
                     }
                 }
-                sheetMessage?.takeIf { !state.busy && !state.detailLoading }?.let { message ->
+                sheetMessage?.takeIf { !state.busy && !packageBusy && !state.detailLoading }?.let { message ->
                     Surface(color = Panel, shape = RoundedCornerShape(20.dp)) {
                         Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(message, modifier = Modifier.weight(1f).padding(vertical = 8.dp).semantics { liveRegion = LiveRegionMode.Polite },
@@ -169,7 +205,11 @@ internal fun AppDetailSheet(
                     AppIcon(app.packageName, 62.dp, userId = app.userId, userSerial = app.profile.serialNumber)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(app.label, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-                        Text(app.packageName, style = MaterialTheme.typography.bodySmall.copy(fontFamily = ReadingFont), color = Muted)
+                        Text(app.packageName, style = MaterialTheme.typography.bodySmall.copy(fontFamily = ReadingFont), color = Muted,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = "Copy package name") {
+                                context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Package name", app.packageName))
+                                Toast.makeText(context, "Package name copied", Toast.LENGTH_SHORT).show()
+                            }.padding(vertical = 12.dp))
                         ProfileLabel(profile)
                         Text((if (app.system) "System app" else "User app") + if (!app.installed) " · Uninstalled" else "", style = MaterialTheme.typography.labelMedium, color = Green)
                     }
@@ -181,7 +221,21 @@ internal fun AppDetailSheet(
                     PackageInformation(state, app, onSelectPackage, initiallyExpanded = !ready || !app.installed)
                 }
                 if (!app.installed) {
-                    InfoCard("Uninstalled for this user", "Android still retains a record of this package. It may retain app data, be part of the system image, or be installed for another user. Live readings and app controls are unavailable here.", Icons.Rounded.Info)
+                    InfoCard("Uninstalled for this user", "Android still retains a record of this package. It may retain app data, be part of the system image, or be installed for another user. Live readings are unavailable. Review reinstall options below.", Icons.Rounded.Info)
+                    AppDetailNetwork(app, onGoToNetwork, onSeeInNetwork, onFirewallSettings, onMessage = { sheetMessage = it })
+                    HorizontalDivider(color = Outline)
+                    AppDetailPackage(app, profileAvailable, profile.unavailableReason, state.busy || packageBusy,
+                        onConnect, onFirewallSettings, onAction = { pkg, action -> sheetMessage = null; packageActionsModel.run(pkg, action) },
+                        firewallSettings.allowCriticalPackageUninstall, packagesModel, packageActions.revision)
+                    sheetMessage?.let { message ->
+                        SelectionContainer { InfoCard("Update", message, Icons.Rounded.Info, accent = Green) }
+                    }
+                    OutlinedButton(onClick = { onOpenAppSettings(app) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(24.dp)) {
+                        Icon(Icons.Rounded.Settings, null, modifier = Modifier.size(19.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text("Open Android app settings", modifier = Modifier.weight(1f))
+                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, modifier = Modifier.size(17.dp))
+                    }
                 } else {
                     if (!ready) {
                         val connecting = state.access in setOf(AccessState.CHECKING, AccessState.CONNECTING)
@@ -250,20 +304,23 @@ internal fun AppDetailSheet(
                         PolicyChoice("Allow during Doze", "Let this app do more while the phone is idle.", selected = policy?.dozeExempt == true, enabled = canChangeDoze && policy?.systemExempt == false, onClick = { confirmation = ControlAction.EXEMPT_DOZE })
                     }
                     HorizontalDivider(color = Outline)
+                    AppDetailNetwork(app, onGoToNetwork, onSeeInNetwork, onFirewallSettings, onMessage = { sheetMessage = it })
+                    HorizontalDivider(color = Outline)
                     Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                         Text("Stop this app", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
                         Text("End the app’s current processes and background activity. Unsaved work may be lost. Notifications and scheduled work can stop until you open the app again. There is no Undo for force stop.", style = MaterialTheme.typography.bodyMedium, color = Muted)
                         forceStopRestriction?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Orange) }
                         OutlinedButton(onClick = { confirmForceStop = true }, enabled = canForceStop, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Force stop app") }
                     }
+                    HorizontalDivider(color = Outline)
+                    AppDetailPackage(app, profileAvailable, profile.unavailableReason, state.busy || packageBusy,
+                        onConnect, onFirewallSettings, onAction = { pkg, action -> sheetMessage = null; packageActionsModel.run(pkg, action) },
+                        firewallSettings.allowCriticalPackageUninstall, packagesModel, packageActions.revision)
                     policy?.takeIf { ready }?.let {
                         Text("Settings checked ${dateTimeLabel(it.capturedAt)}. Changes are read back before being reported as applied.", style = MaterialTheme.typography.bodySmall, color = Muted)
                     }
                     sheetMessage?.let { message ->
                         SelectionContainer { InfoCard("Update", message, Icons.Rounded.Info, accent = Green) }
-                    }
-                    OutlinedButton(onClick = onOpenNetwork, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(24.dp)) {
-                        Text("Network and internet access")
                     }
                     OutlinedButton(onClick = { onOpenAppSettings(app) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(24.dp)) {
                         Icon(Icons.Rounded.Settings, null, modifier = Modifier.size(19.dp))
@@ -458,7 +515,7 @@ private fun AppResourceDiagnostics(
 }
 
 @Composable
-private fun DetailValue(label: String, value: String) {
+internal fun DetailValue(label: String, value: String) {
     ResourceValue(label, value)
 }
 

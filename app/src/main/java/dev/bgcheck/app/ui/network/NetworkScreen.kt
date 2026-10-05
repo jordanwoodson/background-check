@@ -188,6 +188,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
                 NetworkDestination.START -> onStartFirewall()
                 NetworkDestination.VPN_FALLBACK -> onEnableVpn()
                 NetworkDestination.TOGGLE -> if (deps.firewallManager.isActive()) stop() else onStartFirewall()
+                NetworkDestination.SETTINGS -> settingsOpen = true
             }
             onRequestHandled()
         }

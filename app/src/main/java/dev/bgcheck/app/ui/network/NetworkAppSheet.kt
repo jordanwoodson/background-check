@@ -26,6 +26,7 @@ import dev.bgcheck.app.ui.*
 import dev.bgcheck.network.domain.firewall.BlockingContext
 import dev.bgcheck.network.domain.firewall.FirewallBackendType
 import dev.bgcheck.network.domain.model.NetworkPackage
+import dev.bgcheck.network.domain.model.InternetRecommendation
 import dev.bgcheck.network.domain.model.InternetRecommendations
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,7 +36,6 @@ internal fun NetworkAppSheet(pkg: NetworkPackage, mainApp: AppEntry?, profileNam
     hasCellular: Boolean, onDismiss: () -> Unit, onSettings: () -> Unit, onOpenAppSettings: () -> Unit,
     onAppDetails: (AppEntry) -> Unit, onChange: (NetworkControl, Boolean) -> Unit) {
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     val recommendation = rememberInternetRecommendation(pkg)
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Ink,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), modifier = Modifier.testTag("network-sheet")) {
@@ -55,17 +55,26 @@ internal fun NetworkAppSheet(pkg: NetworkPackage, mainApp: AppEntry?, profileNam
                     Toast.makeText(context, "Package name copied", Toast.LENGTH_SHORT).show()
                 }.padding(vertical = 12.dp))
             if (mainApp != null) OutlinedButton(onClick = { onDismiss(); onAppDetails(mainApp) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("App details") }
-            Disclosure("Internet advice", "${recommendation.advice.label}. ${recommendation.reason}") {
-                Text(recommendation.consequence, style = MaterialTheme.typography.bodyMedium)
-                recommendation.notes.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = Muted) }
-                Text(InternetRecommendations.GUIDANCE_NOTE, style = MaterialTheme.typography.bodySmall, color = Orange)
-                recommendation.sourceUrl?.let { source ->
-                    TextButton(onClick = { runCatching { uriHandler.openUri(source) } }) {
-                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Source")
-                    }
-                }
-            }
+            InternetAdviceCard(recommendation)
             NetworkAccessControls(pkg, backend, blockingContext, granular, limited, hasCellular, onChange, onSettings)
+        }
+    }
+}
+
+@Composable
+internal fun InternetAdviceCard(recommendation: InternetRecommendation) {
+    val uriHandler = LocalUriHandler.current
+    Disclosure("Internet advice", "${recommendation.advice.label}. ${recommendation.reason}") {
+        Text(recommendation.consequence, style = MaterialTheme.typography.bodyMedium)
+        recommendation.notes.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = Muted) }
+        recommendation.afterInstall?.let {
+            Text("If reinstalled: ${it.advice.label}. ${it.reason} ${it.consequence}", style = MaterialTheme.typography.bodySmall)
+        }
+        Text(InternetRecommendations.GUIDANCE_NOTE, style = MaterialTheme.typography.bodySmall, color = Orange)
+        recommendation.sourceUrl?.let { source ->
+            TextButton(onClick = { runCatching { uriHandler.openUri(source) } }) {
+                Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Source")
+            }
         }
     }
 }

@@ -359,8 +359,8 @@ class PackagesViewModel(
         applyFilters(newFilterState)
     }
 
-    fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity? = null) {
-        viewModelScope.launch {
+    fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity? = null): Job {
+        return viewModelScope.launch {
             val snapshot = updatePackageInList(packageName, userId) { pkg ->
                 pkg.copy(isEnabled = enabled)
             }
@@ -387,8 +387,8 @@ class PackagesViewModel(
         }
     }
 
-    fun uninstallPackage(packageName: String, userId: Int, appName: String, expected: PackageIdentity? = null) {
-        viewModelScope.launch {
+    fun uninstallPackage(packageName: String, userId: Int, appName: String, expected: PackageIdentity? = null): Job {
+        return viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingData = true,
                 isRenderingUI = false
@@ -450,8 +450,8 @@ class PackagesViewModel(
         _uiState.value = _uiState.value.copy(batchUninstallResult = null)
     }
 
-    fun reinstallPackage(packageName: String, userId: Int, appName: String, expected: PackageIdentity? = null) {
-        viewModelScope.launch {
+    fun reinstallPackage(packageName: String, userId: Int, appName: String, expected: PackageIdentity? = null): Job {
+        return viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingData = true,
                 isRenderingUI = false
@@ -518,8 +518,8 @@ class PackagesViewModel(
         _uiState.value = _uiState.value.copy(reinstallSuccess = null)
     }
 
-    fun forceStopPackage(packageName: String, userId: Int, expected: PackageIdentity? = null) {
-        viewModelScope.launch {
+    fun forceStopPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Job {
+        return viewModelScope.launch {
             managePackageUseCase.forceStopPackage(packageName, userId, expected = expected)
                 .onSuccess {
                 }

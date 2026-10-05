@@ -296,6 +296,12 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    fun onPackageActionCompleted(message: String) {
+        networkDependencies.packageDataSource.invalidateCache()
+        mutableState.update { it.copy(message = message) }
+        refresh()
+    }
+
     fun refresh() {
         if (state.value.busy) return
         if (state.value.refreshing) { refreshAgain = true; return }

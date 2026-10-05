@@ -12,7 +12,7 @@ import dev.bgcheck.network.domain.model.PackageType
 import dev.bgcheck.network.domain.model.InternetRecommendations
 import dev.bgcheck.network.utils.Constants
 
-enum class NetworkDestination { OPEN, START, VPN_FALLBACK, TOGGLE }
+enum class NetworkDestination { OPEN, START, VPN_FALLBACK, TOGGLE, SETTINGS }
 
 data class NetworkRequest(val destination: NetworkDestination, val packageName: String? = null, val userId: Int = 0)
 

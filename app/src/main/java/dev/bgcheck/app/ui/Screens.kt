@@ -289,7 +289,12 @@ fun BackgroundCheckApp(
             AppDetailSheet(state, app, onDismissDetail, onAction, onOpenAppSettings,
                 onConnect = { onDismissDetail(); page = Page.ACCESS }, onForceStop = onForceStop,
                 onRetry = { onClearMessage(); onRefresh() }, onSelectPackage = onSelect,
-                onOpenNetwork = { openNetwork(app) }, onTogglePin = onTogglePin)
+                onGoToNetwork = { openNetwork(null) }, onSeeInNetwork = { openNetwork(app) },
+                onFirewallSettings = {
+                    onDismissDetail()
+                    localNetworkRequest = NetworkRequest(NetworkDestination.SETTINGS)
+                    page = Page.NETWORK
+                }, onTogglePin = onTogglePin)
         }
     }
 }
