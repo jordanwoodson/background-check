@@ -35,7 +35,7 @@
 
 ### Task 3: Compact Network lists
 - [x] Add persisted compact preference and controls to firewall/package lists; adapt row binding while retaining complete sheets.
-- [ ] Verify normal/large fonts, recycling and preference restoration.
+- [x] Verify normal/large fonts, recycling and preference restoration.
 
 ### Task 4: Overview, preferences and pins
 - [x] Test live firewall state/profile presentation and pinned identity matching.
@@ -43,13 +43,14 @@
 - [x] Integrate searchable unified change list, before/after rendering and JSON document export; retain existing policy Undo safeguards.
 
 ### Task 5: Integration and verification
-- [ ] Run unit/lint/release gate and focused instrumented/regression tests; inspect screenshots at normal and large font.
+- [x] Run unit/lint/release gate and available focused instrumented/regression tests; inspect screenshots at normal and large font.
+- [ ] Verify privileged package Undo and fresh battery sampling after explicit Shizuku approval.
 - [x] Review full change, fix material findings and document exact evidence.
 - [x] Check Motorola reachability and run available physical-device checks; record unavailable checks explicitly.
 
 ### Task 6: Deployment
-- [ ] Commit with readable release-note subjects and push main.
-- [ ] Inspect automatic release success, downloaded artifact certificate/checksum and installed release behavior.
+- [x] Commit with readable release-note subjects and push main.
+- [x] Inspect automatic release success, downloaded artifact certificate/checksum and installed release behavior.
 - [ ] Verify Obtainium delivery on reachable phone; mark the overall goal complete only with requirement-by-requirement evidence.
 
 ## Execution record
@@ -62,3 +63,7 @@
 - Motorola is online through Tailscale but historical ADB port refuses connection. Asked user asynchronously for current Wireless debugging IP/port; no response yet.
 
 - Final source gate passed: 244 unit tests in 33 suites, zero release lint errors (319 warnings), signed release and debug/test APK builds. Local certificate matches the established fingerprint. Static review has no outstanding must-fix findings. Device evidence remains pending; do not count emulator startup failures as app-test results.
+- Subsequent isolated API 35 verification passed all seven new UI cases at 100% and 200% font sizes, plus saved-rule Undo/conflict and Activity/ViewModel persistence runtime checks. Actual row checks required the existing safety metadata to finish loading first. Exact scope and qualifications are in `docs/inspection-improvements-verification.md`.
+- Pushed app commit `e23ab6f7c66454f5ba748ab09e67914060bc1380` to main. Workflow `37261977933` automatically published `1.1.1-bgcheck.13` / code 16. Independently downloaded checksum, signature and version checks passed.
+- Published APK installed in place on the isolated API 35 emulator, preserving installation time and all six history records. A force-stop/cold launch restored the Apps tab and descending sort. Published UI screenshots are included in the verification record.
+- Automatic approval review rejected starting Shizuku on the disposable emulator as insufficiently authorized. Explicit approval was requested; no retry was made. Privileged live checks and phone/Obtainium checks remain pending approval and a current phone ADB endpoint, respectively.
