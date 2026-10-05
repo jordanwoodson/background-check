@@ -1,0 +1,5 @@
+<resources>
+    <string name="list_layout_description">列表布局</string>
+    <string name="list_layout_comfortable">舒适</string>
+    <string name="list_layout_compact">紧凑</string>
+</resources>

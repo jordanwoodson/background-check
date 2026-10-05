@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:minHeight="48dp"
     android:layout_marginStart="12dp"
     android:layout_marginEnd="12dp"
     android:layout_marginTop="4dp"
@@ -15,6 +16,7 @@
     android:foreground="?android:attr/selectableItemBackground"
     app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
     <LinearLayout
+        android:id="@+id/row_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -54,9 +56,7 @@
                     android:text="@string/action_sheet_placeholder_app_name"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:maxLines="2"
-                    android:ellipsize="end"/>
+                    android:textColor="?android:attr/textColorPrimary"/>
                 <!-- Row 2: Package Name -->
                 <TextView
                     android:id="@+id/package_name"

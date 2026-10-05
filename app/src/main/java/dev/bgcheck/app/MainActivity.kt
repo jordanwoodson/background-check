@@ -13,12 +13,17 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.activity.viewModels
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.bgcheck.app.ui.BackgroundCheckApp
 import dev.bgcheck.app.ui.BackgroundCheckTheme
 
 class MainActivity : ComponentActivity() {
     private val model: BackgroundViewModel by viewModels()
+    private val historyExport = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        uri?.let(model::exportChanges)
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -27,6 +32,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             BackgroundCheckTheme {
+                CompositionLocalProvider(dev.bgcheck.app.ui.LocalInspectionPreferences provides getSharedPreferences("inspection_preferences", MODE_PRIVATE)) {
                 BackgroundCheckApp(
                     state = model.state.collectAsStateWithLifecycle().value,
                     onRefresh = model::refresh, onConnect = model::connect, onSelect = model::select,
@@ -48,12 +54,19 @@ class MainActivity : ComponentActivity() {
                     onSetMonitorInterval = model::setMonitorInterval,
                     onMonitorVisible = model::setMonitorVisible,
                     onForceStop = model::forceStop,
+                    onTogglePin = model::togglePin,
+                    onUndoNetwork = model::undoNetwork,
+                    onExportChanges = { historyExport.launch("background-check-changes.json") },
+                    onStartComparison = { model.captureComparison(restart = true) },
+                    onCompareBattery = { model.captureComparison(restart = false) },
+                    onClearComparison = model::clearComparison,
                     onOpenNetwork = { app ->
                         open(Intent(this, dev.bgcheck.network.ui.MainActivity::class.java)
                             .putExtra("dev.bgcheck.network.PACKAGE", app?.packageName)
                             .apply { app?.let { putExtra("dev.bgcheck.network.USER_ID", it.userId) } })
                     },
                 )
+                }
             }
         }
     }

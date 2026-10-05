@@ -18,6 +18,7 @@ import dev.bgcheck.network.domain.model.PackageId
 import dev.bgcheck.network.domain.model.PackageType
 import dev.bgcheck.network.utils.Constants
 import dev.bgcheck.network.utils.PackageUtils
+import dev.bgcheck.network.ui.common.CompactListRow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,6 +46,7 @@ class PackageAdapter(
     }
 
     private var isSelectionMode = false
+    private var compactLayout = false
     private val selectedPackages = mutableSetOf<PackageId>()
     private var onSelectionChanged: ((Set<PackageId>) -> Unit)? = null
     private var onSelectionLimitReached: (() -> Unit)? = null
@@ -78,7 +80,13 @@ class PackageAdapter(
 
     override fun onBindViewHolder(holder: PackageViewHolder, position: Int) {
         val item = getItem(position)
-        holder.bind(item, showIcons, isSelectionMode)
+        holder.bind(item, showIcons, isSelectionMode, compactLayout)
+    }
+
+    fun setCompactLayout(compact: Boolean) {
+        if (compactLayout == compact) return
+        compactLayout = compact
+        notifyDataSetChanged()
     }
 
     override fun submitList(list: List<Package>?) {
@@ -189,8 +197,9 @@ class PackageAdapter(
         // Track current package for race condition prevention
         private var currentPackage: Package? = null
 
-        fun bind(pkg: Package, showIcons: Boolean, isSelectionMode: Boolean) {
+        fun bind(pkg: Package, showIcons: Boolean, isSelectionMode: Boolean, compact: Boolean) {
             currentPackage = pkg
+            CompactListRow.bind(binding.root, compact)
             binding.appName.text = pkg.name
             binding.packageName.text = pkg.packageName
 

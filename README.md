@@ -21,9 +21,29 @@ Shizuku may need to be started again after a reboot. Resource monitoring runs on
 
 See the [Dracula identity and screenshots](docs/dracula-theme.md), [Dracula verification](docs/dracula-verification.md), and [verified private GitHub / Obtainium setup](docs/release-setup-verification.md).
 
+## Inspection shortcuts and protection status
+
+Overview separates **Shizuku access** from the firewall's live state, active backend, profile scope and health. Connected Shizuku does not mean the firewall is on. Limited Android backends and failed or partial rule application remain visible; open **Network** from the status card to inspect or recover protection.
+
+Use **Pin app** in an installed app's details to add it to Overview's **Pinned apps**. Pins follow the verified installation and profile, so a reinstalled package or recreated work profile does not inherit an old pin. **Unpin** removes it. Per-list sorting, profile/type/process filters and the Monitor sampling interval survive fresh launches. App-detail sort preferences remain separate for each installation.
+
+**Your changes** combines background/Doze policy changes, saved firewall rules, and package enable/disable changes. Search by app, profile, action or setting; each entry shows before/after values. **Export all changes** writes a JSON document through Android's file picker. Export includes all recorded profiles, independently of the current search.
+
+Undo checks the current installation, profile and settings before restoring. Package Undo preserves Android's exact preceding enabled-state override, including its default state. Firewall Undo restores the saved rule; the live protection card separately reports enforcement. Interrupted Network writes remain visible as **Needs recovery** with an explanation rather than claiming success. They require inspecting the actual setting in Network before another change.
+
+## Battery comparison sessions
+
+Open **Monitor → Battery use → Battery comparison** and choose **Start comparison**. Use the phone, then return and choose **Compare now** to take a second fresh reading. The comparison shows estimated mAh, CPU time, partial wakelocks, received bytes and sent bytes per UID. Search and profile filtering apply to the results; shared-UID packages remain grouped.
+
+The two snapshots stay on this device across restarts. **Restart comparison** replaces the baseline, and **Clear comparison** removes both snapshots. No background sampling service is started. Saved results remain readable when Shizuku is disconnected.
+
+History resets, backwards counters, unknown or changed installation identities, and changed shared-UID membership make affected comparisons unavailable. Missing readings are never treated as zero. Same-boot elapsed time uses the device's monotonic clock; across reboots or older snapshots, the UI distinguishes the recorded wall-clock span from an unverified elapsed duration. Differences are Android estimates over the observed interval and do not prove a setting caused a battery change.
+
 ## Network and internet controls
 
 **Network** owns internet firewall recommendations. Its firewall rows and control sheets explain why to allow, consider blocking or review access, accounting for shared/core UIDs and INTERNET permission. Network's retained-package sheets show reinstall guidance. Recommendations do not change rules automatically. See [internet recommendations and their sources](docs/internet-recommendations.md).
+
+The Firewall and Packages lists each offer **Comfortable** and **Compact** layouts and remember their choices across launches. Compact reduces spacing and hides package identifiers and inline firewall advice; tap an app for its full identifier, explanations and controls. Profile, status and safety badges remain visible, quick controls retain 48dp touch targets, and app names and layout choices wrap at larger font sizes.
 
 The **Network** workspace retains De1984’s four firewall backends, per-app and batch rules, Wi-Fi/mobile/roaming and screen-off controls, LAN blocking with root, allow-by-default/block-by-default policies, profile-aware app lists, package enable/disable/force-stop/uninstall/restore, profile-bound rule backup and package-list export/import, captive-portal settings, Quick Settings tile, widget, installation notifications, logs, appearance and language settings. The MIT source and attribution are included; see [provenance](network/UPSTREAM.md) and the [feature and verification matrix](docs/network-controls-verification.md).
 
@@ -88,7 +108,9 @@ Process state is a point-in-time observation, not a battery-drain measurement. C
 
 Undo restores the preceding effective policy only when the current policy still matches the saved result. A default app-op may be restored as its equivalent explicit value. History keeps the latest 50 changes on this device. Uninstalling the app removes history but does not reset Android policies.
 
-Before changing a setting, the app first checks for changes made elsewhere, then saves a recovery checkpoint. Interrupted changes remain in history with **Restore**. Recovery refuses unrelated policy changes. Undo operations also save a recovery checkpoint before writing.
+Network history additionally retains the latest 500 completed changes and preserves unresolved recovery checkpoints. Its records and battery comparisons remain local and are excluded from Android backup.
+
+Before changing a background policy, the app first checks for changes made elsewhere, then saves a recovery checkpoint. Interrupted policy changes remain in history with **Restore**. Recovery refuses unrelated policy changes. Undo operations also save a recovery checkpoint before writing. Interrupted or unverified Network changes remain marked **Needs recovery** and require inspection of the current setting; they do not offer an unsafe automatic Undo.
 
 ## Build
 
@@ -114,6 +136,8 @@ Keep that keystore and its credentials private and backed up; updates must use t
 ## Device verification
 
 Work-profile behavior and managed-profile test evidence are recorded in [work-profile verification](docs/work-profile-verification.md).
+
+The [inspection improvements verification record](docs/inspection-improvements-verification.md) covers firewall status, battery comparisons, combined history, pins, persistent preferences and compact Network lists, including the outstanding physical-device checks.
 
 The test suite covers shell validation, resource and battery parsing, unavailable-versus-zero readings, sorting fields and directions, policy changes and recovery, and force-stop identity/readback safeguards. Compose tests exercise rendered sort order, search/filter retention, page navigation, preview limits, Undo targeting and force-stop confirmation. Device tests use only `dev.bgcheck.fixture`, a disposable APK with a test activity, a separate worker service and a bounded HTTP traffic probe with INTERNET permission, for mutations. They exercise the Shizuku transport, resource reads, restrictions, Doze exemptions, restoration and force stop.
 

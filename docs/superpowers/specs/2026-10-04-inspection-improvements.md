@@ -1,0 +1,12 @@
+# Inspection and control improvements
+
+Implement the six improvements requested after the repository review, then deploy through the existing signed main-branch release workflow. Keep the default version and signing identity unchanged. Work on main.
+
+1. Overview shows Shizuku access separately from actual firewall state, active backend, health and profile scope. A connected privilege bridge must never imply firewall protection. Backend/profile restrictions remain explicit.
+2. Battery comparison sessions persist a baseline and a later sample locally and compare UID CPU time, partial wakelocks, traffic and estimated mAh. Preserve unavailable readings and reject crossed history resets, backwards counters and stale/recreated identities. Sampling remains explicit/foreground; no background polling service. Show elapsed interval and estimates without claiming causation. Allow restarting and clearing the comparison.
+3. One searchable change list combines existing policy history with firewall rule and package enable/disable changes, with timestamps, profile, before/after values and JSON export. Preserve existing policy Undo. Network Undo must revalidate identity, profile availability and current values before changing anything; report conflicts and failures, and mark restored only after success. Irreversible operations never gain misleading Undo.
+4. Persist per-list sort/filter preferences and monitor interval across cold launches. Pin/unpin apps from details; Overview lists matching pins by installation identity, never silently transferring pins to recreated profiles or packages.
+5. Network firewall and package lists offer a persisted compact layout. Keep controls accessible with at least 48dp touch targets, full information in details, and usable large-font layouts.
+6. Verify on emulator and reachable Motorola: signed install/update, actual interactions, restart preferences, sampling/reset protections, guarded Undo, firewall/privilege status, reboot recovery, Tailscale coexistence and work-profile pause/resume. Record exact evidence and any unavailable hardware verification. Do not alter ordinary apps for mutation tests; use the disposable fixture.
+
+Run JDK 21 / SDK 36 `./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease` before pushing app changes. Inspect the automatic release, certificate and checksum. Obtainium delivery requires evidence from the phone and is not established by CI alone.

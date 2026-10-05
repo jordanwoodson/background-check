@@ -23,6 +23,7 @@ interface PackageDataSource {
 
 
     suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity? = null): Boolean
+    suspend fun setPackageEnabledSetting(packageName: String, userId: Int, setting: Int, expected: PackageIdentity): Boolean
     suspend fun uninstallPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Boolean
     suspend fun reinstallPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Boolean
     suspend fun forceStopPackage(packageName: String, userId: Int, expected: PackageIdentity? = null): Boolean

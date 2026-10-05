@@ -88,24 +88,30 @@ internal fun MonitorScreen(
     onSetInterval: (Long) -> Unit,
     onSelectApp: (AppEntry) -> Unit,
     onAccess: () -> Unit,
+    onStartComparison: () -> Unit = {},
+    onCompareBattery: () -> Unit = {},
+    onClearComparison: () -> Unit = {},
 ) {
-    var profileId by rememberSaveable { mutableStateOf(ALL_PROFILES) }
+    var profileId by rememberIntPreference("monitor.profile", ALL_PROFILES)
     val profiles = state.visibleProfiles()
-    var mode by rememberSaveable { mutableStateOf(MonitorMode.LIVE) }
+    androidx.compose.runtime.LaunchedEffect(profileId, profiles, state.loading) {
+        if (!state.loading && profileId != ALL_PROFILES && profiles.none { it.userId == profileId }) profileId = ALL_PROFILES
+    }
+    var mode by rememberEnumPreference("monitor.mode", MonitorMode.LIVE)
     var processQuery by rememberSaveable { mutableStateOf("") }
     var energyQuery by rememberSaveable { mutableStateOf("") }
     val liveListState = rememberLazyListState()
     val energyListState = rememberLazyListState()
     val modeState = rememberSaveableStateHolder()
-    var filter by rememberSaveable { mutableStateOf(MonitorProcessFilter.ALL) }
-    var sort by rememberSaveable { mutableStateOf(ProcessSort.CPU) }
-    var processDirection by rememberSaveable { mutableStateOf(ProcessSort.CPU.defaultDirection) }
-    var energySort by rememberSaveable { mutableStateOf(EnergySort.BATTERY) }
-    var energyDirection by rememberSaveable { mutableStateOf(EnergySort.BATTERY.defaultDirection) }
-    var componentSort by rememberSaveable { mutableStateOf(ComponentSort.BATTERY) }
-    var componentDirection by rememberSaveable { mutableStateOf(ComponentSort.BATTERY.defaultDirection) }
-    var relatedSort by rememberSaveable { mutableStateOf(AppSort.NAME) }
-    var relatedDirection by rememberSaveable { mutableStateOf(AppSort.NAME.defaultDirection) }
+    var filter by rememberEnumPreference("monitor.filter", MonitorProcessFilter.ALL)
+    var sort by rememberEnumPreference("monitor.sort", ProcessSort.CPU)
+    var processDirection by rememberEnumPreference("monitor.processDirection", ProcessSort.CPU.defaultDirection)
+    var energySort by rememberEnumPreference("monitor.energySort", EnergySort.BATTERY)
+    var energyDirection by rememberEnumPreference("monitor.energyDirection", EnergySort.BATTERY.defaultDirection)
+    var componentSort by rememberEnumPreference("monitor.componentSort", ComponentSort.BATTERY)
+    var componentDirection by rememberEnumPreference("monitor.componentDirection", ComponentSort.BATTERY.defaultDirection)
+    var relatedSort by rememberEnumPreference("monitor.relatedSort", AppSort.NAME)
+    var relatedDirection by rememberEnumPreference("monitor.relatedDirection", AppSort.NAME.defaultDirection)
     var selectedProcess by remember { mutableStateOf<ProcessResource?>(null) }
     var selectedAt by remember { mutableStateOf<Long?>(null) }
     var selectedEnergy by remember { mutableStateOf<UidEnergy?>(null) }
@@ -192,6 +198,11 @@ internal fun MonitorScreen(
                     }
                     if (displayedMode == MonitorMode.ENERGY) {
                         item(key = "battery-flow") { BatteryFlowCard(state.battery) }
+                        item(key = "battery-comparison") {
+                            BatteryComparisonPanel(state.batteryComparison, state.batteryComparisonLoading,
+                                state.access == AccessState.READY && !state.busy, profileId,
+                                onStartComparison, onCompareBattery, onClearComparison)
+                        }
                     }
                     if (!ready || displayedMode == MonitorMode.ENERGY) {
                         item(key = "profile-filters") { profileControls() }

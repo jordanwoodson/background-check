@@ -1,0 +1,5 @@
+<resources>
+    <string name="list_layout_description">List layout</string>
+    <string name="list_layout_comfortable">Comfortable</string>
+    <string name="list_layout_compact">Compact</string>
+</resources>

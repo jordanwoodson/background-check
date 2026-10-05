@@ -73,6 +73,10 @@ class AppInventory(private val context: Context) {
                         uid = info.uid, system = info.flags and ApplicationInfo.FLAG_SYSTEM != 0,
                         enabled = info.enabled, targetSdk = info.targetSdkVersion,
                         installed = installed, profile = profile,
+                        firstInstallTime = if (installed && profile.available) runCatching {
+                            helper.getVerifiedPackageInfoAsUser(context, info.packageName, 0, profile.userId)
+                                ?.takeIf { it.applicationInfo?.uid == info.uid }?.firstInstallTime?.takeIf { it > 0 }
+                        }.getOrNull() else null,
                         description = PackageDescriptions.describe(info.packageName,
                             runCatching { info.loadDescription(pm)?.toString() }.getOrNull(), info.category),
                         protectedReason = when {

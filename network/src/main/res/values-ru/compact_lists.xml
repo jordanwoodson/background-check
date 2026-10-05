@@ -1,0 +1,5 @@
+<resources>
+    <string name="list_layout_description">Вид списка</string>
+    <string name="list_layout_comfortable">Обычный</string>
+    <string name="list_layout_compact">Компактный</string>
+</resources>

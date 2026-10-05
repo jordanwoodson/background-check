@@ -18,6 +18,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import dev.bgcheck.network.data.common.RootManager
 import dev.bgcheck.network.data.common.ShizukuManager
+import dev.bgcheck.network.data.history.NetworkChangeUnverifiedException
 import dev.bgcheck.network.domain.model.Package
 import dev.bgcheck.network.domain.model.ReinstallBatchResult
 import dev.bgcheck.network.domain.model.UninstallBatchResult
@@ -66,6 +67,9 @@ class PackagesViewModel(
     private var uninstalledJob: Job? = null
 
     private var cachedPackages: List<Package> = emptyList()
+
+    // A fast reload must not erase this warning before the screen has presented it.
+    private var unverifiedChangeWarning: String? = null
 
 
 
@@ -211,7 +215,7 @@ class PackagesViewModel(
                 packages = filterPackages(cachedPackages, filterState),
                 isLoadingData = false,
                 isRenderingUI = true,
-                error = null
+                error = unverifiedChangeWarning
             )
             return
         }
@@ -232,7 +236,7 @@ class PackagesViewModel(
                 profileWarnings = (getApplication<Application>() as dev.bgcheck.network.De1984Application).dependencies.packageDataSource.profileWarnings.value,
                 isLoadingData = false,
                 isRenderingUI = true,
-                error = null
+                error = unverifiedChangeWarning
             )
         }
     }
@@ -362,8 +366,19 @@ class PackagesViewModel(
             }
 
             managePackageUseCase.setPackageEnabled(packageName, userId, enabled, expected = expected)
-                                .onFailure { error ->
-                    restoreRow(snapshot)
+                .onFailure { error ->
+                    if (error is NetworkChangeUnverifiedException) {
+                        // Neither the requested state nor the old snapshot is known to be current.
+                        // Remove just this row until the fresh device scan supplies its state.
+                        cachedPackages = cachedPackages.filterNot { it.packageName == packageName && it.userId == userId }
+                        _uiState.value = _uiState.value.copy(packages = _uiState.value.packages.filterNot {
+                            it.packageName == packageName && it.userId == userId
+                        })
+                        unverifiedChangeWarning = error.message
+                        (getApplication<Application>() as dev.bgcheck.network.De1984Application)
+                            .dependencies.packageDataSource.invalidateCache()
+                        loadPackages(forceRefresh = true)
+                    } else restoreRow(snapshot)
                     if (superuserBannerState.shouldShowBannerForError(error)) {
                         superuserBannerState.showSuperuserRequiredBanner()
                     }
@@ -522,6 +537,7 @@ class PackagesViewModel(
     }
 
     fun clearError() {
+        unverifiedChangeWarning = null
         _uiState.value = _uiState.value.copy(error = null)
     }
 

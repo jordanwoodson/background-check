@@ -121,6 +121,8 @@ import dev.bgcheck.app.data.AppSort
 import dev.bgcheck.app.data.BatteryInfo
 import dev.bgcheck.app.data.BatteryPowerState
 import dev.bgcheck.app.data.ChangeRecord
+import dev.bgcheck.app.data.ChangeTimeline
+import dev.bgcheck.app.data.summary
 import dev.bgcheck.app.data.ControlAction
 import dev.bgcheck.app.data.HistorySort
 import dev.bgcheck.app.data.ListSorting
@@ -156,8 +158,14 @@ fun BackgroundCheckApp(
     onMonitorVisible: (Boolean) -> Unit,
     onForceStop: () -> Unit,
     onOpenNetwork: (AppEntry?) -> Unit = {},
+    onTogglePin: (AppEntry) -> Unit = {},
+    onUndoNetwork: (String) -> Unit = {},
+    onExportChanges: () -> Unit = {},
+    onStartComparison: () -> Unit = {},
+    onCompareBattery: () -> Unit = {},
+    onClearComparison: () -> Unit = {},
 ) {
-    var page by rememberSaveable { mutableStateOf(Page.OVERVIEW) }
+    var page by rememberEnumPreference("overview.page", Page.OVERVIEW)
     val pageState = rememberSaveableStateHolder()
     val detailState = rememberSaveableStateHolder()
     val snackbar = remember { SnackbarHostState() }
@@ -231,9 +239,11 @@ fun BackgroundCheckApp(
                 ) { currentPage ->
                     pageState.SaveableStateProvider(currentPage.name) {
                         when (currentPage) {
-                            Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo)
+                            Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo,
+                                onOpenNetwork = { onOpenNetwork(null) }, onUndoNetwork = onUndoNetwork, onExportChanges = onExportChanges)
                             Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS })
-                            Page.MONITOR -> MonitorScreen(state, onRefreshResources, onRefreshEnergy, onSetMonitorPaused, onSetMonitorInterval, onSelect, onAccess = { page = Page.ACCESS })
+                            Page.MONITOR -> MonitorScreen(state, onRefreshResources, onRefreshEnergy, onSetMonitorPaused, onSetMonitorInterval, onSelect, onAccess = { page = Page.ACCESS },
+                                onStartComparison = onStartComparison, onCompareBattery = onCompareBattery, onClearComparison = onClearComparison)
                             Page.ACCESS -> AccessScreen(state, onConnect, onOpenShizuku, onOpenWirelessSettings)
                         }
                     }
@@ -246,7 +256,7 @@ fun BackgroundCheckApp(
             AppDetailSheet(state, app, onDismissDetail, onAction, onOpenAppSettings,
                 onConnect = { onDismissDetail(); page = Page.ACCESS }, onForceStop = onForceStop,
                 onRetry = { onClearMessage(); onRefresh() }, onSelectPackage = onSelect,
-                onOpenNetwork = { onOpenNetwork(app) })
+                onOpenNetwork = { onOpenNetwork(app) }, onTogglePin = onTogglePin)
         }
     }
 }
@@ -275,15 +285,20 @@ private fun AppHeader(state: UiState, onRefresh: () -> Unit, onOpenNetwork: () -
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> Unit, onSelect: (AppEntry) -> Unit, onUndo: (ChangeRecord) -> Unit) {
-    var profileId by rememberSaveable { mutableStateOf(ALL_PROFILES) }
+private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> Unit, onSelect: (AppEntry) -> Unit, onUndo: (ChangeRecord) -> Unit,
+    onOpenNetwork: () -> Unit, onUndoNetwork: (String) -> Unit, onExportChanges: () -> Unit) {
+    var profileId by rememberIntPreference("overview.profile", ALL_PROFILES)
     val profiles = state.visibleProfiles()
+    androidx.compose.runtime.LaunchedEffect(profileId, profiles, state.loading) {
+        if (!state.loading && profileId != ALL_PROFILES && profiles.none { it.userId == profileId }) profileId = ALL_PROFILES
+    }
     val scopedApps = state.apps.filter { profileId == ALL_PROFILES || it.userId == profileId }
     var showAllChanges by rememberSaveable { mutableStateOf(false) }
-    var activeSort by rememberSaveable { mutableStateOf(AppSort.NAME) }
-    var activeDirection by rememberSaveable { mutableStateOf(SortDirection.ASCENDING) }
-    var historySort by rememberSaveable { mutableStateOf(HistorySort.TIME) }
-    var historyDirection by rememberSaveable { mutableStateOf(SortDirection.DESCENDING) }
+    var activeSort by rememberEnumPreference("overview.activeSort", AppSort.NAME)
+    var activeDirection by rememberEnumPreference("overview.activeDirection", SortDirection.ASCENDING)
+    var historySort by rememberEnumPreference("overview.historySort", HistorySort.TIME)
+    var historyDirection by rememberEnumPreference("overview.historyDirection", SortDirection.DESCENDING)
+    var historyQuery by rememberSaveable { mutableStateOf("") }
     val known = state.access == AccessState.READY && scopedApps.any { it.processState != ProcessState.UNKNOWN }
     val foreground = scopedApps.count { it.processState == ProcessState.FOREGROUND }
     val services = scopedApps.count { it.processState == ProcessState.SERVICE }
@@ -292,8 +307,8 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
     val activeApps = remember(scopedApps, activeSort, activeDirection) {
         ListSorting.apps(scopedApps.filter { it.processState in setOf(ProcessState.FOREGROUND, ProcessState.SERVICE, ProcessState.BACKGROUND) }, activeSort, activeDirection).take(4)
     }
-    val changes = remember(state.changes, profileId, historySort, historyDirection) {
-        ListSorting.history(state.changes.filter { profileId == ALL_PROFILES || it.userId == profileId }, historySort, historyDirection)
+    val changes = remember(state.changes, state.networkChanges, profileId, historyQuery, historySort, historyDirection) {
+        ChangeTimeline.entries(state.changes, state.networkChanges, profileId, historyQuery, historySort, historyDirection)
     }
     LazyColumn(modifier = Modifier.testTag("overview-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 22.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
@@ -309,8 +324,14 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
                 Text("System overview", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
             }
         }
+        item { ProtectionCard(state.access, state.protection, onOpenNetwork) }
         item { BatteryCard(state.battery) }
         item { ProfileFilters("overview", profiles, profileId) { profileId = it } }
+        val pinnedApps = scopedApps.filter { app -> state.pins.any { it.matches(app) } }
+        if (pinnedApps.isNotEmpty()) {
+            item { SectionHeading("Pinned apps") }
+            items(pinnedApps, key = { "pinned-${it.key}" }) { app -> AppRow(app, onClick = { onSelect(app) }) }
+        }
         if (state.access in setOf(AccessState.NOT_RUNNING, AccessState.NEEDS_PERMISSION, AccessState.ERROR)) {
             item { AccessPrompt(state.access, onAccess) }
         }
@@ -355,17 +376,30 @@ private fun OverviewScreen(state: UiState, onAccess: () -> Unit, onApps: () -> U
             items(activeApps, key = { "active-${it.key}" }) { AppRow(it, sort = activeSort, modifier = Modifier.animateItem(), onClick = { onSelect(it) }) }
         }
         item { SectionHeading("Your changes", "${changes.size} recorded") }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(historyQuery, onValueChange = { historyQuery = it }, label = { Text("Search changes") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                    supportingText = { Text("App, profile, action or setting") })
+                TextButton(onClick = onExportChanges, enabled = state.changes.isNotEmpty() || state.networkChanges.isNotEmpty()) { Text("Export all changes") }
+            }
+        }
         if (changes.isEmpty()) {
-            item { InfoCard("No changes recorded", "Changes you make here will appear here, with a way to restore the previous setting.", Icons.Rounded.History) }
+            item { InfoCard(if (state.changes.isEmpty() && state.networkChanges.isEmpty()) "No changes recorded" else "No matching changes",
+                if (state.changes.isEmpty() && state.networkChanges.isEmpty()) "Changes you make here will appear here, with a way to restore the previous setting."
+                else "Try another search or profile filter.", Icons.Rounded.History) }
         } else {
             item {
                 SortControls("history", HistorySort.entries, historySort, historyDirection,
                     onSort = { historySort = it }, onDirection = { historyDirection = it })
             }
-            items(if (showAllChanges) changes else changes.take(5), key = { "history-${it.id}" }) { record ->
-                val profile = profiles.firstOrNull { it.userId == record.userId }
-                val sameProfile = profile?.available == true && (record.userSerial == null || profile.serialNumber == null || record.userSerial == profile.serialNumber)
-                HistoryCard(record, state.access == AccessState.READY && !state.busy && sameProfile, onUndo, connected = state.access == AccessState.READY)
+            items(if (showAllChanges) changes else changes.take(5), key = { "history-${it.id}" }) { entry ->
+                entry.policy?.let { record ->
+                    val profile = profiles.firstOrNull { it.userId == record.userId }
+                    val sameProfile = profile?.available == true && (record.userSerial == null || profile.serialNumber == null || record.userSerial == profile.serialNumber)
+                    HistoryCard(record, state.access == AccessState.READY && !state.busy && sameProfile, onUndo, connected = state.access == AccessState.READY)
+                }
+                entry.network?.let { NetworkHistoryCard(it, state.busy, onUndoNetwork) }
             }
             if (changes.size > 5) {
                 item {
@@ -460,6 +494,8 @@ private fun HistoryCard(record: ChangeRecord, canUndo: Boolean, onUndo: (ChangeR
                 }
             }
             Text(record.description, style = MaterialTheme.typography.bodyMedium, color = Muted)
+            Text("Before: ${record.before.summary()}", style = MaterialTheme.typography.bodySmall, color = Muted)
+            Text("After: ${record.after.summary()}", style = MaterialTheme.typography.bodySmall, color = Cyan)
             if (affectsAllProfiles) Text("Doze exemption · applies across all Android profiles", style = MaterialTheme.typography.bodySmall, color = Orange)
             if (record.recovery && !record.undone) Text(
                 if (connected) "This change could not be verified. Restore the previous policy; conflicting changes will be left untouched." else "Connect to restore the previous policy. Conflicting changes will be left untouched.",
@@ -482,13 +518,16 @@ private enum class ProcessFilter(val label: String) { ALL("Any state"), ACTIVE("
 @Composable
 private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: () -> Unit) {
     val focusManager = LocalFocusManager.current
-    var profileId by rememberSaveable { mutableStateOf(ALL_PROFILES) }
+    var profileId by rememberIntPreference("apps.profile", ALL_PROFILES)
     val profiles = state.visibleProfiles()
+    androidx.compose.runtime.LaunchedEffect(profileId, profiles, state.loading) {
+        if (!state.loading && profileId != ALL_PROFILES && profiles.none { it.userId == profileId }) profileId = ALL_PROFILES
+    }
     var query by rememberSaveable { mutableStateOf("") }
-    var type by rememberSaveable { mutableStateOf(PackageType.USER) }
-    var process by rememberSaveable { mutableStateOf(ProcessFilter.ALL) }
-    var sort by rememberSaveable { mutableStateOf(AppSort.NAME) }
-    var direction by rememberSaveable { mutableStateOf(SortDirection.ASCENDING) }
+    var type by rememberEnumPreference("apps.type", PackageType.USER)
+    var process by rememberEnumPreference("apps.process", ProcessFilter.ALL)
+    var sort by rememberEnumPreference("apps.sort", AppSort.NAME)
+    var direction by rememberEnumPreference("apps.direction", SortDirection.ASCENDING)
     val effectiveProcess = if (state.access == AccessState.READY && type != PackageType.UNINSTALLED) process else ProcessFilter.ALL
     val apps = remember(state.apps, state.uninstalledApps, profileId, query, type, effectiveProcess, sort, direction) {
         ListSorting.apps((state.apps + state.uninstalledApps).filter { app ->

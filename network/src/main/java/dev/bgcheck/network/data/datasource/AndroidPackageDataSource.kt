@@ -513,6 +513,12 @@ class AndroidPackageDataSource(
 
     override suspend fun setPackageEnabled(packageName: String, userId: Int, enabled: Boolean, expected: PackageIdentity?): Boolean {
         val identity = validateTarget(packageName, userId, expected, retained = false)
+        return setPackageEnabledSetting(packageName, userId, if (enabled) 1 else 3, identity)
+    }
+
+    override suspend fun setPackageEnabledSetting(packageName: String, userId: Int, setting: Int, expected: PackageIdentity): Boolean {
+        val operation = dev.bgcheck.network.domain.model.PackageEnabledSetting.command(setting)
+        val identity = validateTarget(packageName, userId, expected, retained = false)
 
         if (Constants.App.isOwnApp(packageName)) {
             return false
@@ -526,11 +532,7 @@ class AndroidPackageDataSource(
                 }
 
                 if (shizukuManager.hasShizukuPermission) {
-                    val command = if (enabled) {
-                        "pm enable --user $userId $packageName"
-                    } else {
-                        "pm disable-user --user $userId $packageName"
-                    }
+                    val command = "pm $operation --user $userId $packageName"
 
                     // No catch: executeShellCommand reports every process failure as exitCode -1
                     // rather than throwing. The `catch (e: Exception) {}` that used to sit here
@@ -539,16 +541,13 @@ class AndroidPackageDataSource(
                     val (exitCode, _) = shizukuManager.executeShellCommand(command)
                     if (exitCode == 0) {
                         HiddenApiHelper.clearDisabledPackagesCache()
+                        HiddenApiHelper.clearInstalledAppsCache()
                         return@withContext true
                     }
                 }
             }
 
-            val rootCommand = if (enabled) {
-                "pm enable --user $userId $packageName"
-            } else {
-                "pm disable-user --user $userId $packageName"
-            }
+            val rootCommand = "pm $operation --user $userId $packageName"
 
             // ShellRunner bounds the wait, drains both pipes together, and reports a failed start
             // as exitCode -1 instead of throwing - so there is nothing left here to catch. The
@@ -560,6 +559,7 @@ class AndroidPackageDataSource(
 
             if (rootResult.exitCode == 0) {
                 HiddenApiHelper.clearDisabledPackagesCache()
+                HiddenApiHelper.clearInstalledAppsCache()
                 return@withContext true
             }
 
@@ -725,7 +725,11 @@ class AndroidPackageDataSource(
             if (retained) PackageManager.MATCH_UNINSTALLED_PACKAGES else 0, userId)
             ?: error("App is unavailable in the selected profile")
         val identity = expected ?: PackageIdentity(info.uid, profile.serialNumber)
-        identity.requireCurrent(userId, info.uid, profile.serialNumber, profile.available)
+        val installTime = if (identity.firstInstallTime != null) {
+            HiddenApiHelper.getVerifiedPackageInfoAsUser(context, packageName,
+                if (retained) PackageManager.MATCH_UNINSTALLED_PACKAGES else 0, userId)?.firstInstallTime
+        } else null
+        identity.requireCurrent(userId, info.uid, profile.serialNumber, profile.available, installTime)
         identity
     }
 

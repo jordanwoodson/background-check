@@ -27,6 +27,7 @@ data class AppEntry(
     val description: PackageDescription = PackageDescriptions.describe(packageName),
     val associations: List<PackageAssociation> = PackageDescriptions.associations(packageName),
     val profile: AndroidProfile = AndroidProfile(uid / 100000),
+    val firstInstallTime: Long? = null,
 ) {
     val userId: Int get() = uid / 100000
     val key: String get() = "$userId:$packageName"
@@ -114,6 +115,11 @@ data class UiState(
     val diagnostics: AppDiagnostics? = null,
     val diagnosticsLoading: Boolean = false,
     val profiles: List<AndroidProfile> = emptyList(),
+    val pins: List<PinnedApp> = emptyList(),
+    val protection: ProtectionSummary = ProtectionSummary(),
+    val networkChanges: List<dev.bgcheck.network.domain.model.NetworkChangeRecord> = emptyList(),
+    val batteryComparison: BatteryComparisonSession? = null,
+    val batteryComparisonLoading: Boolean = false,
 )
 fun bucketLabel(bucket: Int?): String = when (bucket) {
     5 -> "Exempt"; 10 -> "Active"; 20 -> "Working set"; 30 -> "Frequent"

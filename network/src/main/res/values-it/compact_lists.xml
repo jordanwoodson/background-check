@@ -1,0 +1,5 @@
+<resources>
+    <string name="list_layout_description">Layout elenco</string>
+    <string name="list_layout_comfortable">Comoda</string>
+    <string name="list_layout_compact">Compatta</string>
+</resources>

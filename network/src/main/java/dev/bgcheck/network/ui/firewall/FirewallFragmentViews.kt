@@ -42,6 +42,8 @@ import dev.bgcheck.network.presentation.viewmodel.FirewallViewModel
 import dev.bgcheck.network.presentation.viewmodel.SettingsViewModel
 import dev.bgcheck.network.ui.base.BaseFragment
 import dev.bgcheck.network.ui.common.FilterChipsHelper
+import dev.bgcheck.network.ui.common.CompactListControls
+import dev.bgcheck.network.utils.NetworkList
 import dev.bgcheck.network.utils.Constants
 import dev.bgcheck.network.utils.copyToClipboard
 import dev.bgcheck.network.utils.openAppSettings
@@ -181,6 +183,7 @@ class FirewallFragmentViews : BaseFragment<FragmentFirewallBinding>() {
         binding.packagesRecyclerView.visibility = View.GONE
 
         setupRecyclerView()
+        CompactListControls.bind(binding.root, NetworkList.FIREWALL) { adapter.setCompactLayout(it) }
         setupFilterChips()
         setupSearchBox()
         activity?.intent?.getStringExtra("dev.bgcheck.network.PACKAGE")?.let { packageName ->

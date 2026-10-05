@@ -10,12 +10,16 @@ import dev.bgcheck.app.shell.ShizukuBridge
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -29,7 +33,12 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
     private val monitor = ResourceMonitor(bridge::execute)
 
     private val preferences = application.getSharedPreferences("policy_history", 0)
+    private val inspectionPreferences = application.getSharedPreferences("inspection_preferences", 0)
+    private val networkDependencies = dev.bgcheck.network.De1984Dependencies.getInstance(application)
+    private val comparisonStore = BatteryComparisonStore(application)
     private val gate = Mutex()
+    private val pinGate = Mutex()
+    private var comparisonJob: Job? = null
     private var detailJob: Job? = null
     private var diagnosticsJob: Job? = null
     private var resourceJob: Job? = null
@@ -39,7 +48,12 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
     private var monitorVisible = false
     private var detailRevision = 0
     private var refreshAgain = false
-    private val mutableState = MutableStateFlow(UiState(changes = ChangeHistory.decode(preferences.getString("changes", null), Process.myUid() / 100000)))
+    private val mutableState = MutableStateFlow(UiState(
+        changes = ChangeHistory.decode(preferences.getString("changes", null), Process.myUid() / 100000),
+        pins = PinnedApp.decode(inspectionPreferences.getString("pins", null)),
+        monitorIntervalMs = inspectionPreferences.getLong("monitor.interval", 5_000).takeIf { it in setOf(3_000L, 5_000L, 10_000L) } ?: 5_000,
+        batteryComparison = comparisonStore.load(),
+    ))
     val state = mutableState.asStateFlow()
 
     private val profileReceiver = object : android.content.BroadcastReceiver() {
@@ -59,6 +73,19 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     init {
+        viewModelScope.launch {
+            val manager = networkDependencies.firewallManager
+            combine(manager.firewallState, manager.firewallHealth,
+                dev.bgcheck.network.domain.firewall.NetworkPolicySupport.fullBlocking,
+                state.map { it.profiles }.distinctUntilChanged(), manager.activeBackendType) { lifecycle, health, npmFull, profiles, activeBackend ->
+                ProtectionSummary.from(lifecycle, health, profiles, Process.myUid() / 100000, npmFull, activeBackend)
+            }.collect { summary -> mutableState.update { it.copy(protection = summary) } }
+        }
+        viewModelScope.launch {
+            networkDependencies.networkChangeHistory.records.collect { records ->
+                mutableState.update { it.copy(networkChanges = records) }
+            }
+        }
         androidx.core.content.ContextCompat.registerReceiver(application, profileReceiver, android.content.IntentFilter().apply {
             addAction(android.content.Intent.ACTION_MANAGED_PROFILE_ADDED)
             addAction(android.content.Intent.ACTION_MANAGED_PROFILE_REMOVED)
@@ -79,7 +106,7 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
                 if (access == AccessState.READY) refresh()
                 else {
                     detailRevision++
-                    detailJob?.cancel(); resourceJob?.cancel(); energyJob?.cancel(); diagnosticsJob?.cancel()
+                    detailJob?.cancel(); resourceJob?.cancel(); energyJob?.cancel(); diagnosticsJob?.cancel(); comparisonJob?.cancel()
                     mutableState.update { it.copy(detailLoading = false, diagnosticsLoading = false) }
                 }
                 restartPolling()
@@ -93,7 +120,7 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
     fun onPause() {
         foreground = false
         detailRevision++
-        pollingJob?.cancel(); resourceJob?.cancel(); energyJob?.cancel(); detailJob?.cancel(); diagnosticsJob?.cancel()
+        pollingJob?.cancel(); resourceJob?.cancel(); energyJob?.cancel(); detailJob?.cancel(); diagnosticsJob?.cancel(); comparisonJob?.cancel()
         mutableState.update { it.copy(monitoring = false, detailLoading = false, diagnosticsLoading = false) }
     }
     fun connect() { bridge.requestPermission() }
@@ -112,8 +139,106 @@ class BackgroundViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setMonitorInterval(intervalMs: Long) {
         if (intervalMs !in setOf(3_000L, 5_000L, 10_000L)) return
+        inspectionPreferences.edit().putLong("monitor.interval", intervalMs).apply()
         mutableState.update { it.copy(monitorIntervalMs = intervalMs) }
         restartPolling()
+    }
+
+    fun togglePin(app: AppEntry) {
+        viewModelScope.launch {
+            pinGate.withLock {
+                val existing = state.value.pins.firstOrNull { it.matches(app) }
+                val pin = existing ?: PinnedApp.from(app)
+                if (pin == null) {
+                    mutableState.update { it.copy(message = "Refresh to verify this installation before pinning it.") }
+                    return@withLock
+                }
+                val pins = if (existing != null) state.value.pins - pin else state.value.pins + pin
+                val saved = withContext(Dispatchers.IO) { inspectionPreferences.edit().putString("pins", PinnedApp.encode(pins)).commit() }
+                mutableState.update { if (saved) it.copy(pins = pins) else it.copy(message = "Couldn't save pinned apps. Try again.") }
+            }
+        }
+    }
+
+    fun captureComparison(restart: Boolean) {
+        if (!foreground || bridge.access.value != AccessState.READY || state.value.busy || state.value.batteryComparisonLoading) return
+        val baseline = state.value.batteryComparison
+        if (!restart && baseline == null) return
+        mutableState.update { it.copy(batteryComparisonLoading = true) }
+        comparisonJob = viewModelScope.launch {
+            try {
+                val sample = gate.withLock {
+                    val inventoryBefore = inventory.read()
+                    val energy = monitor.energy()
+                    val elapsedAt = SystemClock.elapsedRealtime()
+                    val bootCount = runCatching { android.provider.Settings.Global.getInt(
+                        getApplication<Application>().contentResolver, android.provider.Settings.Global.BOOT_COUNT) }.getOrNull()?.takeIf { it >= 0 }
+                    check(energy.uids.isNotEmpty() && energy.startClockTimeMs != null) { "Battery history is unavailable. Reconnect and try again." }
+                    val inventoryAfter = inventory.read()
+                    check(inventoryBefore.apps.filter { it.installed }.map { listOf(it.key, it.uid, it.profile.serialNumber, it.firstInstallTime) }.toSet() ==
+                        inventoryAfter.apps.filter { it.installed }.map { listOf(it.key, it.uid, it.profile.serialNumber, it.firstInstallTime) }.toSet()) {
+                        "App installations changed during sampling. Try again."
+                    }
+                    BatteryComparisonSample.capture(energy, inventoryAfter.apps, inventoryAfter.profiles, elapsedAt, bootCount)
+                }
+                val session = if (restart) BatteryComparisonSession(sample) else baseline!!.copy(later = sample)
+                // Once a complete sample is ready, finish its durable save and publication together.
+                // Cancellation during commit must not leave a new disk baseline with an old UI baseline.
+                withContext(NonCancellable) {
+                    withContext(Dispatchers.IO) { comparisonStore.save(session) }
+                    mutableState.update { it.copy(batteryComparison = session) }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                mutableState.update { it.copy(message = e.message ?: "Couldn't save battery comparison.") }
+            } finally { mutableState.update { it.copy(batteryComparisonLoading = false) } }
+        }
+    }
+
+    fun clearComparison() {
+        if (state.value.batteryComparisonLoading) return
+        mutableState.update { it.copy(batteryComparisonLoading = true) }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { comparisonStore.clear() }
+                mutableState.update { it.copy(batteryComparison = null) }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                mutableState.update { it.copy(message = e.message ?: "Couldn't clear comparison.") }
+            } finally { mutableState.update { it.copy(batteryComparisonLoading = false) } }
+        }
+    }
+
+    fun undoNetwork(id: String) {
+        if (state.value.busy) return
+        mutableState.update { it.copy(busy = true) }
+        viewModelScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) { networkDependencies.networkChangeUndo.undo(id) }
+                mutableState.update { it.copy(message = result.getOrElse { e -> e.message ?: "Couldn't restore this change." }) }
+            } finally { mutableState.update { it.copy(busy = false) }; refresh() }
+        }
+    }
+
+    fun exportChanges(uri: android.net.Uri) {
+        val current = state.value
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val json = org.json.JSONObject().apply {
+                        put("formatVersion", 1); put("exportedAt", System.currentTimeMillis())
+                        put("policies", org.json.JSONArray(ChangeHistory.encode(current.changes)))
+                        put("network", org.json.JSONArray(networkDependencies.networkChangeHistory.exportJson()))
+                    }.toString(2)
+                    val resolver = getApplication<Application>().contentResolver
+                    checkNotNull(resolver.openOutputStream(uri, "wt")) { "Couldn't open the export document." }.bufferedWriter().use { it.write(json) }
+                }
+                mutableState.update { it.copy(message = "Change history exported.") }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                mutableState.update { it.copy(message = "Export failed: ${e.message ?: "document unavailable"}") }
+            }
+        }
     }
 
     private fun restartPolling() {

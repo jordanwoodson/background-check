@@ -25,6 +25,8 @@ import dev.bgcheck.network.data.monitor.ScreenStateMonitor
 import dev.bgcheck.network.data.repository.FirewallRepositoryImpl
 import dev.bgcheck.network.data.repository.NetworkPackageRepositoryImpl
 import dev.bgcheck.network.data.repository.PackageRepositoryImpl
+import dev.bgcheck.network.data.history.NetworkChangeHistoryStore
+import dev.bgcheck.network.data.history.NetworkChangeUndoService
 import dev.bgcheck.network.data.service.NewAppNotificationManager
 import dev.bgcheck.network.domain.repository.FirewallRepository
 import dev.bgcheck.network.domain.repository.NetworkPackageRepository
@@ -288,9 +290,12 @@ class De1984Dependencies(private val context: Context) {
     }
 
 
-    val firewallRepository: FirewallRepository by lazy {
-        FirewallRepositoryImpl(firewallRuleDao, context) { notifyPackageDataChanged() }
+    val networkChangeHistory: NetworkChangeHistoryStore by lazy { NetworkChangeHistoryStore(context) }
+
+    private val firewallRepositoryImpl: FirewallRepositoryImpl by lazy {
+        FirewallRepositoryImpl(firewallRuleDao, context, networkChangeHistory) { notifyPackageDataChanged() }
     }
+    val firewallRepository: FirewallRepository get() = firewallRepositoryImpl
 
     // Note: PackageDataSource depends on FirewallRepository (circular dependency)
     // We use lazy initialization to break the cycle
@@ -298,15 +303,23 @@ class De1984Dependencies(private val context: Context) {
         AndroidPackageDataSource(context, firewallRepository, shizukuManager)
     }
 
-    val packageRepository: PackageRepository by lazy {
+    private val packageRepositoryImpl: PackageRepositoryImpl by lazy {
         PackageRepositoryImpl(
             context,
             packageDataSource,
             accessMissing = {
                 awaitPrivilegeProbes(rootManager.rootStatus, shizukuManager.shizukuStatus, FirewallManager.PRIVILEGE_ANSWER_TIMEOUT_MS) &&
                     !hasPrivilegedAccess(rootManager.rootStatus.value, shizukuManager.shizukuStatus.value)
-            }
+            },
+            history = networkChangeHistory,
         ) { notifyPackageDataChanged() }
+    }
+    val packageRepository: PackageRepository get() = packageRepositoryImpl
+
+    val networkChangeUndo: NetworkChangeUndoService by lazy {
+        NetworkChangeUndoService(networkChangeHistory,
+            restoreFirewall = firewallRepositoryImpl::restoreHistoryChange,
+            restorePackage = packageRepositoryImpl::restoreHistoryChange)
     }
 
     val networkPackageRepository: NetworkPackageRepository by lazy {

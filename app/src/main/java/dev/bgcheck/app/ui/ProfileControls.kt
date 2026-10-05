@@ -29,6 +29,16 @@ internal fun UiState.visibleProfiles(): List<AndroidProfile> {
             serialNumber = record.userSerial, available = profiles.isEmpty(),
             unavailableReason = if (profiles.isEmpty()) null else "Profile no longer available"))
     }
+    networkChanges.forEach { record ->
+        profilesById.putIfAbsent(record.userId, AndroidProfile(record.userId, record.profileName,
+            serialNumber = record.userSerial, available = false, unavailableReason = "Profile no longer available"))
+    }
+    batteryComparison?.let { session ->
+        (session.baseline.identities + session.later?.identities.orEmpty()).forEach { identity ->
+            profilesById.putIfAbsent(identity.uid / 100000, AndroidProfile(identity.uid / 100000, identity.profileName,
+                serialNumber = identity.userSerial, available = false, unavailableReason = "Saved comparison profile is not currently available"))
+        }
+    }
     (resources?.processes.orEmpty().map { it.uid } + energy?.uids.orEmpty().map { it.uid }).forEach { uid ->
         if (uid >= 0) profilesById.putIfAbsent(uid / 100000, AndroidProfile(uid / 100000))
     }

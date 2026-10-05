@@ -33,6 +33,8 @@ import dev.bgcheck.network.presentation.viewmodel.PackagesViewModel
 import dev.bgcheck.network.presentation.viewmodel.SettingsViewModel
 import dev.bgcheck.network.ui.base.BaseFragment
 import dev.bgcheck.network.ui.common.FilterChipsHelper
+import dev.bgcheck.network.ui.common.CompactListControls
+import dev.bgcheck.network.utils.NetworkList
 import dev.bgcheck.network.ui.common.PermissionSetupDialog
 import dev.bgcheck.network.ui.common.StandardDialog
 import dev.bgcheck.network.utils.Constants
@@ -169,6 +171,7 @@ class PackagesFragmentViews : BaseFragment<FragmentPackagesBinding>() {
         binding.packagesRecyclerView.visibility = View.GONE
 
         setupRecyclerView()
+        CompactListControls.bind(binding.root, NetworkList.PACKAGES) { adapter.setCompactLayout(it) }
         setupFilterChips()
         setupSearchBox()
 

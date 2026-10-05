@@ -25,6 +25,9 @@ import dev.bgcheck.network.domain.model.NetworkPackage
 import dev.bgcheck.network.domain.model.PackageId
 import dev.bgcheck.network.domain.model.PackageType
 import dev.bgcheck.network.utils.Constants
+import dev.bgcheck.network.utils.CompactListPreferences
+import dev.bgcheck.network.utils.NetworkList
+import dev.bgcheck.network.ui.common.CompactListRow
 import dev.bgcheck.network.utils.PackageUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +70,7 @@ class NetworkPackageAdapter(
     }
 
     private var isSelectionMode = false
+    private var compactLayout = false
     private val selectedPackages = mutableSetOf<PackageId>()
     private var onSelectionChanged: ((Set<PackageId>) -> Unit)? = null
     private var onSelectionLimitReached: (() -> Unit)? = null
@@ -90,6 +94,8 @@ class NetworkPackageAdapter(
     fun initialize(context: Context) {
         val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
         hasCellular = telephonyManager?.phoneType != TelephonyManager.PHONE_TYPE_NONE
+        // Also runs when changing icon settings replaces the adapter.
+        setCompactLayout(CompactListPreferences.isCompact(context, NetworkList.FIREWALL))
 
         refreshSettings(context)
     }
@@ -139,7 +145,13 @@ class NetworkPackageAdapter(
     }
 
     override fun onBindViewHolder(holder: NetworkPackageViewHolder, position: Int) {
-        holder.bind(getItem(position), isSelectionMode)
+        holder.bind(getItem(position), isSelectionMode, compactLayout)
+    }
+
+    fun setCompactLayout(compact: Boolean) {
+        if (compactLayout == compact) return
+        compactLayout = compact
+        notifyDataSetChanged()
     }
 
     fun setOnSelectionLimitReachedListener(listener: () -> Unit) {
@@ -296,13 +308,15 @@ class NetworkPackageAdapter(
         // Track which package the icon was loaded for (to avoid race conditions)
         private var iconLoadedForPackage: String? = null
 
-        fun bind(pkg: NetworkPackage, isSelectionMode: Boolean) {
+        fun bind(pkg: NetworkPackage, isSelectionMode: Boolean, compact: Boolean) {
             currentPackage = pkg
             currentIsSelectionMode = isSelectionMode
+            CompactListRow.bind(itemView, compact)
 
             appName.text = pkg.name
             packageName.text = pkg.packageName
             dev.bgcheck.network.ui.common.InternetRecommendationView.bindSummary(internetAdvice, pkg)
+            internetAdvice.visibility = if (compact) View.GONE else View.VISIBLE
 
             systemCriticalBadge.visibility = if (pkg.isSystemCritical) View.VISIBLE else View.GONE
 

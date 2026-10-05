@@ -81,6 +81,7 @@ internal fun AppDetailSheet(
     onRetry: () -> Unit = {},
     onSelectPackage: (AppEntry) -> Unit = {},
     onOpenNetwork: () -> Unit = {},
+    onTogglePin: (AppEntry) -> Unit = {},
 ) {
     val windowHeight = LocalWindowInfo.current.containerSize.height
     val compactHeight = with(LocalDensity.current) { windowHeight.toDp() < 480.dp }
@@ -101,10 +102,11 @@ internal fun AppDetailSheet(
         state.message?.let { sheetMessage = it }
     }
     // Keep these in the caller's saveable registry, above the sheet's dialog composition.
-    var processSort by rememberSaveable(app.key) { mutableStateOf(ProcessSort.PID) }
-    var processDirection by rememberSaveable(app.key) { mutableStateOf(SortDirection.ASCENDING) }
-    var serviceSort by rememberSaveable(app.key) { mutableStateOf(ServiceSort.NAME) }
-    var serviceDirection by rememberSaveable(app.key) { mutableStateOf(SortDirection.ASCENDING) }
+    val preferenceKey = "detail.${app.key}:${app.profile.serialNumber}:${app.firstInstallTime}"
+    var processSort by rememberEnumPreference("$preferenceKey.processSort", ProcessSort.PID)
+    var processDirection by rememberEnumPreference("$preferenceKey.processDirection", SortDirection.ASCENDING)
+    var serviceSort by rememberEnumPreference("$preferenceKey.serviceSort", ServiceSort.NAME)
+    var serviceDirection by rememberEnumPreference("$preferenceKey.serviceDirection", SortDirection.ASCENDING)
     val sharedApps = state.apps.filter { it.uid == app.uid }
     val forceStopRestriction = when {
         !profileAvailable -> profile.unavailableReason ?: "This profile is unavailable. Resume or unlock it before changing app settings."
@@ -138,6 +140,10 @@ internal fun AppDetailSheet(
             Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Eyebrow("APP DETAILS")
+                    val pinned = state.pins.any { it.matches(app) }
+                    TextButton(onClick = { onTogglePin(app) }, enabled = pinned || dev.bgcheck.app.data.PinnedApp.from(app) != null) {
+                        Text(if (pinned) "Unpin" else "Pin app")
+                    }
                     IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) { Icon(Icons.Rounded.Close, "Close app details", tint = Muted) }
                 }
                 if (state.detailLoading || state.busy) {

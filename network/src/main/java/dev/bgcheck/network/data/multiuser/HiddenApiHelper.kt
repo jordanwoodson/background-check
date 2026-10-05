@@ -1180,11 +1180,19 @@ object HiddenApiHelper {
         return result
     }
 
+    /** Installation identity must never use metadata synthesized from another profile. */
+    fun getVerifiedPackageInfoAsUser(context: Context, packageName: String, flags: Int, userId: Int): PackageInfo? {
+        if (userId != Constants.Firewall.ownUserId()) ensureCrossUserPermission(context)
+        return fetchPackageInfoAsUser(context, packageName, flags, userId, allowSharedMetadata = false)
+            ?.takeIf { it.packageName == packageName && it.applicationInfo?.uid?.div(100000) == userId }
+    }
+
     private fun fetchPackageInfoAsUser(
         context: Context,
         packageName: String,
         flags: Int,
-        userId: Int
+        userId: Int,
+        allowSharedMetadata: Boolean = true,
     ): PackageInfo? {
         if (!initialized) initialize()
 
@@ -1216,6 +1224,7 @@ object HiddenApiHelper {
         }
 
         (privilegedPackageCall("getPackageInfo", flags, userId, packageName) as? PackageInfo)?.let { return it }
+        if (!allowSharedMetadata) return null
         // Shared APK metadata is usable only after verifying this installation exists.
         // Strategy 2: Create synthetic PackageInfo based on personal profile data
         // Work profile apps are typically clones of personal profile apps with same permissions
