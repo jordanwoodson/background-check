@@ -321,7 +321,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
                     TextButton(onClick = { resetFilters() }) { Text("Reset filters") }
                 }
             } else items(apps, key = { "${it.userId}:${it.packageName}:${it.userSerial}" }) { pkg ->
-                NetworkRow(pkg, compact, settings.showAppIcons, backend, state.blockingContext, hasCellular, limited,
+                NetworkRow(pkg, compact, backend, state.blockingContext, hasCellular, limited,
                     selectionMode, selection.any { it.id == pkg.id }, onClick = {
                         focus.clearFocus()
                         if (selectionMode) select(pkg) else selectedSheet = NetworkSelection(pkg.id, pkg.identity).encode()

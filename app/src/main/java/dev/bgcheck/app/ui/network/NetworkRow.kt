@@ -23,7 +23,7 @@ import dev.bgcheck.network.domain.model.NetworkPackage
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean, showIcons: Boolean,
+internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean,
     backend: FirewallBackendType?, blockingContext: BlockingContext, hasCellular: Boolean, limited: Boolean,
     selecting: Boolean, selected: Boolean, onClick: () -> Unit, onLongClick: () -> Unit,
     onToggle: (NetworkControl) -> Unit) {
@@ -60,7 +60,7 @@ internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean, showIcons: Boolea
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (selecting) Checkbox(checked = selected, onCheckedChange = { onClick() }, enabled = enabled,
                     modifier = Modifier.size(48.dp), colors = CheckboxDefaults.colors(checkedColor = Purple))
-                if (showIcons) AppIcon(pkg.packageName, if (compact) 36.dp else 46.dp, pkg.userId, pkg.userSerial)
+                AppIcon(pkg.packageName, if (compact) 36.dp else 46.dp, pkg.userId, pkg.userSerial)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(pkg.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     if (!compact) {

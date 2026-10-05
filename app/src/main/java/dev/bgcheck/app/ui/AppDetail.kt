@@ -463,7 +463,7 @@ private fun DetailValue(label: String, value: String) {
 }
 
 @Composable
-private fun PolicyChoice(title: String, description: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+internal fun PolicyChoice(title: String, description: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     val current = selected
     Surface(
         onClick = onClick,

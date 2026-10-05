@@ -4,12 +4,14 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -19,6 +21,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.bgcheck.app.data.AccessState
 import dev.bgcheck.app.data.UiState
+import dev.bgcheck.app.ui.network.FirewallPermissionsSection
+import dev.bgcheck.app.ui.network.rememberFirewallPermissionsContent
+import kotlinx.coroutines.launch
 
 internal fun accessStatusLabel(access: AccessState): String = when (access) {
     AccessState.READY -> "Connected"
@@ -33,7 +38,10 @@ internal fun accessStatusLabel(access: AccessState): String = when (access) {
 internal fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: () -> Unit, onOpenWirelessSettings: () -> Unit) {
     val ready = state.access == AccessState.READY
     val connecting = state.access in setOf(AccessState.CHECKING, AccessState.CONNECTING)
-    LazyColumn(modifier = Modifier.testTag("access-list"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    val list = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val firewallPermissions = rememberFirewallPermissionsContent(onShowShizuku = { scope.launch { list.animateScrollToItem(1) } })
+    LazyColumn(modifier = Modifier.testTag("access-list"), state = list, contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Eyebrow("access / shizuku")
@@ -99,7 +107,8 @@ internal fun AccessScreen(state: UiState, onConnect: () -> Unit, onOpenShizuku: 
                 }
             }
         }
-        item { InfoCard("Local by design", "No internet permission or analytics. Resource sampling runs while Monitor is open. Network firewall and package monitoring have their own controls. Your data stays on this device.", Icons.Rounded.Shield, accent = Green) }
+        item { FirewallPermissionsSection(firewallPermissions) }
+        item { InfoCard("Local by design", "No internet permission or analytics. Resource sampling runs while Monitor is open. Firewall controls live in the Network tab. Your data stays on this device.", Icons.Rounded.Shield, accent = Green) }
     }
 }
 
