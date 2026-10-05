@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Lifecycle
 import dev.bgcheck.app.ui.network.*
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.De1984Application
 import dev.bgcheck.network.data.service.PackageMonitoringService
 import dev.bgcheck.network.data.multiuser.HiddenApiHelper
@@ -151,14 +152,15 @@ class MainActivity : ComponentActivity() {
     }
     private fun consumeNetworkIntent(intent: Intent?) {
         if (intent == null) return
-        val request = parseNetworkRequest(intent.action, intent.getStringExtra("dev.bgcheck.network.PACKAGE"),
+        val request = if (intent.action == NetworkEntryIntents.ACTION_OPEN_SETTINGS) NetworkRequest(NetworkDestination.SETTINGS) else parseNetworkRequest(intent.action, intent.getStringExtra("dev.bgcheck.network.PACKAGE"),
             if (intent.hasExtra("dev.bgcheck.network.USER_ID")) intent.getIntExtra("dev.bgcheck.network.USER_ID", 0) else null,
             intent.getStringExtra("package_name"),
             if (intent.hasExtra("user_id")) intent.getIntExtra("user_id", 0) else null, Process.myUid() / 100000)
+            ?: if (intent.getBooleanExtra(NetworkEntryIntents.EXTRA_OPEN_NETWORK, false)) NetworkRequest(NetworkDestination.OPEN) else null
         if (request != null) {
             networkRequest = request
             intent.action = null
-            listOf("dev.bgcheck.network.PACKAGE", "dev.bgcheck.network.USER_ID", "package_name", "user_id").forEach(intent::removeExtra)
+            listOf("dev.bgcheck.network.PACKAGE", "dev.bgcheck.network.USER_ID", "package_name", "user_id", NetworkEntryIntents.EXTRA_OPEN_NETWORK).forEach(intent::removeExtra)
         }
     }
     private fun startFirewall() = requestFirewallStart(fallback = false)

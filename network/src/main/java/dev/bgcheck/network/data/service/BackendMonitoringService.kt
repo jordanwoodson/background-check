@@ -17,7 +17,7 @@ import dev.bgcheck.network.data.common.ShizukuStatus
 import dev.bgcheck.network.data.firewall.FirewallManager
 import dev.bgcheck.network.domain.firewall.FirewallBackendType
 import dev.bgcheck.network.domain.firewall.FirewallMode
-import dev.bgcheck.network.ui.MainActivity
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.utils.Constants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -333,7 +333,7 @@ class BackendMonitoringService : Service() {
         withRetryAction: Boolean,
         autoCancel: Boolean = false
     ): Notification {
-        val tapIntent = Intent(this, MainActivity::class.java)
+        val tapIntent = NetworkEntryIntents.create(this)
         val tapPendingIntent = PendingIntent.getActivity(
             this,
             0,

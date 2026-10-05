@@ -285,7 +285,7 @@ private fun UidRuleAggregate.effective(): UidRuleAggregate =
  * on one the backend was really dropping.
  *
  * LAN counts only on iptables, the one backend that can block it. The screen-off value counts only
- * while its switch is on screen, which FirewallFragmentViews.bindScreenOffToggle decides.
+ * while its switch is on screen, which the network access controls decide.
  */
 private fun FirewallBackendType.displayMatches(
     pkg: NetworkPackage,

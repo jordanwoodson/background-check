@@ -1,120 +1,11 @@
 <resources>
     <string name="app_name" translatable="false">Background Check</string>
-
-    <!-- App Identity -->
-
-    <!-- Donate Button -->
-    <string name="donate_button">Donează</string>
-
-    <!-- Navigation -->
-    <string name="nav_firewall">Firewall</string>
-    <string name="nav_packages">Pachete</string>
-    <string name="nav_settings">Setări</string>
-
-    <!-- Navigation Labels -->
-
-    <!-- Toolbar Titles -->
-
-    <!-- Firewall Toggle Button -->
-    <string name="firewall_button_off">OPRIT</string>
-    <string name="firewall_status_active">ACTIV</string>
-
-    <!-- Firewall States -->
-    <string name="firewall_state_blocked">Blocat</string>
-    <string name="firewall_state_allowed">Permis</string>
-    <string name="firewall_state_on">ON</string>
-    <string name="firewall_state_off">OFF</string>
-    <string name="firewall_state_internet">Internet</string>
-    <string name="firewall_search_hint">Caută aplicații...</string>
-
-    <!-- Firewall Dialogs -->
-    <string name="dialog_firewall_start_title">Pornești Background Check Firewall?</string>
-    <string name="dialog_firewall_start_message">Bine ai venit la Background Check! Vrei să pornești Firewall-ul acum pentru a-ți proteja confidențialitatea?</string>
-    <string name="dialog_firewall_start_confirm">Pornește Firewall</string>
-    <string name="dialog_firewall_start_skip">Mai târziu</string>
-
-    <string name="dialog_firewall_stop_title">Oprește Firewall-ul?</string>
-    <string name="dialog_firewall_stop_message">⚠️ Oprirea firewall-ului va permite tuturor aplicațiilor să acceseze internetul.\n\nProtecția confidențialității tale va fi dezactivată până când vei porni din nou firewall-ul.</string>
-    <string name="dialog_firewall_stop_confirm">Oprește Firewall-ul</string>
-
-
-
-    <!-- Quick Toggle Dialogs -->
-    <string name="dialog_quick_toggle_block_title">Blochezi %1$s?</string>
-    <string name="dialog_quick_toggle_allow_title">Permiți %1$s?</string>
-    <string name="dialog_quick_toggle_message_wifi">Aceasta va %1$s accesul WiFi pentru %2$s</string>
-    <string name="dialog_quick_toggle_message_mobile">Aceasta va %1$s accesul la date mobile pentru %2$s</string>
-    <string name="dialog_quick_toggle_message_roaming">Aceasta va %1$s accesul la roaming pentru %2$s</string>
-    <string name="dialog_quick_toggle_action_block">bloca</string>
-    <string name="dialog_quick_toggle_action_allow">permite</string>
-    <string name="snackbar_wifi_blocked">WiFi blocat pentru %s</string>
-    <string name="snackbar_wifi_allowed">WiFi permis pentru %s</string>
-    <string name="snackbar_mobile_blocked">Date mobile blocate pentru %s</string>
-    <string name="snackbar_mobile_allowed">Date mobile permise pentru %s</string>
-    <string name="snackbar_roaming_blocked">Roaming blocat pentru %s</string>
-    <string name="snackbar_roaming_allowed">Roaming permis pentru %s</string>
-    <string name="dialog_quick_toggle_message_internet">Aceasta va %1$s accesul la Internet pentru %2$s</string>
-    <string name="snackbar_internet_blocked">Internet blocat pentru %s</string>
-    <string name="snackbar_internet_allowed">Internet permis pentru %s</string>
-    <string name="snackbar_undo">Anulează</string>
-
-
-    <!-- Package Management -->
-    <string name="packages_search_hint">Caută pachete…</string>
-    <string name="packages_filter_all">Toate</string>
-    <string name="packages_filter_system">Sistem</string>
-    <string name="packages_filter_user">Utilizator</string>
-    <string name="packages_filter_bloatware">Bloatware</string>
-    <string name="packages_export_description">Exportă lista afișată</string>
     <string name="packages_export_empty">Nimic de exportat pe ecran</string>
     <string name="packages_export_success">✅ %d nume de pachete exportate</string>
     <string name="packages_export_failed">Export eșuat: %s</string>
-    <string name="packages_filter_enabled">Activate</string>
-    <string name="packages_filter_disabled">Dezactivate</string>
-    <string name="packages_empty_state_no_uninstalled">Nicio aplicație de sistem dezinstalată</string>
-
-    <!-- Profile Filters (Multi-user/Work Profile Support) -->
-    <string name="filter_profile_all">Toate profilurile</string>
-    <string name="filter_profile_personal">Personal</string>
-    <string name="filter_profile_work">Serviciu</string>
-    <string name="filter_profile_clone">Clonă</string>
-    <string name="badge_work_profile">Serviciu</string>
-    <string name="badge_clone_profile">Clonă</string>
-
-    <!-- Package Status -->
-    <string name="status_uninstalled">Dezinstalat</string>
-    <!-- Per-row status badge. Singular, unlike the plural filter chips above. -->
-    <string name="packages_status_enabled">Activat</string>
-    <string name="packages_status_disabled">Dezactivat</string>
-
-    <!-- Package Actions -->
-    <string name="action_enable">Activează</string>
-    <string name="action_disable">Dezactivează</string>
-    <string name="action_uninstall">Dezinstalează</string>
-    <string name="action_reinstall">Reinstalează</string>
-    <string name="action_force_stop">Oprire forțată</string>
-    <string name="select_package">Selectează pachet</string>
-    <string name="close_selection">Închide modul selecție</string>
-
-    <!-- Package Action Sheet -->
-    <string name="action_sheet_package_name_label">Nume pachet</string>
-    <string name="action_sheet_force_stop_desc_running">Oprește imediat toate procesele</string>
-    <string name="action_sheet_force_stop_desc_not_running">Oprire forțată (dacă rulează)</string>
-    <string name="action_sheet_disable_desc">Împiedică această aplicație să ruleze</string>
-    <string name="action_sheet_enable_desc">Permite acestei aplicații să ruleze</string>
-    <string name="action_sheet_uninstall_desc">Elimină această aplicație de pe dispozitiv</string>
-    <string name="action_sheet_reinstall_desc">Restaurează această aplicație de sistem</string>
-
-    <!-- Package Action Confirmations -->
-    <string name="dialog_force_stop_title">Oprire Forțată %s?</string>
-    <string name="dialog_force_stop_system_message">⚠️ Acesta este un pachet de sistem. Oprirea forțată poate cauza instabilitate sistemului.\n\nContinui?</string>
-    <string name="dialog_force_stop_message">Aceasta va opri imediat toate procesele pentru %s.\n\nConfirmi?</string>
-    <string name="dialog_enable_disable_title">%1$s %2$s?</string>
     <string name="dialog_disable_system_message">⚠️ Acesta este un pachet de sistem. Dezactivarea lui poate cauza instabilitate sistemului sau poate împiedica alte aplicații să funcționeze.\n\nContinui?</string>
     <string name="dialog_enable_message">Aceasta va permite %s să ruleze normal.\n\nConfirmi?</string>
     <string name="dialog_disable_message">Aceasta va împiedica %s să ruleze.\n\nConfirmi?</string>
-
-    <!-- Permission Names -->
     <string name="permission_network_state">Stare rețea</string>
     <string name="permission_wifi_state">Stare WiFi</string>
     <string name="permission_notification">Permisiune notificări</string>
@@ -123,8 +14,6 @@
     <string name="permission_enable_disable_components">Activare/Dezactivare componente</string>
     <string name="permission_superuser_access">Acces Superutilizator</string>
     <string name="permission_vpn">Permisiune VPN</string>
-
-    <!-- Permission Descriptions -->
     <string name="permission_network_state_desc">Monitorizează conectivitatea rețelei (WiFi/Mobil/Roaming)</string>
     <string name="permission_wifi_state_desc">Detectează starea rețelei WiFi</string>
     <string name="permission_notification_desc">Afișează notificări pentru instalări noi de aplicații</string>
@@ -133,143 +22,15 @@
     <string name="permission_enable_disable_components_desc">Activează sau dezactivează componentele aplicațiilor</string>
     <string name="permission_superuser_access_desc">Acces complet la sistem pentru operații avansate</string>
     <string name="permission_vpn_desc">Permite revenirea automată la VPN când backend-urile privilegiate (iptables/ConnectivityManager) eșuează. Asigură că Firewall-ul rămâne activ.</string>
-
-    <!-- Permission Tier Titles -->
-    <string name="permission_tier_basic_title">Funcționalitate de bază</string>
-    <string name="permission_tier_battery_title">Proces în fundal</string>
-    <string name="permission_tier_advanced_title">Operațiuni avansate</string>
-    <string name="permission_tier_vpn_title">Restaurare VPN</string>
-
-    <!-- Permission Tier Descriptions -->
-    <string name="permission_tier_basic_desc">Vizualizează pachetele instalate și informații de bază</string>
-    <string name="permission_tier_battery_desc">Împiedică Android să oprească serviciul firewall pentru a economisi baterie. Critic pentru fiabilitatea VPN.</string>
-    <string name="permission_tier_advanced_desc">Gestionarea pachetelor și operațiuni la nivel de sistem (prin Shizuku sau root)</string>
-    <string name="permission_tier_vpn_desc">Permite revenirea automată la VPN când backend-urile privilegiate (iptables/ConnectivityManager) eșuează. Asigură că firewall-ul rămâne activ.</string>
-    <string name="permission_tier_vpn_desc_privileged">Nu este necesar când se utilizează un backend de firewall privilegiat (iptables/ConnectivityManager). Necesar doar ca rezervă.</string>
-
-    <!-- Permission Tier Status -->
-    <string name="permission_status_completed">Finalizat</string>
-    <string name="permission_status_required">Permisiune necesară</string>
-    <string name="permission_status_not_required">Nu este necesar</string>
-    <string name="permission_status_shizuku_or_root_required">Shizuku sau Root necesar</string>
-
-    <!-- Permission Tier Buttons -->
-    <string name="permission_button_grant">Acordă permisiune</string>
-    <string name="permission_button_grant_shizuku">Acordă permisiune Shizuku</string>
-    <string name="permission_button_grant_privileged">Acordă acces privilegiat</string>
-    <string name="permission_button_grant_vpn">Acordă permisiune VPN</string>
-
-    <!-- Multi-Select Package Operations -->
-    <string name="multiselect_toast_not_available_disabled">Selecția multiplă nu este disponibilă pentru pachetele dezactivate</string>
-    <string name="multiselect_toast_not_available_uninstalled">Selecția multiplă nu este disponibilă pentru pachetele dezinstalate</string>
-    <string name="multiselect_toolbar_title_format">%d selectate</string>
-    <string name="multiselect_toolbar_button_uninstall">Dezinstalează</string>
-    <string name="multiselect_toolbar_button_reinstall">Reinstalează</string>
-
-
-
-
-
-
-    <string name="multiselect_toast_limit_reached">Maximum %d pachete pot fi selectate odată</string>
-
-    <!-- Firewall Multi-Select -->
-    <string name="firewall_multiselect_toast_cannot_select_critical">Pachetele critice/VPN nu pot fi selectate</string>
-    <string name="firewall_multiselect_toast_cannot_select_system_uid">Această aplicație nu poate fi blocată în modul curent al firewall-ului</string>
-    <string name="firewall_multiselect_toolbar_button_block">Blochează</string>
-    <string name="firewall_multiselect_toolbar_button_allow">Permite</string>
-    <string name="firewall_multiselect_toolbar_button_rules">Modifică regulile</string>
-    <string name="firewall_multiselect_dialog_title_results">Rezultate Firewall</string>
-    <string name="firewall_multiselect_dialog_message_success_format">✓ %2$s cu succes: %1$d aplicații</string>
-    <string name="firewall_multiselect_dialog_message_failed_format">✓ %1$d reușite, ✗ %2$d eșuate la %3$s</string>
-
-    <!-- Firewall Multi-Select Bottom Sheet -->
-    <string name="firewall_multiselect_sheet_header_format">%d pachete selectate</string>
-    <string name="firewall_multiselect_sheet_section_network_rules">Reguli de rețea</string>
-    <string name="firewall_multiselect_sheet_state_mixed">Mixt</string>
-    <string name="firewall_multiselect_sheet_quick_actions">Acțiuni rapide</string>
-    <string name="firewall_multiselect_sheet_allow_all">Permite toate rețelele</string>
-    <string name="firewall_multiselect_sheet_block_all">Blochează toate rețelele</string>
-
-    <!-- Theme -->
-
-    <!-- Common -->
-
-    <!-- Content Descriptions -->
-    <string name="cd_app_icon">Pictogramă aplicație</string>
-    <string name="cd_wifi_status">Stare WiFi</string>
-    <string name="cd_wifi_blocked">WiFi blocat</string>
-    <string name="cd_mobile_data_status">Stare date mobile</string>
-    <string name="cd_mobile_blocked">Date mobile blocate</string>
-    <string name="cd_roaming_status">Stare roaming</string>
-    <string name="cd_roaming_blocked">Roaming blocat</string>
-    <string name="cd_shield_icon">Pictogramă scut</string>
-    <string name="cd_open_app_settings">Deschide setări aplicație</string>
-    <string name="cd_package_control_icon">Pictogramă control pachete</string>
-    <string name="cd_status_icon">Pictogramă stare</string>
-    <string name="cd_de1984_logo">Logo Background Check</string>
-    <string name="cd_force_stop_icon">Pictogramă oprire forțată</string>
-    <string name="cd_enable_disable_icon">Pictogramă activare/dezactivare</string>
-    <string name="cd_uninstall_icon">Pictogramă dezinstalare</string>
-    <string name="cd_firewall_rules_icon">Pictogramă reguli firewall</string>
-    <string name="cd_settings_icon">Pictogramă setări</string>
-    <string name="cd_backend_information">Informații backend</string>
-    <string name="cd_captive_portal_icon">Pictogramă portal captiv</string>
-    <string name="cd_apps_icon">Pictogramă aplicații</string>
-    <string name="cd_permission_status">Stare permisiune</string>
-
-    <!-- Footer / Branding -->
-    <string name="footer_tagline">Nopți târzii pentru zile mai luminoase.\nCreat de Doru Moraru</string>
-    <string name="footer_author_name" translatable="false">Doru Moraru</string>
-    <string name="footer_author_url" translatable="false">https://github.com/dorumrr/de1984</string>
-
-    <!-- Plurals -->
-    <plurals name="package_count">
-        <item quantity="one">%d aplicație</item>
-        <item quantity="few">%d aplicații</item>
-        <item quantity="other">%d de aplicații</item>
-    </plurals>
-
-    <!-- Root Access -->
-    <string name="root_status_denied">Acces Root: Refuzat</string>
-    <string name="root_status_not_available">Acces Root: Indisponibil</string>
-
-    <string name="root_desc_denied">Permisiunea root a fost refuzată. Urmează instrucțiunile de mai jos pentru a acorda acces.</string>
-    <string name="root_desc_not_available">Dispozitivul tău nu este rootat. Accesul root este necesar pentru operațiuni avansate de gestionare pachete.</string>
-
-    <string name="root_grant_instructions_title">Pentru a acorda acces root:</string>
-    <string name="root_grant_instructions_body">• Reinstalează aplicația pentru a declanșa din nou dialogul de permisiune\n• Sau adaugă manual Background Check în aplicația ta de Superuser (Magisk, KernelSU, etc.)</string>
-
-    <string name="root_rooting_tools_title"><![CDATA[<b>Instrumente de rootare recomandate:</b>]]></string>
-    <string name="root_rooting_tools_body">• Magisk - Cea mai populară și larg suportată soluție de root. Funcționează pe Android 5.0+ și suportă module pentru funcții adiționale.\n• KernelSU - Gestionare root modernă bazată pe kernel. Oferă izolare de securitate mai bună și nu modifică partiția de sistem.\n• APatch - Alternativă mai nouă cu abordare de patch kernel. Bună pentru dispozitive cu politici stricte de securitate.</string>
-
-
-    <!-- Shizuku Access -->
-    <string name="shizuku_status_denied">Shizuku: Refuzat</string>
-    <string name="shizuku_status_not_running">Shizuku: Nu Rulează</string>
-
-    <string name="shizuku_desc_denied">Permisiunea Shizuku a fost refuzată. Apasă \'Acordă Permisiune Shizuku\' pentru a încerca din nou.</string>
-    <string name="shizuku_desc_not_running">Shizuku este instalat dar nu rulează. Pornește Shizuku pentru a activa gestionarea pachetelor.</string>
-
-
-
-    <!-- Privileged Access Banner -->
-
-
-    <!-- Backend Monitoring -->
-
     <string name="backend_notification_title_waiting">Background Check Firewall activ (Mod VPN)</string>
     <string name="backend_notification_title_switching">Background Check schimbă backend-u...</string>
     <string name="backend_notification_title_success">Backend-ul Background Check Firewall a fost schimbat</string>
     <string name="backend_notification_title_failed">Schimbarea backend-ului Background Check Firewall a eșuat</string>
-
     <string name="backend_notification_text_shizuku_not_running">Se așteaptă pornirea Shizuku. Apasă pentru a reîncerca.</string>
     <string name="backend_notification_text_shizuku_no_permission">Se așteaptă permisiunea Shizuku. Apasă pentru a reîncerca.</string>
     <string name="backend_notification_text_switching">Shizuku este acum disponibil. Se schimbă la backend-ul preferat...</string>
     <string name="backend_notification_text_failed">Background Check Firewall nu a reușit să schimbe backend-ul. Încă folosește VPN.</string>
-
     <string name="backend_action_button_retry">Reîncearcă</string>
-
     <string name="backend_switched_notification_title">Backend de firewall schimbat</string>
     <string name="backend_switched_notification_text">S-a trecut la %1$s — alt VPN este activ</string>
     <string name="backend_switched_notification_big">O altă aplicație VPN s-a conectat. Background Check a trecut automat la %1$s ca să te protejeze în continuare. Atinge pentru a deschide setările.</string>
@@ -280,19 +41,12 @@
     <string name="backend_notification_text_success">Background Check folosește acum backendul %1$s</string>
     <string name="backend_unknown_name">Necunoscut</string>
     <string name="backend_toast_failed">Background Check Firewall nu a reușit să schimbe backend-ul</string>
-
-    <!-- VPN Fallback -->
-
     <string name="vpn_fallback_notification_title">Background Check Firewall Oprit</string>
     <string name="vpn_fallback_notification_text">Backend-ul privilegiat a eșuat. Apasă pentru a activa conectarea prin VPN și a restabili protecția firewall.</string>
     <string name="vpn_fallback_notification_action_text">Activează conectarea prin VPN</string>
-    <!-- Widget/tile start that needs VPN permission. Distinct from the fallback strings
-         above: nothing has failed here, the user just asked to turn the firewall on. -->
     <string name="vpn_permission_notification_title">Pornește Background Check Firewall</string>
     <string name="vpn_permission_notification_text">Background Check are nevoie de permisiunea dvs. pentru a crea o conexiune VPN. Atingeți pentru a permite și a porni firewallul.</string>
     <string name="vpn_permission_notification_action_text">Permite și pornește</string>
-
-    <!-- Firewall Down warning (in-app banner + notification) -->
     <string name="firewall_down_title">Firewall picat — aplicațiile tale sunt deblocate</string>
     <string name="firewall_down_reason_no_plan">Pe acest dispozitiv nu există niciun backend de firewall utilizabil.</string>
     <string name="firewall_down_reason_fallback_failed">Backendul de rezervă nu a pornit. Nimic nu blochează accesul la rețea.</string>
@@ -313,142 +67,29 @@
     <string name="firewall_apply_failed_message">Backendul %1$s nu a putut aplica toate regulile. Unele aplicații pot să nu fie blocate sau permise așa cum se arată.</string>
     <string name="firewall_stop_failed_action_retry">Oprește din nou</string>
     <string name="firewall_down_notifications_off">Notificările sunt oprite, așa că acest avertisment nu te poate ajunge când Background Check este închis.</string>
-    <string name="firewall_down_action_enable_notifications">Activează alertele</string>
-    <string name="firewall_status_down">PICAT</string>
-    <string name="firewall_status_stuck">BLOCAT</string>
-
-    <!-- VPN Conflict Notification -->
     <string name="vpn_conflict_notification_title">Background Check Firewall Oprit - Conflict VPN</string>
     <string name="vpn_conflict_notification_text">Un alt VPN este activ. Background Check necesită permisiunea VPN pentru a restabili protecția firewall-ului. Aceasta va înlocui conexiunea VPN curentă. Apasă pentru a acorda permisiunea.</string>
     <string name="vpn_conflict_notification_action_text">Înlocuiește VPN &amp; Activează Firewall</string>
-
-
-
-    <!-- Language Switcher -->
-    <string name="language_title">Limba Aplicației</string>
-    <string name="language_description">Alege limba preferată pentru aplicație</string>
-    <string name="language_system_default">Implicit Sistem</string>
-    <string name="language_english">English (Engleză)</string>
-    <string name="language_romanian">Română</string>
-    <string name="language_portuguese">Português (Portugheză)</string>
-    <string name="language_chinese">中文 (Chineză)</string>
-    <string name="language_italian">Italiano (Italiană)</string>
-    <string name="language_french">Français (Franceză)</string>
-    <string name="language_russian">Русский (Rusă)</string>
-
-    <!-- Settings Screen -->
-    <string name="settings_app_version">Versiunea %s</string>
-    <string name="settings_app_description">Comenzi pentru firewall și aplicații adaptate din De1984, creat de Doru Moraru sub licența MIT. Donațiile prin acest buton susțin proiectul original De1984.</string>
-
-    <string name="settings_options_title">Opțiuni</string>
-    <string name="settings_options_description">Configurează comportamentul și setările</string>
-
-    <string name="settings_firewall_policy_title">Firewall Blochează totul implicit</string>
-    <string name="settings_firewall_policy_description_block_all">Blochează totul. Permite preferential</string>
-    <string name="settings_firewall_policy_description_allow_all">Permite totul. Blochează preferențial</string>
-
-    <string name="settings_backend_title">Backend Firewall</string>
-    <string name="settings_backend_description">Selectează ce backend să folosească pentru blocarea aplicațiilor</string>
-    <string name="settings_backend_active">Activ: %s</string>
-    <string name="settings_backend_not_running">Firewall-ul nu rulează.</string>
-    <string name="settings_backend_loading">Se încarcă...</string>
-
-    <!-- Backend Options -->
     <string name="backend_auto_name">AUTO (Recomandat)</string>
-    <string name="backend_auto_description">Selectează automat cel mai bun backend disponibil</string>
     <string name="backend_vpn_name">VPN</string>
-    <string name="backend_vpn_description">Folosește întotdeauna backend-ul VPN</string>
     <string name="backend_connectivity_manager_name">ConnectivityManager</string>
-    <string name="backend_connectivity_manager_description">Blocare la nivel de sistem (necesită Shizuku + Android 13+)</string>
-    <string name="backend_requires_android_13">Necesită Android 13+</string>
-    <string name="backend_requires_shizuku">Necesită Shizuku</string>
     <string name="backend_iptables_name">iptables</string>
-    <string name="backend_iptables_description">Blocare la nivel de kernel (necesită root)</string>
-    <string name="backend_iptables_requirement">Necesită root sau Shizuku în mod root</string>
     <string name="backend_network_policy_manager_name">NetworkPolicyManager (Vechi)</string>
-    <string name="backend_network_policy_manager_description">Pentru Android 12 și mai jos (folosește ConnectivityManager pe Android 13+)</string>
-    <string name="backend_network_policy_manager_requirement">Necesită Shizuku</string>
-    <string name="backend_not_available_title">%s Indisponibil</string>
-    <string name="backend_not_available_message">Acest backend nu este disponibil pe dispozitivul tău.</string>
-
-    <string name="settings_show_icons_title">Arată iconițele aplicațiilor</string>
-    <string name="settings_show_icons_description">Ar putea fluidiza aplicația când este dezactivat</string>
-
-    <string name="settings_boot_protection_title">Protecție la Pornire</string>
-    <string name="settings_boot_protection_description">Blochează tot traficul de rețea în timpul pornirii dispozitivului până când firewall-ul se activează (necesită root și Magisk)</string>
-    <string name="settings_boot_protection_unavailable">Necesită root și scripturi de pornire Magisk</string>
-    <string name="settings_boot_protection_stuck">⚠️ Protecția la pornire este încă instalată, iar Background Check a pierdut accesul root, deci nu o poate elimina. La fiecare pornire, toate aplicațiile sunt blocate până la 2 minute, apoi scriptul se ridică singur. Încercați eliminarea mai jos — funcționează dacă rootul a fost doar refuzat, nu pierdut.</string>
-    <string name="settings_boot_protection_retry_remove">Încearcă eliminarea</string>
     <string name="boot_protection_remove_no_root">Nu a putut fi eliminată. Background Check tot nu are acces root, deci nu poate șterge un fișier din /data/adb. Restabiliți rootul și încercați din nou. Până atunci, fiecare pornire blochează aplicațiile până la 2 minute, apoi se eliberează singură.</string>
-    <string name="boot_protection_rebooting">Protecția la pornire a fost eliminată. Se repornește telefonul…</string>
-
-    <string name="settings_new_app_notifications_title">Notificare pentru aplicațiile noi</string>
-    <string name="settings_new_app_notifications_description">Arată notificări când aplicații noi cu permisiuni de rețea sunt instalate</string>
-
-    <string name="settings_allow_uninstall_critical_title">Permite dezinstalarea pachetelor critice</string>
-    <string name="settings_allow_uninstall_critical_description">Arată opțiunea de dezinstalare pentru pachete Esențiale și Importante</string>
-
-    <string name="settings_allow_firewall_critical_title">Permite Firewall Pachete Critice</string>
-    <string name="settings_allow_firewall_critical_description">Permite blocarea accesului la rețea pentru pachete critice de sistem și VPN</string>
-
-    <string name="settings_show_firewall_prompt_title">Arată promptul Pornire Firewall</string>
-    <string name="settings_show_firewall_prompt_description">Arată un prompt pentru a porni firewall-ul când aplicația se deschide și firewall-ul e inactiv</string>
-
-    <string name="settings_confirm_rule_changes_title">Confirmă Modificările Regulilor</string>
-    <string name="settings_confirm_rule_changes_description">Arată un dialog de confirmare când atingi pictogramele de rețea pentru a comuta regulile</string>
-
-    <string name="settings_dynamic_color_title">Folosește culori dinamice</string>
-    <string name="settings_dynamic_color_description">Adaptează culorile aplicației la fundalul dispozitivului (Android 12+). Necesită repornirea aplicației.</string>
-
-    <string name="settings_backup_restore_title">Backup &amp; Restaurare</string>
-    <string name="settings_backup_restore_description">Salvează și restaurează regulile Firewall-ului</string>
-    <string name="settings_backup_button">Backup</string>
-    <string name="settings_restore_button">Restaurare</string>
-
-    <!-- Export/Import Uninstalled Apps -->
-    <string name="settings_uninstalled_apps_title">Aplicații dezinstalate</string>
-    <string name="settings_uninstalled_apps_description">Exportă și importă lista aplicațiilor de sistem dezinstalate</string>
-    <string name="button_export_uninstalled_apps">Exportă</string>
-    <string name="button_import_uninstalled_apps">Importă</string>
-
-    <!-- Export Messages -->
     <string name="success_export_uninstalled">✅ Export reușit: %d pachete</string>
     <string name="error_export_requires_privileges">❌ Root sau Shizuku necesar pentru a exporta aplicații dezinstalate</string>
     <string name="error_export_no_uninstalled_apps">Nu s-au găsit pachete de sistem dezinstalate</string>
     <string name="error_export_failed">Export eșuat: %s</string>
-
-    <!-- Import Messages -->
-    <string name="dialog_import_preview_title">Importă &amp; dezinstalează aplicații</string>
-    <string name="dialog_import_preview_message">S-au găsit %1$d pachete de dezinstalat:\n\n%2$s\n\n⚠️ Aceasta va dezinstala toate aplicațiile listate.</string>
-    <string name="dialog_import_warning_title">Unele pachete nu au fost găsite</string>
-    <string name="dialog_import_warning_message">%1$d din %2$d pachete găsite.\n\nGăsite:\n%3$s\n\nNegăsite:\n%4$s\n\nContinuă cu pachetele găsite?</string>
-    <string name="dialog_import_all_not_found">❌ Niciunul dintre cele %d pachete din fișier nu este instalat în prezent</string>
-    <string name="dialog_import_protected_section">🛡️ Ignorate pentru că sunt protejate (esențiale sau necesare pentru Background Check):\n%1$s</string>
     <string name="dialog_import_empty_file">❌ Fișierul este gol sau nu conține nume de pachete valide</string>
-    <string name="dialog_import_confirm">Dezinstalează tot</string>
     <string name="error_import_requires_privileges">❌ Root sau Shizuku necesar pentru a dezinstala aplicații</string>
     <string name="error_import_file_read_failed">Citirea fișierului a eșuat: %s</string>
     <string name="error_import_failed">Import eșuat: %s</string>
-
-    <string name="settings_captive_portal_title">Control portal captiv</string>
-    <string name="settings_captive_portal_description">Controlează sistemul de detectare portal captiv Android</string>
-    <string name="settings_captive_portal_current_settings">Setări curente</string>
-    <string name="settings_captive_portal_detection_mode">Mod detectare: %s</string>
-    <string name="settings_captive_portal_http_url">URL HTTP: %s</string>
-    <string name="settings_captive_portal_https_url">URL HTTPS: %s</string>
-    <string name="settings_captive_portal_preset">Preset: %s</string>
-    <string name="settings_captive_portal_loading">Se încarcă...</string>
-    <string name="settings_captive_portal_not_set">Nesetat</string>
-
-    <!-- Captive Portal Mode Options -->
     <string name="captive_portal_mode_forced_off">Oprire forțată</string>
     <string name="captive_portal_mode_forced_off_description">Detectarea portalului captiv este complet dezactivată</string>
     <string name="captive_portal_mode_disabled">Dezactivat</string>
     <string name="captive_portal_mode_disabled_description">Detectarea portalului captiv este dezactivată</string>
     <string name="captive_portal_mode_enabled">Activat</string>
     <string name="captive_portal_mode_enabled_description">Detectarea portalului captiv este activată (implicit)</string>
-
-    <!-- Captive Portal Preset Options -->
     <string name="captive_portal_preset_google">Google (implicit)</string>
     <string name="captive_portal_preset_google_description">Serverele implicite de detectare a portalului captiv de la Google</string>
     <string name="captive_portal_preset_grapheneos">GrapheneOS</string>
@@ -459,74 +100,9 @@
     <string name="captive_portal_preset_cloudflare_description">Serverele de detectare a portalului captiv ale Cloudflare</string>
     <string name="captive_portal_preset_custom">URL-uri Personalizate</string>
     <string name="captive_portal_preset_custom_description">Folosește propriile tale URL-uri personalizate pentru portalul captiv</string>
-
-    <!-- Captive Portal Success Messages -->
     <string name="captive_portal_preset_applied">Presetare %s aplicată cu succes</string>
     <string name="captive_portal_mode_set">Modul de detectare setat la %s</string>
-    <string name="settings_captive_portal_restore_original">Restaurează originalul</string>
-    <string name="settings_captive_portal_reset_google">Resetează la Google</string>
-    <string name="settings_captive_portal_no_privileges">Acces Root sau Shizuku necesar pentru a modifica setările</string>
-
-    <string name="settings_permissions_title">Permisiuni</string>
-    <string name="settings_permissions_description">Status și configurare avansată</string>
-
-    <string name="settings_contribute_title">Întrebări, funcționalități, bug-uri?</string>
-    <string name="settings_contribute_description">Implică-te și ajută la îmbunătățirea Background Check</string>
-    <string name="settings_contribute_message">Contribuie cod, raportează bug-uri sau sugerează funcționalități pentru a face această aplicație mai bună pentru toată lumea.</string>
-    <string name="settings_contribute_button">Contribuie pe GitHub</string>
-
-    <!-- Dialog Titles and Messages -->
-    <string name="dialog_success">Succes</string>
-    <string name="dialog_firewall_backends_title">Backend-uri Firewall</string>
-    <string name="dialog_firewall_backends_message">💡 Mod AUTO (Recomandat)\nSelectează automat cel mai bun backend disponibil:\n1. iptables (dacă root/Shizuku disponibil)\n2. ConnectivityManager (dacă Shizuku + Android 13+)\n3. VPN (rezervă)\n\nBackground Check suportă patru backend-uri firewall:\n\n� Backend VPN\n• Întotdeauna disponibil (nu necesită root)\n• Folosește API-ul Android VpnService\n• Suportă control granular (WiFi/Mobile/Roaming)\n• Ocupă slotul VPN (nu poți folosi alte aplicații VPN)\n• Filtrare pachete în spațiul utilizator\n\n🔹 Backend iptables\n• Necesită root sau Shizuku în mod root\n• Blocare la nivel de kernel (cel mai eficient)\n• Suportă control granular (WiFi/Mobile/Roaming)\n• Nu ocupă slotul VPN\n• Funcționează cu alte aplicații VPN\n\n🔹 Backend ConnectivityManager\n• Necesită Shizuku + Android 13+\n• Blocare la nivel de sistem (blochează toate rețelele fiabil)\n• Doar blocare totală (fără control granular)\n• Nu ocupă slotul VPN\n• Funcționează cu alte aplicații VPN\n\n� Backend NetworkPolicyManager (Vechi)\n• Necesită Shizuku\n• Pentru Android 12 și mai jos\n• Poate să nu blocheze WiFi pe unele dispozitive\n• Folosește ConnectivityManager pe Android 13+ în schimb\n• Nu ocupă slotul VPN</string>
-    <string name="dialog_privileged_access_title">Acces privilegiat</string>
-    <string name="dialog_privileged_access_testing">🔄 Se testează accesul privilegiat...\n\nTe rog acordă permisiunea în dialogul popup dacă apare.</string>
-    <string name="dialog_privileged_access_failed">❌ Testul root a eșuat.\n\nEroare: %s</string>
-    <string name="dialog_restore_rules_title">Restaurează regulile Firewall?</string>
-    <string name="dialog_restore_rules_message">📦 Informații Backup:\n\n• Creat: %1$s\n• Versiune App: %2$s\n• Număr Reguli: %3$d\n\nAlege modul de restaurare:\n\n• Îmbină: Păstrează regulile existente și adaugă/actualizează din backup\n• Înlocuiește Tot: Șterge toate regulile existente mai întâi (⚠️ distructiv)</string>
-    <string name="dialog_restore_rules_merge">Îmbină</string>
-    <string name="dialog_restore_rules_replace">Înlocuiește Tot</string>
-    <string name="dialog_replace_all_title">⚠️ Înlocuiești toate Regulile?</string>
-    <string name="dialog_replace_all_message">Acțiunea va ȘTERGE toate regulile firewall existente și le va înlocui cu cele din backup.\n\nAceastă acțiune nu este reversibilă.\n\nConfirmi?</string>
-    <string name="dialog_replace_all_confirm">Înlocuiește tot</string>
-    <string name="dialog_critical_uninstall_title">⚠️ Avertisment</string>
-    <string name="dialog_critical_uninstall_message">Aceasta permite dezinstalarea pachetelor critice de sistem care pot deteriora dispozitivul. Activează doar dacă știi ce faci.\n\nConfirmi?</string>
-    <string name="dialog_critical_uninstall_enable">Activează</string>
-    <string name="dialog_critical_firewall_title">⚠️ Avertisment</string>
-    <string name="dialog_critical_firewall_message">Aceasta permite blocarea accesului la rețea pentru pachete critice de sistem (WiFi, Bluetooth, Download Manager, etc.) și aplicații VPN.\n\nBlocarea acestor pachete poate:\n• Întrerupe conectivitatea la rețea\n• Împiedica funcționarea WiFi/Bluetooth\n• Cauza probleme de reconectare VPN\n• Necesita resetare din fabrică sau ADB pentru remediere\n\nActivează doar dacă știi ce faci.\n\nConfirmi activarea?</string>
-    <string name="dialog_critical_firewall_enable">Activează</string>
-    <string name="dialog_restart_title">Repornire necesară</string>
-    <string name="dialog_restart_message">Aplicația trebuie repornită pentru a aplica noua temă de culoare. Repornești acum?</string>
-    <string name="dialog_restart_confirm">Repornește</string>
-    <string name="dialog_captive_portal_restore_title">Restaurează setările originale?</string>
-    <string name="dialog_captive_portal_restore_message">Aceasta va restaura setările originale ale portalului captiv ale dispozitivului tău care au fost capturate când ai deschis prima dată această funcționalitate.</string>
-    <string name="dialog_captive_portal_restore_confirm">Restaurează</string>
-    <string name="dialog_captive_portal_reset_title">Resetează la valorile implicite Google?</string>
-    <string name="dialog_captive_portal_reset_message">Aceasta va reseta setările portalului captiv la serverele implicite Google. Setările tale originale vor rămâne salvate și pot fi restaurate mai târziu.</string>
-    <string name="dialog_captive_portal_reset_confirm">Resetează</string>
-    <string name="dialog_backup_read_error">Eșec la citirea fișierului backup: %s</string>
-    <string name="dialog_backup_load_error">Eșec la încărcarea backup-ului: %s</string>
-    <string name="dialog_loading_backup_title">Se încarcă backup-ul...</string>
-    <string name="dialog_loading_backup_message">Te rog așteaptă...</string>
-    <string name="dialog_vpn_permission_error_title">Eroare Permisiune VPN</string>
-    <string name="dialog_vpn_permission_error_message">Eroare la solicitarea permisiunii VPN: %s</string>
-
-    <!-- Licenses (unused but kept for future) -->
-
-    <!-- Packages Screen -->
-    <string name="packages_empty_state_title">Nu s-au găsit pachete</string>
-    <string name="packages_empty_state_subtitle">Încearcă să ajustezi filtrele</string>
-    <string name="package_state_enabled">Activat</string>
-    <string name="package_type_user">Utilizator</string>
-
-    <!-- Firewall Screen -->
-    <string name="firewall_empty_state_title">Nu s-au găsit pachete</string>
-    <string name="firewall_empty_state_subtitle">Încearcă să ajustezi filtrele</string>
     <string name="firewall_vpn_info_message">Se folosește Firewall-ul bazat pe VPN deoarece dispozitivul tău nu este rootat sau nu are Shizuku. Nu poți folosi o altă aplicație VPN în timp ce Background Check Firewall este activ.</string>
-    <string name="firewall_network_label_wifi">WiFi</string>
-    <string name="firewall_network_label_mobile">Date mobile</string>
-    <string name="firewall_network_label_roaming">Roaming</string>
-    <string name="firewall_network_label_lan">Acces LAN</string>
     <string name="firewall_lan_requires_root">Necesită acces root</string>
     <string name="firewall_backend_cannot_block_uid">Nu poate fi blocată</string>
     <string name="firewall_system_uid_info">⚠️ Face parte din Android, nu este o aplicație obișnuită. Shizuku nu o poate bloca — Android refuză regulile de firewall pentru propriile componente. Cu root se poate, dar acolo unde ID-ul de utilizator este partajat cu o aplicație protejată, precum Setările, este nevoie și de \'Permite Firewall Pachete Critice\' activat în Setări, iar blocarea le va afecta și pe acelea.</string>
@@ -537,147 +113,23 @@
     <string name="firewall_shared_uid_info">⚠️ Această aplicație are același ID de utilizator ca o aplicație protejată, iar modul curent al firewall-ului blochează după ID-ul de utilizator, nu după aplicație. Blocarea ei ar opri și aplicația protejată, așa că Background Check lasă întregul ID de utilizator neatins. Pentru a o bloca totuși, activează \'Permite Firewall Pachete Critice\' în Setări, apoi pornește comutatorul acestei aplicații.</string>
     <string name="firewall_no_rule_protected_uid_info">⚠️ Background Check protejează ID-ul de utilizator al acestei aplicații, așa că politica implicită Blochează Tot nu i se aplică — altfel ar putea opri o aplicație de sistem protejată. Cu \'Permite Firewall Pachete Critice\' activat o poți bloca totuși: pornește comutatorul acestei aplicații.</string>
     <string name="firewall_sibling_rule_info">⚠️ O altă aplicație folosește același ID de utilizator și are propria regulă de firewall. Modul curent blochează după ID-ul de utilizator, deci acea regulă se aplică și acestei aplicații, inclusiv orice blocare cu ecranul stins. Comutatoarele din această fereastră sunt setările proprii ale acestei aplicații.</string>
-    <string name="firewall_network_label_background_access">Permite cu ecranul stins</string>
-    <string name="firewall_network_label_internet_access">Acces Internet</string>
-    <string name="firewall_internet_access_subtitle">WiFi, Date mobile, Roaming</string>
     <string name="firewall_connectivity_manager_info">Dispozitivul tău folosește un Firewall la nivel de sistem care nu suportă blocare per rețea. Pentru control granular, este necesar acces root.</string>
     <string name="firewall_system_critical_info">⚠️ Pachet critic de sistem - Accesul la rețea nu poate fi modificat pentru a preveni instabilitatea sistemului.</string>
     <string name="firewall_vpn_app_info">🔒 Aplicație VPN - Întotdeauna permisă pentru a preveni probleme de reconectare VPN după blocare/deblocare dispozitiv.</string>
     <string name="firewall_critical_allowed_info">⚠️ Protecția pachetelor critice este dezactivată în Setări. Blocarea accesului la rețea poate cauza instabilitate a sistemului sau probleme VPN.</string>
-    <string name="firewall_badge_system_critical">Critic de sistem</string>
-    <string name="firewall_badge_vpn_app">Aplicație VPN</string>
-    <string name="firewall_badge_no_internet">Fără Permisiune Internet</string>
     <string name="firewall_no_internet_info">ℹ️ Această aplicație nu are în prezent permisiunea de internet declarată în manifestul său.\n\nBlocarea ei acum va avea efect dacă aplicația obține permisiunea de internet într-o actualizare viitoare, oferind protecție proactivă.</string>
-
-    <!-- Protection Warning Banner -->
-    <string name="protection_banner_title">🛡️ Pachet Protejat</string>
     <string name="protection_banner_message_firewall_system">Acest pachet critic de sistem este protejat implicit pentru a preveni instabilitatea sistemului. Activează \'Permite Firewall Pachete Critice\' în Setări pentru a modifica accesul la rețea.</string>
     <string name="protection_banner_message_firewall_vpn">Această aplicație VPN este protejată implicit pentru a preveni probleme de reconectare VPN. Activează \'Permite Firewall Pachete Critice\' în Setări pentru a modifica accesul la rețea.</string>
-    <string name="protection_banner_message_firewall">Acest pachet este protejat implicit. Activează \'Permite Firewall Pachete Critice\' în Setări pentru a modifica accesul la rețea.</string>
-    <string name="protection_banner_message_uninstall">Acest pachet critic este protejat implicit pentru a preveni instabilitatea sistemului. Activează \'Permite Dezinstalarea Pachetelor Critice\' în Setări pentru a-l dezinstala.</string>
-    <string name="protection_banner_button">Setări</string>
-
-    <!-- Snackbar Messages -->
-    <string name="snackbar_firewall_protected">Acest pachet este protejat. Activează opțiunea în Setări pentru a modifica accesul la rețea.</string>
-    <string name="snackbar_uninstall_protected">Acest pachet este protejat. Activează opțiunea în Setări pentru a dezinstala.</string>
-    <string name="snackbar_action_settings">SETĂRI</string>
-
-    <!-- Package Categories -->
-    <string name="category_system_core">Nucleu de sistem</string>
-    <string name="category_system_ui">Interfață sistem</string>
-    <string name="category_google_services">Servicii Google</string>
-    <string name="category_connectivity">Conectivitate</string>
-    <string name="category_telephony">Telefonie</string>
-    <string name="category_media">Media</string>
-    <string name="category_social">Social</string>
-    <string name="category_assistant">Asistent</string>
-    <string name="category_vendor">Furnizor</string>
-    <string name="category_unknown">Necunoscut</string>
-
-    <!-- Package Action Sheet -->
-    <string name="action_sheet_placeholder_app_name">Nume aplicație</string>
-    <string name="action_sheet_placeholder_package_name">com.exemplu.app</string>
-    <string name="action_sheet_safety_badge_essential">Esențial</string>
-    <string name="action_sheet_safety_badge_important">Important</string>
-    <string name="action_sheet_safety_badge_optional">Opțional</string>
-    <string name="action_sheet_safety_badge_bloatware">Bloatware</string>
-    <string name="action_sheet_type_badge_user">Utilizator</string>
-    <string name="action_sheet_type_badge_system">UI sistem</string>
-    <string name="action_sheet_action_force_stop">Oprire forțată</string>
-    <string name="action_sheet_action_force_stop_desc">Oprește imediat toate procesele</string>
-    <string name="action_sheet_action_disable">Dezactivează</string>
-    <string name="action_sheet_action_disable_desc">Împiedică rularea acestei aplicații</string>
-    <string name="action_sheet_action_uninstall">Dezinstalează</string>
-    <string name="action_sheet_action_uninstall_desc">Elimină această aplicație de pe dispozitiv</string>
-    <string name="action_sheet_action_firewall">Reguli Firewall</string>
-    <string name="action_sheet_action_firewall_desc">Controlează accesul la rețea</string>
-    <string name="action_sheet_section_network_access">Control acces rețea</string>
-    <string name="action_sheet_section_package_control">Control pachete</string>
-    <string name="action_sheet_section_package_control_desc">Oprire forțată, dezactivare sau dezinstalare</string>
-    <string name="action_sheet_status_updating">Se actualizează...</string>
-
-    <!-- Clipboard -->
-    <string name="clipboard_label_package_name">Nume pachet</string>
-
-    <!-- Uninstall Dialogs -->
-    <string name="uninstall_dialog_title_critical">🚨 AVERTISMENT CRITIC</string>
     <string name="uninstall_dialog_message_essential">⚠️ PACHET SISTEM ESENȚIAL ⚠️\n\nDezinstalarea %1$s POATE BLOCA DISPOZITIVUL!\n\nAcest pachet este critic pentru funcționarea sistemului. Eliminarea lui poate face dispozitivul inutilizabil și poate necesita resetare la fabrică sau reflash.\n\n%2$sScrie \"UNINSTALL\" pentru a confirma această acțiune periculoasă:</string>
     <string name="uninstall_dialog_affects_prefix">Afectează:\n%s\n\n</string>
     <string name="uninstall_dialog_confirm_word">UNINSTALL</string>
-    <string name="uninstall_dialog_button_uninstall">Dezinstalează</string>
-
-    <string name="uninstall_dialog_title_important">⚠️ Avertisment: Pachet important</string>
     <string name="uninstall_dialog_message_important">Dezinstalarea %1$s poate cauza oprirea funcționării unor capabilități majore ale sistemului.\n\n%2$sAceasta poate necesita resetare la fabrică pentru a restabili funcționalitatea.\n\nConfirmi?</string>
-
-    <string name="uninstall_dialog_title_optional">Dezinstalezi %s?</string>
     <string name="uninstall_dialog_message_optional_with_affects">Aceasta poate afecta:\n%s\n\nConfirmi?</string>
     <string name="uninstall_dialog_message_optional">Aceasta va elimina %s de pe dispozitivul tău.\n\nConfirmi?</string>
-
-    <string name="uninstall_dialog_title_bloatware">Dezinstalezi %s?</string>
     <string name="uninstall_dialog_message_bloatware">✓ Sigur de eliminat\n\nAcest pachet este considerat bloatware și poate fi dezinstalat în siguranță.\n\nConfirmi?</string>
-
-    <string name="uninstall_dialog_title_unknown">Dezinstalezi %s?</string>
     <string name="uninstall_dialog_message_unknown_system">⚠️ PERICOL: Acesta este un pachet de sistem. Dezinstalarea lui poate bloca dispozitivul sau cauza instabilitate severă a sistemului.\n\nAceastă acțiune nu poate fi anulată ușor.\n\nConfirmi?</string>
     <string name="uninstall_dialog_message_unknown_user">Aceasta va elimina %s de pe dispozitivul tău.\n\nConfirmi?</string>
-
-    <!-- Reinstall Dialog -->
-    <string name="reinstall_dialog_title">Reinstalezi %s?</string>
     <string name="reinstall_dialog_message">Aceasta va restabili aplicația de sistem pe dispozitivul tău.\n\nConfirmi?</string>
-    <string name="reinstall_dialog_button_reinstall">Reinstalează</string>
-
-    <!-- Batch Reinstall Dialog -->
-    <string name="batch_reinstall_dialog_title">Reinstalezi %d aplicații selectate?</string>
-    <plurals name="batch_reinstall_dialog_message_prefix">
-        <item quantity="one">Reinstalezi %d aplicație de sistem selectată?\n\nUrmătoarele aplicații vor fi reinstalate:\n\n</item>
-        <item quantity="few">Reinstalezi %d aplicații de sistem selectate?\n\nUrmătoarele aplicații vor fi reinstalate:\n\n</item>
-        <item quantity="other">Reinstalezi %d de aplicații de sistem selectate?\n\nUrmătoarele aplicații vor fi reinstalate:\n\n</item>
-    </plurals>
-    <string name="batch_reinstall_dialog_message_item">• %s\n</string>
-    <string name="batch_reinstall_dialog_message_more">\n…și încă %d</string>
-    <string name="batch_reinstall_dialog_button_reinstall_all">Reinstalează tot</string>
-
-    <!-- Batch Uninstall Dialog -->
-    <string name="batch_uninstall_dialog_message_question">Ești sigur că vrei să dezinstalezi aceste %d aplicații?</string>
-    <string name="batch_uninstall_dialog_category_user_apps">📱 Aplicații Utilizator (%d):</string>
-    <string name="batch_uninstall_dialog_category_bloatware">✓ Bloatware (%d):</string>
-    <string name="batch_uninstall_dialog_category_optional">⚠️ Aplicații Opționale de Sistem (%d):</string>
-    <string name="batch_uninstall_dialog_and_more">... și încă %d</string>
-    <string name="batch_uninstall_results_and_more">... și încă %d</string>
-    <string name="batch_uninstall_results_error_prefix">  Eroare: %s</string>
-    <string name="batch_uninstall_progress_title">Dezinstalare aplicații</string>
-    <string name="batch_uninstall_progress_message">Dezinstalare %1$d din %2$d aplicații…</string>
-    <string name="batch_uninstall_results_title">Rezultate dezinstalare</string>
-    <string name="batch_uninstall_results_success">✅ Dezinstalate cu succes %d aplicații:</string>
-    <string name="batch_uninstall_results_failed">❌ Eșec la dezinstalarea a %d aplicații:</string>
-
-    <!-- Common Dialog Strings -->
-    <string name="dialog_ok">OK</string>
-    <string name="dialog_cancel">Anulează</string>
-    <string name="dialog_continue">Continuă</string>
-    <string name="dialog_error_title">Eroare</string>
-    <string name="dialog_no_access_message">❌ Niciun acces privilegiat disponibil\n\nDispozitivul tău nu pare să fie rootat. Pentru a activa funcțiile avansate de gestionare a pachetelor:\n• Instalează și configurează Shizuku (recomandat - nu necesită root)\n• Sau rootează dispozitivul folosind Magisk, KernelSU sau APatch</string>
-    <string name="dialog_root_denied_message">❌ Acces Root refuzat\n\nDispozitivul tău este rootat dar Background Check a fost refuzat permisiunea superuser.\n\nPentru a acorda acces:\n• Deschide aplicația ta Superuser (Magisk, KernelSU, APatch, etc.) și acordă permisiune pentru Background Check\n• Dacă promptul de permisiune nu apare, dezinstalează și reinstalează aplicația, apoi acordă permisiunea când ești solicitat la prima lansare\n• Sau adaugă manual Background Check în aplicația ta superuser (Magisk, KernelSU, etc.)</string>
-    <string name="dialog_type_to_confirm_hint">Tastează \"%s\" pentru a confirma</string>
-
-    <!-- Toast Messages -->
-    <string name="toast_copied_to_clipboard">Copiat</string>
-
-    <!-- VPN Fallback -->
-    <string name="vpn_fallback_failed_title">Eroare VPN (rezervă)])</string>
-    <string name="vpn_fallback_failed_message">Eroare la pornirea VPN (rezervă): %s</string>
-
-    <!-- Privileged Access Banner -->
-    <string name="privileged_access_banner_no_access">Niciun acces privilegiat disponibil. Instalează Shizuku sau rootează dispozitivul pentru a activa gestionarea pachetelor.</string>
-    <string name="privileged_access_banner_shizuku_not_running">Shizuku este instalat dar nu rulează. Pornește Shizuku sau rootează dispozitivul pentru a activa gestionarea pachetelor.</string>
-    <string name="privileged_access_banner_permission_required">Shizuku sau acces Root necesar pentru gestionarea pachetelor</string>
-    <string name="privileged_access_banner_button_settings">Mergi la Setări</string>
-    <string name="privileged_access_banner_button_grant">Acordă</string>
-    <string name="privileged_access_dialog_title">Acces privilegiat</string>
-    <string name="privileged_access_tier_title">Gestionare pachete</string>
-    <string name="privileged_access_status_setup_required">Configurare necesară</string>
-    <string name="privileged_access_status_permission_required">Permisiune necesară</string>
-
-    <!-- Firewall Service Notifications -->
     <string name="privileged_firewall_notification_title">Firewall Background Check Activ</string>
     <string name="privileged_firewall_notification_text">Folosește backend-ul %s</string>
     <string name="vpn_firewall_notification_title">Firewall Background Check activ</string>
@@ -688,8 +140,6 @@
     <string name="new_app_notification_text">%s a fost instalată. Apasă pentru a configura regulile firewall-ului.</string>
     <string name="new_app_notification_action_block">Blochează rețeaua</string>
     <string name="new_app_notification_action_allow">Permite rețeaua</string>
-
-    <!-- Backup/Restore Error Messages -->
     <string name="error_firewall_restart_failed">Repornirea Firewall-ului cu noul backend a eșuat: %s</string>
     <string name="error_no_rules_to_backup">Nu există reguli de firewall pentru backup</string>
     <string name="error_backup_failed">Backup-ul a eșuat: %s</string>
@@ -698,8 +148,6 @@
     <string name="error_backup_file_unreadable">Fișierul nu a putut fi deschis. Dacă l-ați ales din rezultatele căutării, deschideți folderul în care se află și selectați-l de acolo.</string>
     <string name="error_invalid_backup_format">Format de fișier backup invalid</string>
     <string name="error_restore_failed">Restaurarea a eșuat: %s</string>
-
-    <!-- Package Management Error Messages -->
     <string name="error_unable_to_enable_package">Nu se poate activa pachetul. Shizuku sau acces root necesar pentru gestionarea pachetelor.</string>
     <string name="error_unable_to_disable_package">Nu se poate dezactiva pachetul. Shizuku sau acces root necesar pentru gestionarea pachetelor.</string>
     <string name="error_unable_to_uninstall_package">Nu se poate dezinstala pachetul. Shizuku sau acces root necesar pentru gestionarea pachetelor.</string>
@@ -711,70 +159,23 @@
     <string name="error_package_reinstall_failed">Nu se poate reinstala pachetul.</string>
     <string name="error_package_force_stop_failed">Nu se poate opri forțat pachetul.</string>
     <string name="error_unknown">Eroare necunoscută</string>
-
-    <!-- Firewall Error Messages -->
     <string name="error_unable_to_allow_network">Nu se poate permite accesul la rețea. Acces root necesar pentru operațiuni Firewall.</string>
     <string name="error_unable_to_block_network">Nu se poate bloca accesul la rețea. Acces root necesar pentru operațiuni Firewall.</string>
     <string name="error_failed_to_block_mobile">Blocarea datelor mobile a eșuat: %s</string>
     <string name="error_failed_to_block_roaming">Blocarea roaming-ului a eșuat: %s</string>
     <string name="error_failed_to_unblock_roaming">Deblocarea roaming-ului a eșuat: %s</string>
-
-    <!-- Captive Portal Error Messages -->
     <string name="error_failed_to_load_settings">Încărcarea setărilor a eșuat</string>
     <string name="error_failed_to_apply_preset">Aplicarea presetării a eșuat</string>
     <string name="error_failed_to_set_detection_mode">Setarea modului de detectare a eșuat</string>
     <string name="error_failed_to_set_custom_urls">Setarea URL-urilor personalizate a eșuat</string>
     <string name="error_failed_to_restore_original_settings">Restaurarea setărilor originale a eșuat</string>
     <string name="error_failed_to_reset_to_google_defaults">Resetarea la valorile implicite Google a eșuat</string>
-
-    <!-- Captive Portal Success Messages -->
     <string name="success_custom_urls_applied">URL-uri personalizate aplicate cu succes</string>
     <string name="success_original_settings_restored">Setări originale restaurate cu succes</string>
     <string name="success_reset_to_google_defaults">Resetat la valorile implicite Google cu succes</string>
-
-    <!-- Boot Protection Dialogs -->
-    <string name="boot_protection_enable_warning_title">Activezi Protecția la Pornire?</string>
-    <string name="boot_protection_enable_warning_message">⚠️ Dispozitivul tău va reporni imediat când continui.\n\nAceasta va bloca TOT traficul de rețea în timpul pornirii dispozitivului până când Background Check pornește.\n\n⚠️ Dacă Background Check nu reușește să pornească, dispozitivul tău nu va avea rețea.\n\nOpțiuni de recuperare:\n1. Deschide Background Check → Setări → Dezactivează Protecția la Pornire\n2. Dacă asta nu funcționează, folosește ADB:\n   adb shell\n   su\n   rm %1$s\n   reboot</string>
-    <string name="boot_protection_disable_warning_title">Dezactivezi Protecția la Pornire?</string>
-    <string name="boot_protection_disable_warning_message">⚠️ Dispozitivul tău va reporni imediat când continui.\n\nTraficul de rețea nu va mai fi blocat în timpul pornirii. Aplicațiile pot scurge date înainte ca firewall-ul să pornească.</string>
     <string name="boot_protection_reboot_failed">Protecția la Pornire a fost modificată, dar dispozitivul nu a putut fi repornit automat. Te rugăm să repornești dispozitivul manual.</string>
     <string name="boot_protection_enable_failed">Eșec la activarea protecției la pornire: %s</string>
     <string name="boot_protection_disable_failed">Eșec la dezactivarea protecției la pornire: %s</string>
-
-    <!-- Input Hints -->
-    <string name="hint_detection_mode">Mod detectare</string>
-    <string name="hint_server_preset">Presetare server</string>
-    <string name="hint_custom_http_url">URL HTTP personalizat</string>
-    <string name="hint_custom_https_url">URL HTTPS personalizat</string>
-
-    <!-- App Logs -->
-    <string name="logs_title">Jurnale aplicație</string>
-    <string name="logs_menu_item">Jurnale aplicație</string>
-    <string name="logs_menu_description">Vezi jurnalele pentru depanare</string>
-    <string name="logs_enable_title">Activează jurnalizarea</string>
-    <string name="logs_enable_description">Salvează jurnalele într-un fișier pentru depanare. Jurnalele nu sunt trimise nicăieri.</string>
-    <string name="logs_debug_mode_note">ℹ️ Versiune debug - jurnalizare activată implicit</string>
-    <string name="logs_clear">Șterge</string>
-    <string name="logs_clear_confirm_title">Ștergi jurnalele?</string>
-    <string name="logs_clear_confirm_message">Aceasta va șterge intrările de jurnal existente.</string>
-    <string name="logs_share">Partajează jurnalele</string>
-    <string name="logs_count">%d intrări în jurnal</string>
-    <string name="logs_file_info">%1$d linii • %2$s</string>
-    <string name="logs_empty">Niciun jurnal încă. Activează jurnalizarea și folosește aplicația pentru a genera jurnale.</string>
-    <string name="logs_cleared">Jurnale șterse</string>
-    <string name="logs_share_title">Partajează jurnalele Background Check</string>
-    <string name="logs_disabled_message">Jurnalizare dezactivată. Noile jurnale nu vor fi înregistrate.</string>
-
-    <!-- Content Descriptions -->
-    <string name="cd_multiselect_icon">Mai multe pachete selectate</string>
-
-    <!-- VPN Conflict Dialog -->
-    <string name="dialog_vpn_conflict_title">Alt VPN este activ</string>
-    <string name="dialog_vpn_conflict_message">Trecerea la backend-ul VPN va deconecta conexiunea VPN curentă (ex: Proton VPN, NordVPN, etc.).\n\nVrei să continui?</string>
-    <string name="dialog_vpn_conflict_confirm">Deconectează și schimbă</string>
-    <string name="vpn_permission_denied">Permisiunea VPN a fost refuzată. Se revine la modul AUTO.</string>
-
-    <!-- Quick Settings Tile -->
     <string name="tile_label_firewall">Background Check</string>
     <string name="tile_label_firewall_loading">Se pornește firewallul</string>
     <string name="tile_label_firewall_on">Firewall ON</string>
@@ -787,21 +188,10 @@
     <string name="tile_description_firewall_off">Background Check firewall este oprit</string>
     <string name="tile_description_firewall_starting">Background Check firewall pornește</string>
     <string name="tile_description_firewall_error">Background Check firewall a întâmpinat o eroare</string>
-
-    <!-- Home Screen Widget -->
     <string name="widget_description">Comutator rapid pentru Background Check Firewall</string>
-
-    <!-- Notification Actions -->
-
-    <string name="backend_not_supported_on_device">Nu este acceptat pe acest dispozitiv</string>
     <string name="backend_fell_back_to_auto">%1$s nu a putut porni pe acest dispozitiv. Firewallul rulează în modul Automat în schimb.</string>
     <string name="backend_changed_title">Backend schimbat</string>
-    <string name="settings_confirm_firewall_stop_title">Confirmă oprirea firewallului</string>
-    <string name="settings_confirm_firewall_stop_description">Întreabă înainte de a opri firewallul din dală sau widget</string>
     <string name="firewall_stopped_notification_title">Firewall oprit</string>
     <string name="firewall_stopped_notification_text">Toate aplicațiile pot accesa acum internetul. Atinge pentru a-l porni din nou.</string>
-    <string name="error_package_scan_failed_title">Nu s-a putut citi lista de aplicații</string>
-    <string name="error_package_scan_failed_hint">Dacă se întâmplă din nou, închide și redeschide Background Check.</string>
     <string name="error_package_scan_failed">Nu s-a putut citi lista de aplicații de pe acest dispozitiv. Dacă se repetă, închide și redeschide Background Check.</string>
-    <string name="support_upstream">Susține De1984</string>
 </resources>

@@ -64,7 +64,7 @@ internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean,
                     modifier = Modifier.size(48.dp), colors = CheckboxDefaults.colors(checkedColor = Purple))
                 AppIcon(pkg.packageName, if (compact) 36.dp else 46.dp, pkg.userId, pkg.userSerial)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(pkg.name, style = MaterialTheme.typography.titleMedium, maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis)
+                    Text(pkg.name, style = MaterialTheme.typography.titleMedium)
                     if (!compact) {
                         Text(pkg.packageName, style = MaterialTheme.typography.bodySmall, color = Muted,
                             maxLines = 1, overflow = TextOverflow.Ellipsis)

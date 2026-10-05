@@ -67,7 +67,7 @@ internal fun AppDetailNetwork(app: AppEntry, onNetwork: () -> Unit, onSeeInNetwo
         InternetRecommendations.forPackage(app.packageName, app.system, installed = app.installed)
     }
     Column(Modifier.testTag("app-detail-network"), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-        Text("Network access", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+        Text("Network access", style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("app-detail-network-heading").semantics { heading() })
         Text(appDetailNetworkStatus(pkg, app.installed, limited), style = MaterialTheme.typography.bodyMedium, color = Muted)
         InternetAdviceCard(recommendation)
         if (pkg != null && (!pkg.permissionsKnown || pkg.hasInternetPermission)) {

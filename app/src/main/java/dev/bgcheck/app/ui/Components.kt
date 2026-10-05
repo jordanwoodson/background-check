@@ -191,11 +191,12 @@ internal fun Disclosure(
     title: String,
     summary: String? = null,
     initiallyExpanded: Boolean = false,
+    modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, tween(180), label = "Disclosure arrow")
-    Column(Modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth()) {
         Surface(
             onClick = { expanded = !expanded }, color = Panel, shape = RoundedCornerShape(24.dp),
             border = null,

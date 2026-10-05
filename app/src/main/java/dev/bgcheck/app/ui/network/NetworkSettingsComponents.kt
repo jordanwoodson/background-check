@@ -26,8 +26,8 @@ import dev.bgcheck.app.ui.*
 
 @Composable
 internal fun NetworkSettingsCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+    Column(modifier = Modifier.testTag("network-settings-section-${title.lowercase().replace(' ', '-')}"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("network-settings-heading-${title.lowercase().replace(' ', '-')}").semantics { heading() })
         Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Panel), border = BorderStroke(1.dp, Outline)) {
             Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
         }

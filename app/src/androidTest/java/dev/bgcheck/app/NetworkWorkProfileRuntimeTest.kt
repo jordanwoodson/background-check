@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.ParcelFileDescriptor
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -20,12 +22,22 @@ import dev.bgcheck.network.utils.openAppSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
+import org.junit.rules.TestRule
+import org.junit.rules.RuleChain
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Disposable managed-profile emulator, fixture in users 0/10, HTTP server on host port 8765. */
 @RunWith(AndroidJUnit4::class)
 class NetworkWorkProfileRuntimeTest {
+    private val compose = createAndroidComposeRule<MainActivity>()
+    // Direct backend tests keep their existing lifecycle; only the shortcut needs an activity.
+    @get:Rule val shortcutRule = TestRule { base, description ->
+        if (description.methodName == "networkShortcutCarriesTheSelectedWorkProfileIntoItsAppSheet") {
+            RuleChain.outerRule(NetworkTestPreferences()).around(compose).apply(base, description)
+        } else base
+    }
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val deps get() = (context as De1984Application).dependencies
     private val pkg = "dev.bgcheck.fixture"
@@ -206,36 +218,18 @@ class NetworkWorkProfileRuntimeTest {
         val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
         val oldPrompt = prefs.getBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, true)
         prefs.edit().putBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, false).commit()
-        val intent = android.content.Intent(context, dev.bgcheck.network.ui.MainActivity::class.java)
-            .putExtra("dev.bgcheck.network.PACKAGE", pkg).putExtra("dev.bgcheck.network.USER_ID", 10)
         try {
-            androidx.test.core.app.ActivityScenario.launch<android.app.Activity>(intent).use {
-                var sheetVisible = false
-                repeat(60) {
-                    if (!sheetVisible) {
-                        sheetVisible = runCatching {
-                            androidx.test.espresso.Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.withId(
-                                dev.bgcheck.network.R.id.action_sheet_settings_icon))
-                                .check(androidx.test.espresso.assertion.ViewAssertions.matches(
-                                    androidx.test.espresso.matcher.ViewMatchers.isDisplayed()))
-                        }.isSuccess
-                        if (!sheetVisible) delay(100)
-                    }
-                }
-                assertTrue("Shortcut opens an installation-specific sheet", sheetVisible)
-                androidx.test.espresso.Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.withId(
-                    dev.bgcheck.network.R.id.action_sheet_package_name))
-                    .check(androidx.test.espresso.assertion.ViewAssertions.matches(
-                        androidx.test.espresso.matcher.ViewMatchers.withText("Work (user 10) · $pkg")))
-                androidx.test.espresso.Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.withId(
-                    dev.bgcheck.network.R.id.action_sheet_settings_icon))
-                    .perform(androidx.test.espresso.action.ViewActions.click())
-                delay(1000)
-                assertTrue("Work shortcut Settings targets user10", shell("dumpsys activity activities").lineSequence().any {
-                    (it.contains("topResumedActivity") || it.contains("mResumedActivity")) && it.contains("u10") && it.contains("com.android.settings")
-                })
-                shell("input keyevent 4")
-            }
+            compose.activityRule.scenario.onActivity { it.deliverNetworkIntent(android.content.Intent(context, MainActivity::class.java)
+                .putExtra("dev.bgcheck.network.PACKAGE", pkg).putExtra("dev.bgcheck.network.USER_ID", 10)) }
+            compose.awaitNetworkNode("network-sheet")
+            compose.onNode(hasText("Work · User 10") and hasAnyAncestor(hasTestTag("network-sheet")), useUnmergedTree = true).assertExists()
+            compose.onNode(hasText(pkg) and hasAnyAncestor(hasTestTag("network-sheet"))).assertExists()
+            compose.onNodeWithTag("network-app-settings").performClick()
+            delay(1000)
+            assertTrue("Work shortcut Settings targets user10", shell("dumpsys activity activities").lineSequence().any {
+                (it.contains("topResumedActivity") || it.contains("mResumedActivity")) && it.contains("u10") && it.contains("com.android.settings")
+            })
+            shell("input keyevent 4")
         } finally { prefs.edit().putBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, oldPrompt).commit() }
     }
 

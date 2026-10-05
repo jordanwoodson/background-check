@@ -17,7 +17,7 @@ import androidx.core.content.ContextCompat
 import dev.bgcheck.network.R
 import dev.bgcheck.network.data.multiuser.HiddenApiHelper
 import dev.bgcheck.network.data.receiver.NotificationActionReceiver
-import dev.bgcheck.network.ui.MainActivity
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.utils.Constants
 
 class NewAppNotificationManager(
@@ -131,7 +131,7 @@ class NewAppNotificationManager(
     }
 
     private fun createOpenFirewallIntent(packageName: String, userId: Int, uid: Int, serial: Long): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = NetworkEntryIntents.create(context).apply {
             action = Constants.Notifications.ACTION_OPEN_FIREWALL
             putExtra(Constants.Notifications.EXTRA_PACKAGE_NAME, packageName)
             putExtra(Constants.Notifications.EXTRA_USER_ID, userId)

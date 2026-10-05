@@ -214,7 +214,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Network", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f).semantics { heading() })
-                        IconButton(onClick = { settingsOpen = true }) { Icon(Icons.Rounded.Settings, "Firewall settings", tint = Purple) }
+                        IconButton(onClick = { settingsOpen = true }, modifier = Modifier.testTag("network-open-settings")) { Icon(Icons.Rounded.Settings, "Firewall settings", tint = Purple) }
                     }
                 }
             }
@@ -261,8 +261,8 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     InfoCard("Turn on the firewall?", "Apply your saved rules to control apps' network access.", Icons.Rounded.Shield, accent = Cyan)
                     Row {
-                        TextButton(onClick = { suggestionDismissed = true; onStartFirewall() }) { Text("Start") }
-                        TextButton(onClick = { suggestionDismissed = true }) { Text("Not now") }
+                        TextButton(onClick = { suggestionDismissed = true; onStartFirewall() }, modifier = Modifier.testTag("network-start")) { Text("Start") }
+                        TextButton(onClick = { suggestionDismissed = true }, modifier = Modifier.testTag("network-dismiss-start")) { Text("Not now") }
                     }
                 }
             }
@@ -271,7 +271,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
             item {
                 if (selectionMode) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("${selection.size} selected", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { batchBackend = backend?.name; batchOpen = true }, enabled = selectedPackages.isNotEmpty()) { Text("Rules") }
+                    TextButton(modifier = Modifier.testTag("network-batch-action"), onClick = { batchBackend = backend?.name; batchOpen = true }, enabled = selectedPackages.isNotEmpty()) { Text("Rules") }
                     IconButton(onClick = { exitSelection() }) { Icon(Icons.Rounded.Close, "Close selection") }
                 } else OutlinedTextField(value = state.searchQuery, onValueChange = model::setSearchQuery,
                     modifier = Modifier.fillMaxWidth().testTag("network-search"), singleLine = true,
@@ -282,7 +282,7 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
                     shape = RoundedCornerShape(24.dp), colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Panel, focusedContainerColor = Panel, unfocusedBorderColor = Comment, focusedBorderColor = Purple))
             }
             item {
-                Disclosure("Filters", networkFilterSummary(state.filterState, profileChoices, compact)) {
+                Disclosure("Filters", networkFilterSummary(state.filterState, profileChoices, compact), modifier = Modifier.testTag("network-filters")) {
                     NetworkChips(networkPackageTypeChoices, state.filterState.packageType, model::setPackageTypeFilter)
                     NetworkChips(networkAccessChoices, state.filterState.networkState ?: "Any") {
                         model.setNetworkStateFilter(it.takeUnless { value -> networkFilterMatches(value, "Any") })
@@ -366,7 +366,7 @@ private fun NetworkChips(choices: List<ProfileChoice>, selected: String, onSelec
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         choices.forEach { choice ->
             FilterChip(selected = networkFilterMatches(selected, choice.value), onClick = { onSelect(choice.value) }, label = { Text(choice.label) },
-                modifier = Modifier.heightIn(min = 48.dp), colors = appFilterColors())
+                modifier = Modifier.heightIn(min = 48.dp).testTag("network-filter-${choice.value}"), colors = appFilterColors())
         }
     }
 }

@@ -1,9 +1,6 @@
 package dev.bgcheck.network
 
 import android.app.Application
-import android.content.Context
-import android.os.Build
-import com.google.android.material.color.DynamicColors
 import com.topjohnwu.superuser.Shell
 import dev.bgcheck.network.data.firewall.ConnectivityManagerFirewallBackend
 import dev.bgcheck.network.data.firewall.IptablesFirewallBackend
@@ -49,8 +46,6 @@ class De1984Application : Application() {
         // Initialize HiddenApiBypass for multi-user/work profile support
         // Must be done early, before any hidden API calls
         HiddenApiHelper.initialize()
-
-        applyDynamicColorsIfEnabled()
 
         dependencies = De1984Dependencies.getInstance(this)
 
@@ -200,32 +195,4 @@ class De1984Application : Application() {
         }
     }
 
-    /**
-     * Apply dynamic colors if enabled in settings.
-     * This must be called before any activities are created.
-     */
-    private fun applyDynamicColorsIfEnabled() {
-        try {
-            val prefs = getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
-            val useDynamicColors = prefs.getBoolean(
-                Constants.Settings.KEY_USE_DYNAMIC_COLORS,
-                Constants.Settings.DEFAULT_USE_DYNAMIC_COLORS
-            )
-
-            AppLogger.d(TAG, "applyDynamicColorsIfEnabled: useDynamicColors=$useDynamicColors, SDK=${Build.VERSION.SDK_INT}")
-
-            if (useDynamicColors) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    DynamicColors.applyToActivitiesIfAvailable(this)
-                    AppLogger.d(TAG, "Dynamic colors enabled and applied (Android 12+)")
-                } else {
-                    AppLogger.d(TAG, "Dynamic colors enabled but not available (Android < 12)")
-                }
-            } else {
-                AppLogger.d(TAG, "Dynamic colors disabled by user")
-            }
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "Failed to apply dynamic colors: ${e.message}", e)
-        }
-    }
 }

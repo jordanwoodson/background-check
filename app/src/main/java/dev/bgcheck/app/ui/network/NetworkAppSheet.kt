@@ -47,14 +47,14 @@ internal fun NetworkAppSheet(pkg: NetworkPackage, mainApp: AppEntry?, profileNam
                     Text(pkg.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
                     Text("$profileName · User ${pkg.userId}", color = Muted, style = MaterialTheme.typography.bodySmall)
                 }
-                IconButton(onClick = onOpenAppSettings) { Icon(Icons.Rounded.Settings, "Android app settings") }
+                IconButton(onClick = onOpenAppSettings, modifier = Modifier.testTag("network-app-settings")) { Icon(Icons.Rounded.Settings, "Android app settings") }
             }
             Text(pkg.packageName, color = Cyan, style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClickLabel = "Copy package name") {
                     context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Package name", pkg.packageName))
                     Toast.makeText(context, "Package name copied", Toast.LENGTH_SHORT).show()
                 }.padding(vertical = 12.dp))
-            if (mainApp != null) OutlinedButton(onClick = { onDismiss(); onAppDetails(mainApp) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("App details") }
+            if (mainApp != null) OutlinedButton(onClick = { onDismiss(); onAppDetails(mainApp) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("network-app-details")) { Text("App details") }
             InternetAdviceCard(recommendation)
             NetworkAccessControls(pkg, backend, blockingContext, granular, limited, hasCellular, onChange, onSettings)
         }
@@ -64,7 +64,7 @@ internal fun NetworkAppSheet(pkg: NetworkPackage, mainApp: AppEntry?, profileNam
 @Composable
 internal fun InternetAdviceCard(recommendation: InternetRecommendation) {
     val uriHandler = LocalUriHandler.current
-    Disclosure("Internet advice", "${recommendation.advice.label}. ${recommendation.reason}") {
+    Disclosure("Internet advice", "${recommendation.advice.label}. ${recommendation.reason}", modifier = Modifier.testTag("internet-advice")) {
         Text(recommendation.consequence, style = MaterialTheme.typography.bodyMedium)
         recommendation.notes.forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = Muted) }
         recommendation.afterInstall?.let {

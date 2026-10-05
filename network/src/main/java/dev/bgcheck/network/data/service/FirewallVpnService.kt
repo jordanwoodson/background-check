@@ -21,7 +21,7 @@ import dev.bgcheck.network.domain.firewall.uidBlockedNow
 import dev.bgcheck.network.domain.model.FirewallRule
 import dev.bgcheck.network.domain.model.NetworkType
 import dev.bgcheck.network.domain.repository.FirewallRepository
-import dev.bgcheck.network.ui.MainActivity
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.utils.AppLogger
 import dev.bgcheck.network.utils.Constants
 import kotlinx.coroutines.CoroutineScope
@@ -657,7 +657,7 @@ class FirewallVpnService : VpnService() {
     }
 
     private fun createNotification(): Notification {
-        val intent = Intent(this, MainActivity::class.java)
+        val intent = NetworkEntryIntents.create(this)
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,

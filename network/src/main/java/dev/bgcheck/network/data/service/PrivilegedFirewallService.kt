@@ -22,7 +22,7 @@ import dev.bgcheck.network.domain.firewall.FirewallBackend
 import dev.bgcheck.network.domain.firewall.FirewallBackendType
 import dev.bgcheck.network.domain.model.NetworkType
 import dev.bgcheck.network.domain.repository.FirewallRepository
-import dev.bgcheck.network.ui.MainActivity
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.utils.Constants
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -240,7 +240,7 @@ class PrivilegedFirewallService : Service() {
     }
 
     private fun createNotification(): Notification {
-        val intent = Intent(this, MainActivity::class.java)
+        val intent = NetworkEntryIntents.create(this)
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,

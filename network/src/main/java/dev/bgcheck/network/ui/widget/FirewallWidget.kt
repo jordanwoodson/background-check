@@ -7,7 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import dev.bgcheck.network.R
-import dev.bgcheck.network.ui.MainActivity
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.utils.AppLogger
 import dev.bgcheck.network.utils.Constants
 
@@ -140,7 +140,7 @@ class FirewallWidget : AppWidgetProvider() {
         val pendingIntent: PendingIntent
 
         if (isEnabled) {
-            clickIntent = Intent(context, MainActivity::class.java).apply {
+            clickIntent = NetworkEntryIntents.create(context).apply {
                 action = Constants.Firewall.ACTION_TOGGLE_FIREWALL
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }

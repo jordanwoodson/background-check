@@ -30,7 +30,7 @@ import dev.bgcheck.network.domain.firewall.FirewallHealthPresenter
 import dev.bgcheck.network.domain.firewall.FirewallMode
 import dev.bgcheck.network.domain.firewall.PartialApplyException
 import dev.bgcheck.network.domain.repository.FirewallRepository
-import dev.bgcheck.network.ui.MainActivity
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.ui.VpnPermissionActivity
 import dev.bgcheck.network.utils.AppLogger
 import dev.bgcheck.network.utils.Constants
@@ -1724,7 +1724,7 @@ class FirewallManager(
             )
         )
 
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = NetworkEntryIntents.create(context).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
@@ -1764,7 +1764,7 @@ class FirewallManager(
             notificationManager.createNotificationChannel(channel)
         }
 
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = NetworkEntryIntents.create(context).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
@@ -2097,7 +2097,7 @@ class FirewallManager(
                 putExtra(VpnPermissionActivity.EXTRA_RESOLVED_MODE, resolvedMode.name)
             }
         } else {
-            Intent(context, MainActivity::class.java).apply {
+            NetworkEntryIntents.create(context).apply {
                 action = Constants.Notifications.ACTION_ENABLE_VPN_FALLBACK
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
@@ -2176,7 +2176,7 @@ class FirewallManager(
             notificationManager.createNotificationChannel(channel)
         }
 
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = NetworkEntryIntents.create(context).apply {
             action = Constants.Notifications.ACTION_ENABLE_VPN_FALLBACK
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -2232,7 +2232,7 @@ class FirewallManager(
             notificationManager.createNotificationChannel(channel)
         }
 
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = NetworkEntryIntents.create(context).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -2734,7 +2734,7 @@ class FirewallManager(
                 notificationManager.createNotificationChannel(channel)
             }
 
-            val intent = Intent(context, MainActivity::class.java).apply {
+            val intent = NetworkEntryIntents.create(context).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val pendingIntent = PendingIntent.getActivity(
@@ -2789,7 +2789,7 @@ class FirewallManager(
                 notificationManager.createNotificationChannel(channel)
             }
 
-            val intent = Intent(context, MainActivity::class.java).apply {
+            val intent = NetworkEntryIntents.create(context).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             val pendingIntent = PendingIntent.getActivity(

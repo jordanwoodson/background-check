@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Checked state - Use teal stroke -->
-    <item android:color="@color/chip_stroke_checked" android:state_checked="true" />
-    <!-- Unchecked state - Use outline color -->
-    <item android:color="@color/chip_stroke_unchecked" />
-</selector>

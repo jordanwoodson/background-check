@@ -296,7 +296,7 @@ object ShellRunner {
      *
      * AppLogger is not free when the user has file logging on: it appends to the log AND re-counts
      * every line of it, up to a megabyte, on whatever thread calls it. run() can be awaited from
-     * the main thread - SettingsFragmentViews does exactly that - so logging inline would put file
+     * the main thread, so logging inline would put file
      * IO on the UI thread on the one path that reports a failure.
      */
     private fun report(warn: Boolean, message: String) {

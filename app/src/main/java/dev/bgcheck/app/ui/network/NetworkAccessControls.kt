@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -112,7 +113,7 @@ private fun reasonMessage(reason: UnblockableReason): Int = when (reason) {
 @Composable
 internal fun NetworkAccessSwitch(label: String, allowed: Boolean, enabled: Boolean, description: String? = null,
     onAllowed: (Boolean) -> Unit) {
-    Surface(color = Panel, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = Panel, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().testTag("network-control-${label.lowercase().replace(' ', '-')}")) {
         val large = LocalDensity.current.fontScale > 1.3f
         @Composable fun Title(modifier: Modifier) {
             Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {

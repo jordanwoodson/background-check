@@ -232,7 +232,7 @@ fun BackgroundCheckApp(
                                     val selected = page == item
                                     val color = if (selected) Purple else Muted
                                     Box(
-                                        Modifier.weight(1f).heightIn(min = 56.dp)
+                                        Modifier.weight(1f).heightIn(min = 56.dp).testTag("nav-${item.name.lowercase()}")
                                             .clip(RoundedCornerShape(24.dp))
                                             .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
                                             .selectable(selected, role = Role.Tab, onClick = { page = item })
@@ -262,6 +262,7 @@ fun BackgroundCheckApp(
                 NavigationBar(modifier = Modifier.navigationBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp).clip(RoundedCornerShape(28.dp)), containerColor = Panel, tonalElevation = 0.dp, windowInsets = WindowInsets(0, 0, 0, 0)) {
                     Page.entries.forEach { item ->
                         NavigationBarItem(
+                            modifier = Modifier.testTag("nav-${item.name.lowercase()}"),
                             selected = page == item,
                             onClick = { page = item },
                             icon = { Icon(item.icon, contentDescription = null, modifier = Modifier.size(23.dp)) },
@@ -277,7 +278,7 @@ fun BackgroundCheckApp(
             if (wide) {
                 NavigationRail(modifier = Modifier.verticalScroll(rememberScrollState()), containerColor = Panel, windowInsets = WindowInsets(0, 0, 0, 0)) {
                     Page.entries.forEach { item ->
-                        NavigationRailItem(selected = page == item, onClick = { page = item },
+                        NavigationRailItem(modifier = Modifier.testTag("nav-${item.name.lowercase()}"), selected = page == item, onClick = { page = item },
                             icon = { Icon(item.icon, null) }, label = { Text(item.label) })
                     }
                 }
@@ -650,7 +651,7 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
                 if (profileId != ALL_PROFILES) add(profiles.firstOrNull { it.userId == profileId }?.name ?: "User $profileId")
                 if (compact) add("Compact")
             }.joinToString(" · ")
-            Disclosure("Filters", summary) {
+            Disclosure("Filters", summary, modifier = Modifier.testTag("apps-filters")) {
                 SortControls("apps", AppSort.entries, sort, direction, onSort = { sort = it }, onDirection = { direction = it })
                 Text("Profile", style = MaterialTheme.typography.labelMedium, color = Muted)
                 ProfileFilters("apps", profiles, profileId) { profileId = it }

@@ -1,119 +1,11 @@
 <resources>
-    <!-- App Identity -->
     <string name="app_name" translatable="false">Background Check</string>
-
-    <!-- Donate Button -->
-    <string name="donate_button">Пожертвовать</string>
-
-    <!-- Navigation -->
-    <string name="nav_firewall">Брандмауэр</string>
-    <string name="nav_packages">Пакеты</string>
-    <string name="nav_settings">Настройки</string>
-
-    <!-- Navigation Labels -->
-
-    <!-- Toolbar Titles -->
-
-    <!-- Firewall Toggle Button -->
-    <string name="firewall_button_off">ВЫКЛ</string>
-    <string name="firewall_status_active">АКТИВЕН</string>
-
-    <!-- Firewall States -->
-    <string name="firewall_state_blocked">Заблокировано</string>
-    <string name="firewall_state_allowed">Разрешено</string>
-    <string name="firewall_state_on">ВКЛ</string>
-    <string name="firewall_state_off">ВЫКЛ</string>
-    <string name="firewall_state_internet">Интернет</string>
-    <string name="firewall_search_hint">Поиск приложений…</string>
-
-    <!-- Firewall Dialogs -->
-    <string name="dialog_firewall_start_title">Запустить Background Check Брандмауэр?</string>
-    <string name="dialog_firewall_start_message">Добро пожаловать в Background Check! Хотите запустить брандмауэр сейчас для защиты конфиденциальности?</string>
-    <string name="dialog_firewall_start_confirm">Запустить брандмауэр</string>
-    <string name="dialog_firewall_start_skip">Позже</string>
-
-    <string name="dialog_firewall_stop_title">Остановить брандмауэр?</string>
-    <string name="dialog_firewall_stop_message">⚠️ Остановка брандмауэра позволит всем приложениям получить доступ к интернету.\n\nВаша защита конфиденциальности будет отключена до повторного включения брандмауэра.</string>
-    <string name="dialog_firewall_stop_confirm">Остановить брандмауэр</string>
-
-
-
-    <!-- Quick Toggle Dialogs -->
-    <string name="dialog_quick_toggle_block_title">Заблокировать %1$s?</string>
-    <string name="dialog_quick_toggle_allow_title">Разрешить %1$s?</string>
-    <string name="dialog_quick_toggle_message_wifi">Это %1$s доступ к WiFi для %2$s</string>
-    <string name="dialog_quick_toggle_message_mobile">Это %1$s доступ к мобильным данным для %2$s</string>
-    <string name="dialog_quick_toggle_message_roaming">Это %1$s доступ к роумингу для %2$s</string>
-    <string name="dialog_quick_toggle_action_block">заблокирует</string>
-    <string name="dialog_quick_toggle_action_allow">разрешит</string>
-    <string name="snackbar_wifi_blocked">WiFi заблокирован для %s</string>
-    <string name="snackbar_wifi_allowed">WiFi разрешён для %s</string>
-    <string name="snackbar_mobile_blocked">Мобильные данные заблокированы для %s</string>
-    <string name="snackbar_mobile_allowed">Мобильные данные разрешены для %s</string>
-    <string name="snackbar_roaming_blocked">Роуминг заблокирован для %s</string>
-    <string name="snackbar_roaming_allowed">Роуминг разрешён для %s</string>
-    <string name="dialog_quick_toggle_message_internet">Это %1$s доступ в интернет для %2$s</string>
-    <string name="snackbar_internet_blocked">Интернет заблокирован для %s</string>
-    <string name="snackbar_internet_allowed">Интернет разрешён для %s</string>
-    <string name="snackbar_undo">Отменить</string>
-
-
-    <!-- Package Management -->
-    <string name="packages_search_hint">Поиск пакетов…</string>
-    <string name="packages_filter_all">Все</string>
-    <string name="packages_filter_system">Системные</string>
-    <string name="packages_filter_user">Пользовательские</string>
-    <string name="packages_filter_bloatware">Мусорные</string>
-    <string name="packages_export_description">Экспортировать показанный список</string>
     <string name="packages_export_empty">Нечего экспортировать</string>
     <string name="packages_export_success">✅ Экспортировано имён пакетов: %d</string>
     <string name="packages_export_failed">Ошибка экспорта: %s</string>
-    <string name="packages_filter_enabled">Включённые</string>
-    <string name="packages_filter_disabled">Отключённые</string>
-    <string name="packages_empty_state_no_uninstalled">Нет удалённых системных приложений</string>
-
-    <!-- Profile Filters (Multi-user/Work Profile Support) -->
-    <string name="filter_profile_all">Все профили</string>
-    <string name="filter_profile_personal">Личный</string>
-    <string name="filter_profile_work">Рабочий</string>
-    <string name="filter_profile_clone">Клон</string>
-    <string name="badge_work_profile">Рабочий</string>
-    <string name="badge_clone_profile">Клон</string>
-
-    <!-- Package Status -->
-    <string name="status_uninstalled">Удалён</string>
-    <!-- Per-row status badge. Singular, unlike the plural filter chips above. -->
-    <string name="packages_status_enabled">Включён</string>
-    <string name="packages_status_disabled">Отключён</string>
-
-    <!-- Package Actions -->
-    <string name="action_enable">Включить</string>
-    <string name="action_disable">Отключить</string>
-    <string name="action_uninstall">Удалить</string>
-    <string name="action_reinstall">Переустановить</string>
-    <string name="action_force_stop">Принудительная остановка</string>
-    <string name="select_package">Выбрать пакет</string>
-    <string name="close_selection">Закрыть режим выбора</string>
-
-    <!-- Package Action Sheet -->
-    <string name="action_sheet_package_name_label">Имя пакета</string>
-    <string name="action_sheet_force_stop_desc_running">Немедленно остановить все процессы</string>
-    <string name="action_sheet_force_stop_desc_not_running">Принудительная остановка (если запущен)</string>
-    <string name="action_sheet_disable_desc">Запретить запуск этого приложения</string>
-    <string name="action_sheet_enable_desc">Разрешить запуск этого приложения</string>
-    <string name="action_sheet_uninstall_desc">Удалить это приложение с устройства</string>
-    <string name="action_sheet_reinstall_desc">Восстановить это системное приложение</string>
-
-    <!-- Package Action Confirmations -->
-    <string name="dialog_force_stop_title">Принудительно остановить %s?</string>
-    <string name="dialog_force_stop_system_message">⚠️ Это системный пакет. Принудительная остановка может вызвать нестабильность системы.\n\nВы уверены, что хотите продолжить?</string>
-    <string name="dialog_force_stop_message">Это немедленно остановит все процессы %s.\n\nВы уверены?</string>
-    <string name="dialog_enable_disable_title">%1$s %2$s?</string>
     <string name="dialog_disable_system_message">⚠️ Это системный пакет. Его отключение может вызвать нестабильность системы или помешать работе других приложений.\n\nВы уверены, что хотите продолжить?</string>
     <string name="dialog_enable_message">Это разрешит запуск %s.\n\nВы уверены?</string>
     <string name="dialog_disable_message">Это запретит запуск %s.\n\nВы уверены?</string>
-
-    <!-- Permission Names -->
     <string name="permission_network_state">Состояние сети</string>
     <string name="permission_wifi_state">Состояние WiFi</string>
     <string name="permission_notification">Разрешение уведомлений</string>
@@ -122,8 +14,6 @@
     <string name="permission_enable_disable_components">Включение/Отключение компонентов</string>
     <string name="permission_superuser_access">Доступ суперпользователя</string>
     <string name="permission_vpn">VPN-разрешение</string>
-
-    <!-- Permission Descriptions -->
     <string name="permission_network_state_desc">Отслеживание сетевого подключения (WiFi/Мобильные/Роуминг)</string>
     <string name="permission_wifi_state_desc">Определение состояния WiFi-сети</string>
     <string name="permission_notification_desc">Показ уведомлений при установке новых приложений</string>
@@ -132,145 +22,15 @@
     <string name="permission_enable_disable_components_desc">Включение или отключение компонентов приложений</string>
     <string name="permission_superuser_access_desc">Полный доступ к системе для расширенных операций</string>
     <string name="permission_vpn_desc">Позволяет автоматический переход на VPN при сбое привилегированных бэкендов (iptables/ConnectivityManager). Гарантирует активность файрволла.</string>
-
-    <!-- Permission Tiers -->
-    <string name="permission_tier_basic_title">Базовый доступ</string>
-    <string name="permission_tier_battery_title">Фоновый процесс</string>
-    <string name="permission_tier_advanced_title">Расширенные операции</string>
-    <string name="permission_tier_vpn_title">Резервный VPN</string>
-
-    <!-- Permission Tier Descriptions -->
-    <string name="permission_tier_basic_desc">Просмотр установленных пакетов и базовой информации</string>
-    <string name="permission_tier_battery_desc">Предотвращает остановку службы файрволла системой для экономии батареи. Критично для надёжности VPN.</string>
-    <string name="permission_tier_advanced_desc">Управление пакетами и системные операции (через Shizuku или root)</string>
-    <string name="permission_tier_vpn_desc">Позволяет автоматический переход на VPN при сбое привилегированных бэкендов (iptables/ConnectivityManager). Гарантирует активность файрволла.</string>
-    <string name="permission_tier_vpn_desc_privileged">Не требуется при использовании привилегированного бэкенда файрволла (iptables/ConnectivityManager). Требуется только как резервный вариант.</string>
-
-    <!-- Permission Tier Status -->
-    <string name="permission_status_completed">Выполнено</string>
-    <string name="permission_status_required">Требуется разрешение</string>
-    <string name="permission_status_not_required">Не требуется</string>
-    <string name="permission_status_shizuku_or_root_required">Требуется Shizuku или Root</string>
-
-    <!-- Permission Tier Buttons -->
-    <string name="permission_button_grant">Предоставить разрешение</string>
-    <string name="permission_button_grant_shizuku">Предоставить Shizuku</string>
-    <string name="permission_button_grant_privileged">Предоставить привилегированный доступ</string>
-    <string name="permission_button_grant_vpn">Предоставить VPN</string>
-
-    <!-- Multi-Select Package Operations -->
-    <string name="multiselect_toast_not_available_disabled">Множественный выбор недоступен для отключённых пакетов</string>
-    <string name="multiselect_toast_not_available_uninstalled">Множественный выбор недоступен для удалённых пакетов</string>
-    <string name="multiselect_toolbar_title_format">Выбрано: %d</string>
-    <string name="multiselect_toolbar_button_uninstall">Удалить</string>
-    <string name="multiselect_toolbar_button_reinstall">Переустановить</string>
-
-
-
-
-
-
-    <string name="multiselect_toast_limit_reached">Максимум %d пакетов можно выбрать одновременно</string>
-
-    <!-- Firewall Multi-Select -->
-    <string name="firewall_multiselect_toast_cannot_select_critical">Критичные/VPN пакеты нельзя выбрать</string>
-    <string name="firewall_multiselect_toast_cannot_select_system_uid">Это приложение нельзя заблокировать в текущем режиме брандмауэра</string>
-    <string name="firewall_multiselect_toolbar_button_block">Заблокировать</string>
-    <string name="firewall_multiselect_toolbar_button_allow">Разрешить</string>
-    <string name="firewall_multiselect_toolbar_button_rules">Изменить правила</string>
-    <string name="firewall_multiselect_dialog_title_results">Результаты файрволла</string>
-    <string name="firewall_multiselect_dialog_message_success_format">✓ Успешно %2$s: %1$d приложений</string>
-    <string name="firewall_multiselect_dialog_message_failed_format">✓ %1$d успешно, ✗ %2$d не удалось %3$s</string>
-
-    <!-- Firewall Multi-Select Bottom Sheet -->
-    <string name="firewall_multiselect_sheet_header_format">Выбрано %d пакетов</string>
-    <string name="firewall_multiselect_sheet_section_network_rules">Сетевые правила</string>
-    <string name="firewall_multiselect_sheet_state_mixed">Смешанный</string>
-    <string name="firewall_multiselect_sheet_quick_actions">Быстрые действия</string>
-    <string name="firewall_multiselect_sheet_allow_all">Разрешить все сети</string>
-    <string name="firewall_multiselect_sheet_block_all">Заблокировать все сети</string>
-
-    <!-- Theme -->
-
-    <!-- Common -->
-
-    <!-- Content Descriptions -->
-    <string name="cd_app_icon">Иконка приложения</string>
-    <string name="cd_wifi_status">Состояние WiFi</string>
-    <string name="cd_wifi_blocked">WiFi заблокирован</string>
-    <string name="cd_mobile_data_status">Состояние мобильных данных</string>
-    <string name="cd_mobile_blocked">Мобильные данные заблокированы</string>
-    <string name="cd_roaming_status">Состояние роуминга</string>
-    <string name="cd_roaming_blocked">Роуминг заблокирован</string>
-    <string name="cd_shield_icon">Иконка щита</string>
-    <string name="cd_open_app_settings">Открыть настройки приложения</string>
-    <string name="cd_package_control_icon">Иконка управления пакетами</string>
-    <string name="cd_status_icon">Иконка состояния</string>
-    <string name="cd_de1984_logo">Логотип Background Check</string>
-    <string name="cd_force_stop_icon">Иконка принудительной остановки</string>
-    <string name="cd_enable_disable_icon">Иконка включения/отключения</string>
-    <string name="cd_uninstall_icon">Иконка удаления</string>
-    <string name="cd_firewall_rules_icon">Иконка правил файрволла</string>
-    <string name="cd_settings_icon">Иконка настроек</string>
-    <string name="cd_backend_information">Информация о бэкенде</string>
-    <string name="cd_captive_portal_icon">Иконка авторизационного портала</string>
-    <string name="cd_apps_icon">Иконка приложений</string>
-    <string name="cd_permission_status">Состояние разрешений</string>
-    <string name="cd_multiselect_icon">Выбрано несколько пакетов</string>
-
-    <!-- Footer / Branding -->
-    <string name="footer_tagline">Бессонные ночи ради светлых дней.\nСоздано Doru Moraru</string>
-    <string name="footer_author_name" translatable="false">Doru Moraru</string>
-    <string name="footer_author_url" translatable="false">https://github.com/dorumrr/de1984</string>
-
-    <!-- Plurals -->
-    <plurals name="package_count">
-        <item quantity="one">%d приложение</item>
-        <item quantity="few">%d приложения</item>
-        <item quantity="many">%d приложений</item>
-        <item quantity="other">%d приложений</item>
-    </plurals>
-
-    <!-- Root Access -->
-    <string name="root_status_denied">Root-доступ: Отклонён</string>
-    <string name="root_status_not_available">Root-доступ: Недоступен</string>
-
-    <string name="root_desc_denied">Root-разрешение было отклонено. Следуйте инструкциям ниже для предоставления доступа.</string>
-    <string name="root_desc_not_available">Ваше устройство не имеет root-доступа. Root необходим для расширенных операций управления пакетами.</string>
-
-    <string name="root_grant_instructions_title">Для предоставления root-доступа:</string>
-    <string name="root_grant_instructions_body">• Переустановите приложение для повторного запроса разрешения\n• Или вручную добавьте Background Check в приложение суперпользователя (Magisk, KernelSU и т.д.)</string>
-
-    <string name="root_rooting_tools_title"><![CDATA[<b>Рекомендуемые инструменты для root:</b>]]></string>
-    <string name="root_rooting_tools_body">• Magisk - Самое популярное и широко поддерживаемое root-решение. Работает на Android 5.0+ и поддерживает модули для дополнительных функций.\n• KernelSU - Современное управление root на уровне ядра. Обеспечивает лучшую изоляцию безопасности и не модифицирует системный раздел.\n• APatch - Новая альтернатива с патчингом ядра. Подходит для устройств со строгими политиками безопасности.</string>
-
-
-    <!-- Shizuku Access -->
-    <string name="shizuku_status_denied">Shizuku: Отклонён</string>
-    <string name="shizuku_status_not_running">Shizuku: Не запущен</string>
-
-    <string name="shizuku_desc_denied">Разрешение Shizuku было отклонено. Нажмите \'Предоставить Shizuku\' для повтора.</string>
-    <string name="shizuku_desc_not_running">Shizuku установлен, но не запущен. Запустите Shizuku для управления пакетами.</string>
-
-
-
-    <!-- Privileged Access Banner -->
-
-
-    <!-- Backend Monitoring -->
-
     <string name="backend_notification_title_waiting">Файрволл Background Check активен (режим VPN)</string>
     <string name="backend_notification_title_switching">Background Check переключает бэкенд…</string>
     <string name="backend_notification_title_success">Бэкенд файрволла Background Check переключён</string>
     <string name="backend_notification_title_failed">Не удалось переключить бэкенд файрволла Background Check</string>
-
     <string name="backend_notification_text_shizuku_not_running">Ожидание запуска Shizuku. Нажмите для повтора.</string>
     <string name="backend_notification_text_shizuku_no_permission">Ожидание разрешения Shizuku. Нажмите для повтора.</string>
     <string name="backend_notification_text_switching">Shizuku теперь доступен. Переключение на предпочтительный бэкенд…</string>
     <string name="backend_notification_text_failed">Не удалось переключить бэкенд файрволла Background Check. Используется VPN.</string>
-
     <string name="backend_action_button_retry">Повторить</string>
-
     <string name="backend_switched_notification_title">Бэкенд брандмауэра изменён</string>
     <string name="backend_switched_notification_text">Переключено на %1$s — активен другой VPN</string>
     <string name="backend_switched_notification_big">Подключилось другое VPN-приложение. Background Check автоматически переключился на %1$s, чтобы продолжать вас защищать. Нажмите, чтобы открыть настройки.</string>
@@ -281,19 +41,12 @@
     <string name="backend_notification_text_success">Background Check теперь использует бэкенд %1$s</string>
     <string name="backend_unknown_name">Неизвестно</string>
     <string name="backend_toast_failed">Не удалось переключить бэкенд файрволла Background Check</string>
-
-    <!-- VPN Fallback -->
-
     <string name="vpn_fallback_notification_title">Файрволл Background Check отключён</string>
     <string name="vpn_fallback_notification_text">Привилегированный бэкенд не работает. Нажмите для включения резервного VPN и восстановления защиты файрволла.</string>
     <string name="vpn_fallback_notification_action_text">Включить резервный VPN</string>
-    <!-- Widget/tile start that needs VPN permission. Distinct from the fallback strings
-         above: nothing has failed here, the user just asked to turn the firewall on. -->
     <string name="vpn_permission_notification_title">Запустить брандмауэр Background Check</string>
     <string name="vpn_permission_notification_text">Background Check нужно ваше разрешение на создание VPN-подключения. Нажмите, чтобы разрешить и запустить брандмауэр.</string>
     <string name="vpn_permission_notification_action_text">Разрешить и запустить</string>
-
-    <!-- Firewall Down warning (in-app banner + notification) -->
     <string name="firewall_down_title">Брандмауэр не работает — ваши приложения разблокированы</string>
     <string name="firewall_down_reason_no_plan">На этом устройстве нет подходящего бэкенда брандмауэра.</string>
     <string name="firewall_down_reason_fallback_failed">Запасной бэкенд не запустился. Доступ к сети ничем не ограничен.</string>
@@ -314,142 +67,29 @@
     <string name="firewall_apply_failed_message">Бэкенд %1$s не смог применить все правила. Некоторые приложения могут быть заблокированы или разрешены не так, как показано.</string>
     <string name="firewall_stop_failed_action_retry">Остановить снова</string>
     <string name="firewall_down_notifications_off">Уведомления отключены, поэтому это предупреждение не дойдёт до вас, когда Background Check закрыт.</string>
-    <string name="firewall_down_action_enable_notifications">Включить уведомления</string>
-    <string name="firewall_status_down">СБОЙ</string>
-    <string name="firewall_status_stuck">ЗАСТРЯЛ</string>
-
-    <!-- VPN Conflict Notification -->
     <string name="vpn_conflict_notification_title">Файрволл Background Check отключён - Конфликт VPN</string>
     <string name="vpn_conflict_notification_text">Активен другой VPN. Background Check требуется разрешение VPN для восстановления защиты файрволла. Это заменит текущее VPN-подключение. Нажмите для предоставления разрешения.</string>
     <string name="vpn_conflict_notification_action_text">Заменить VPN и включить файрволл</string>
-
-
-
-    <!-- Language Switcher -->
-    <string name="language_title">Язык приложения</string>
-    <string name="language_description">Выберите предпочтительный язык приложения</string>
-    <string name="language_system_default">Системный по умолчанию</string>
-    <string name="language_english">English (Английский)</string>
-    <string name="language_romanian">Română (Румынский)</string>
-    <string name="language_portuguese">Português (Португальский)</string>
-    <string name="language_chinese">中文 (Китайский)</string>
-    <string name="language_italian">Italiano (Итальянский)</string>
-    <string name="language_french">Français (Французский)</string>
-    <string name="language_russian">Русский (Russian)</string>
-
-    <!-- Settings Screen -->
-    <string name="settings_app_version">Версия %s</string>
-    <string name="settings_app_description">Управление межсетевым экраном и приложениями адаптировано из De1984, созданного Дору Морару под лицензией MIT. Пожертвования через эту кнопку поддерживают исходный проект De1984.</string>
-
-    <string name="settings_options_title">Параметры</string>
-    <string name="settings_options_description">Настройка поведения и параметров</string>
-
-    <string name="settings_firewall_policy_title">Файрволл блокирует всё по умолчанию</string>
-    <string name="settings_firewall_policy_description_block_all">Блокировать всё, разрешить нужное</string>
-    <string name="settings_firewall_policy_description_allow_all">Разрешить всё, блокировать нежелательное</string>
-
-    <string name="settings_backend_title">Бэкенд файрволла</string>
-    <string name="settings_backend_description">Выберите бэкенд для блокировки приложений</string>
-    <string name="settings_backend_active">Активный: %s</string>
-    <string name="settings_backend_not_running">Файрволл не запущен.</string>
-    <string name="settings_backend_loading">Загрузка...</string>
-
-    <!-- Backend Options -->
     <string name="backend_auto_name">АВТО (Рекомендуется)</string>
-    <string name="backend_auto_description">Автоматический выбор лучшего доступного бэкенда</string>
     <string name="backend_vpn_name">VPN</string>
-    <string name="backend_vpn_description">Всегда использовать VPN-бэкенд</string>
     <string name="backend_connectivity_manager_name">ConnectivityManager</string>
-    <string name="backend_connectivity_manager_description">Системная блокировка (требуется Shizuku + Android 13+)</string>
-    <string name="backend_requires_android_13">Требуется Android 13+</string>
-    <string name="backend_requires_shizuku">Требуется Shizuku</string>
     <string name="backend_iptables_name">iptables</string>
-    <string name="backend_iptables_description">Блокировка на уровне ядра (требуется root)</string>
-    <string name="backend_iptables_requirement">Требуется root или Shizuku в режиме root</string>
     <string name="backend_network_policy_manager_name">NetworkPolicyManager (устаревший)</string>
-    <string name="backend_network_policy_manager_description">Для Android 12 и ниже (используйте ConnectivityManager на Android 13+)</string>
-    <string name="backend_network_policy_manager_requirement">Требуется Shizuku</string>
-    <string name="backend_not_available_title">%s недоступен</string>
-    <string name="backend_not_available_message">Этот бэкенд недоступен на вашем устройстве.</string>
-
-    <string name="settings_show_icons_title">Показывать иконки приложений</string>
-    <string name="settings_show_icons_description">Отключение может ускорить работу приложения</string>
-
-    <string name="settings_boot_protection_title">Защита при загрузке</string>
-    <string name="settings_boot_protection_description">Блокировать весь сетевой трафик при запуске устройства до активации файрволла (требуется root и Magisk)</string>
-    <string name="settings_boot_protection_unavailable">Требуется root и скрипты загрузки Magisk</string>
-    <string name="settings_boot_protection_stuck">⚠️ Защита при загрузке всё ещё установлена, а Background Check потерял root-доступ и не может её удалить. При каждой загрузке все приложения блокируются до 2 минут, затем скрипт снимает блокировку сам. Попробуйте удалить её ниже — это сработает, если в root было лишь отказано, а не утрачено.</string>
-    <string name="settings_boot_protection_retry_remove">Попробовать удалить</string>
     <string name="boot_protection_remove_no_root">Не удалось удалить. У Background Check по-прежнему нет root-доступа, поэтому он не может удалить файл в /data/adb. Восстановите root и повторите попытку. До тех пор каждая загрузка блокирует приложения до 2 минут, затем блокировка снимается сама.</string>
-    <string name="boot_protection_rebooting">Защита при загрузке удалена. Перезапуск телефона…</string>
-
-    <string name="settings_new_app_notifications_title">Уведомления о новых приложениях</string>
-    <string name="settings_new_app_notifications_description">Показывать уведомления при установке новых приложений с сетевыми разрешениями</string>
-
-    <string name="settings_allow_uninstall_critical_title">Разрешить удаление критических пакетов</string>
-    <string name="settings_allow_uninstall_critical_description">Показывать опцию удаления для основных и важных пакетов</string>
-
-    <string name="settings_allow_firewall_critical_title">Разрешить блокировку критических пакетов</string>
-    <string name="settings_allow_firewall_critical_description">Разрешить блокировку сетевого доступа для критически важных системных и VPN-пакетов</string>
-
-    <string name="settings_show_firewall_prompt_title">Показывать запрос запуска файрволла</string>
-    <string name="settings_show_firewall_prompt_description">Показывать запрос на запуск файрволла при открытии приложения, если файрволл неактивен</string>
-
-    <string name="settings_confirm_rule_changes_title">Подтверждать изменения правил</string>
-    <string name="settings_confirm_rule_changes_description">Показывать диалог подтверждения при нажатии на иконки сети для переключения правил</string>
-
-    <string name="settings_dynamic_color_title">Использовать динамический цвет</string>
-    <string name="settings_dynamic_color_description">Адаптировать цвета приложения к обоям устройства (Android 12+). Требуется перезапуск приложения.</string>
-
-    <string name="settings_backup_restore_title">Резервное копирование и восстановление</string>
-    <string name="settings_backup_restore_description">Сохранение и восстановление правил файрволла</string>
-    <string name="settings_backup_button">Резервная копия</string>
-    <string name="settings_restore_button">Восстановить</string>
-
-    <!-- Export/Import Uninstalled Apps -->
-    <string name="settings_uninstalled_apps_title">Удалённые приложения</string>
-    <string name="settings_uninstalled_apps_description">Экспорт и импорт списка удалённых системных пакетов</string>
-    <string name="button_export_uninstalled_apps">Экспорт</string>
-    <string name="button_import_uninstalled_apps">Импорт</string>
-
-    <!-- Export Messages -->
     <string name="success_export_uninstalled">✅ Экспорт успешен: %d пакетов</string>
     <string name="error_export_requires_privileges">❌ Требуется Root или Shizuku для экспорта удалённых приложений</string>
     <string name="error_export_no_uninstalled_apps">Удалённые системные пакеты не найдены</string>
     <string name="error_export_failed">Ошибка экспорта: %s</string>
-
-    <!-- Import Messages -->
-    <string name="dialog_import_preview_title">Импорт и удаление приложений</string>
-    <string name="dialog_import_preview_message">Найдено %1$d пакетов для удаления:\n\n%2$s\n\n⚠️ Все перечисленные приложения будут удалены.</string>
-    <string name="dialog_import_warning_title">Некоторые пакеты не найдены</string>
-    <string name="dialog_import_warning_message">Найдено %1$d из %2$d пакетов.\n\nНайдены:\n%3$s\n\nНе найдены:\n%4$s\n\nПродолжить с найденными пакетами?</string>
-    <string name="dialog_import_all_not_found">❌ Ни один из %d пакетов в файле не установлен</string>
-    <string name="dialog_import_protected_section">🛡️ Пропущены как защищённые (важные или необходимые для Background Check):\n%1$s</string>
     <string name="dialog_import_empty_file">❌ Файл пуст или не содержит допустимых имён пакетов</string>
-    <string name="dialog_import_confirm">Удалить все</string>
     <string name="error_import_requires_privileges">❌ Требуется Root или Shizuku для удаления приложений</string>
     <string name="error_import_file_read_failed">Не удалось прочитать файл: %s</string>
     <string name="error_import_failed">Ошибка импорта: %s</string>
-
-    <string name="settings_captive_portal_title">Контроллер авторизационного портала</string>
-    <string name="settings_captive_portal_description">Управление системой обнаружения авторизационного портала</string>
-    <string name="settings_captive_portal_current_settings">Текущие настройки</string>
-    <string name="settings_captive_portal_detection_mode">Режим обнаружения: %s</string>
-    <string name="settings_captive_portal_http_url">HTTP URL: %s</string>
-    <string name="settings_captive_portal_https_url">HTTPS URL: %s</string>
-    <string name="settings_captive_portal_preset">Пресет: %s</string>
-    <string name="settings_captive_portal_loading">Загрузка...</string>
-    <string name="settings_captive_portal_not_set">Не установлено</string>
-
-    <!-- Captive Portal Mode Options -->
     <string name="captive_portal_mode_forced_off">Принудительно отключён</string>
     <string name="captive_portal_mode_forced_off_description">Обнаружение авторизационного портала полностью отключено</string>
     <string name="captive_portal_mode_disabled">Отключён</string>
     <string name="captive_portal_mode_disabled_description">Обнаружение авторизационного портала отключено</string>
     <string name="captive_portal_mode_enabled">Включён</string>
     <string name="captive_portal_mode_enabled_description">Обнаружение авторизационного портала включено (по умолчанию)</string>
-
-    <!-- Captive Portal Preset Options -->
     <string name="captive_portal_preset_google">Google (по умолчанию)</string>
     <string name="captive_portal_preset_google_description">Серверы обнаружения авторизационного портала Google по умолчанию</string>
     <string name="captive_portal_preset_grapheneos">GrapheneOS</string>
@@ -460,74 +100,9 @@
     <string name="captive_portal_preset_cloudflare_description">Серверы обнаружения авторизационного портала Cloudflare</string>
     <string name="captive_portal_preset_custom">Пользовательские URL</string>
     <string name="captive_portal_preset_custom_description">Использовать собственные URL авторизационного портала</string>
-
-    <!-- Captive Portal Success Messages -->
     <string name="captive_portal_preset_applied">Пресет %s успешно применён</string>
     <string name="captive_portal_mode_set">Режим обнаружения установлен на %s</string>
-    <string name="settings_captive_portal_restore_original">Восстановить оригинал</string>
-    <string name="settings_captive_portal_reset_google">Сбросить на Google</string>
-    <string name="settings_captive_portal_no_privileges">Требуется Root или Shizuku для изменения настроек</string>
-
-    <string name="settings_permissions_title">Разрешения</string>
-    <string name="settings_permissions_description">Статус и расширенная конфигурация</string>
-
-    <string name="settings_contribute_title">Вопросы, пожелания, баги?</string>
-    <string name="settings_contribute_description">Участвуйте в улучшении Background Check</string>
-    <string name="settings_contribute_message">Вносите код, сообщайте об ошибках или предлагайте функции, чтобы сделать приложение лучше для всех.</string>
-    <string name="settings_contribute_button">Участвовать на GitHub</string>
-
-    <!-- Dialog Titles and Messages -->
-    <string name="dialog_success">Успешно</string>
-    <string name="dialog_firewall_backends_title">Бэкенды файрволла</string>
-    <string name="dialog_firewall_backends_message">💡 Режим АВТО (Рекомендуется)\nАвтоматически выбирает лучший доступный бэкенд:\n1. iptables (если доступен root/Shizuku)\n2. ConnectivityManager (если Shizuku + Android 13+)\n3. VPN (резервный)\n\nBackground Check поддерживает четыре бэкенда файрволла:\n\n🔹 VPN-бэкенд\n• Всегда доступен (root не требуется)\n• Использует Android VpnService API\n• Поддерживает детальный контроль (WiFi/Мобильные/Роуминг)\n• Занимает слот VPN (нельзя использовать другие VPN)\n• Фильтрация пакетов в пользовательском пространстве\n\n🔹 iptables-бэкенд\n• Требуется root или Shizuku в режиме root\n• Блокировка на уровне ядра (наиболее эффективна)\n• Поддерживает детальный контроль (WiFi/Мобильные/Роуминг)\n• Не занимает слот VPN\n• Работает с другими VPN\n\n🔹 ConnectivityManager-бэкенд\n• Требуется Shizuku + Android 13+\n• Системная блокировка (надёжно блокирует все сети)\n• Только полная блокировка (без детального контроля)\n• Не занимает слот VPN\n• Работает с другими VPN\n\n🔹 NetworkPolicyManager-бэкенд (устаревший)\n• Требуется Shizuku\n• Для Android 12 и ниже\n• Может не блокировать WiFi на некоторых устройствах\n• Используйте ConnectivityManager на Android 13+\n• Не занимает слот VPN</string>
-    <string name="dialog_privileged_access_title">Привилегированный доступ</string>
-    <string name="dialog_privileged_access_testing">🔄 Тестирование привилегированного доступа...\n\nПожалуйста, предоставьте разрешение во всплывающем диалоге, если появится запрос.</string>
-    <string name="dialog_privileged_access_failed">❌ Тест root не пройден.\n\nОшибка: %s</string>
-    <string name="dialog_restore_rules_title">Восстановить правила файрволла?</string>
-    <string name="dialog_restore_rules_message">📦 Информация о резервной копии:\n\n• Создана: %1$s\n• Версия приложения: %2$s\n• Количество правил: %3$d\n\nВыберите режим восстановления:\n\n• Объединить: Сохранить существующие правила и добавить/обновить из копии\n• Заменить все: Сначала удалить все существующие правила (⚠️ деструктивно)</string>
-    <string name="dialog_restore_rules_merge">Объединить</string>
-    <string name="dialog_restore_rules_replace">Заменить все</string>
-    <string name="dialog_replace_all_title">⚠️ Заменить все правила?</string>
-    <string name="dialog_replace_all_message">Это УДАЛИТ все существующие правила файрволла и заменит их резервной копией.\n\nЭто действие нельзя отменить.\n\nВы уверены?</string>
-    <string name="dialog_replace_all_confirm">Заменить все</string>
-    <string name="dialog_critical_uninstall_title">⚠️ Предупреждение</string>
-    <string name="dialog_critical_uninstall_message">Это позволяет удалять критически важные системные пакеты, что может привести к неработоспособности устройства. Включайте только если понимаете, что делаете.\n\nВы уверены, что хотите включить это?</string>
-    <string name="dialog_critical_uninstall_enable">Включить</string>
-    <string name="dialog_critical_firewall_title">⚠️ Предупреждение</string>
-    <string name="dialog_critical_firewall_message">Это позволяет блокировать сетевой доступ для критически важных системных пакетов (WiFi, Bluetooth, Менеджер загрузок и т.д.) и VPN-приложений.\n\nБлокировка этих пакетов может:\n• Нарушить сетевое подключение\n• Привести к неработоспособности WiFi/Bluetooth\n• Вызвать проблемы с переподключением VPN\n• Потребовать сброса настроек или ADB для исправления\n\nВключайте только если понимаете, что делаете.\n\nВы уверены, что хотите включить это?</string>
-    <string name="dialog_critical_firewall_enable">Включить</string>
-    <string name="dialog_restart_title">Требуется перезапуск</string>
-    <string name="dialog_restart_message">Приложение необходимо перезапустить для применения новой цветовой темы. Перезапустить сейчас?</string>
-    <string name="dialog_restart_confirm">Перезапустить</string>
-    <string name="dialog_captive_portal_restore_title">Восстановить оригинальные настройки?</string>
-    <string name="dialog_captive_portal_restore_message">Это восстановит оригинальные настройки авторизационного портала вашего устройства, сохранённые при первом открытии этой функции.</string>
-    <string name="dialog_captive_portal_restore_confirm">Восстановить</string>
-    <string name="dialog_captive_portal_reset_title">Сбросить на Google по умолчанию?</string>
-    <string name="dialog_captive_portal_reset_message">Это сбросит настройки авторизационного портала на серверы Google по умолчанию. Ваши оригинальные настройки останутся сохранены и могут быть восстановлены позже.</string>
-    <string name="dialog_captive_portal_reset_confirm">Сбросить</string>
-    <string name="dialog_backup_read_error">Не удалось прочитать файл резервной копии: %s</string>
-    <string name="dialog_backup_load_error">Не удалось загрузить резервную копию: %s</string>
-    <string name="dialog_loading_backup_title">Загрузка резервной копии...</string>
-    <string name="dialog_loading_backup_message">Пожалуйста, подождите...</string>
-    <string name="dialog_vpn_permission_error_title">Ошибка VPN-разрешения</string>
-    <string name="dialog_vpn_permission_error_message">Не удалось запросить VPN-разрешение: %s</string>
-
-    <!-- Licenses (unused but kept for future) -->
-
-    <!-- Packages Screen -->
-    <string name="packages_empty_state_title">Пакеты не найдены</string>
-    <string name="packages_empty_state_subtitle">Попробуйте изменить фильтры</string>
-    <string name="package_state_enabled">Включён</string>
-    <string name="package_type_user">Пользовательский</string>
-
-    <!-- Firewall Screen -->
-    <string name="firewall_empty_state_title">Пакеты не найдены</string>
-    <string name="firewall_empty_state_subtitle">Попробуйте изменить фильтры</string>
     <string name="firewall_vpn_info_message">Используется VPN-файрволл, так как на устройстве нет root или Shizuku. Вы не можете использовать другое VPN-приложение, пока активен файрволл Background Check.</string>
-    <string name="firewall_network_label_wifi">WiFi</string>
-    <string name="firewall_network_label_mobile">Мобильные данные</string>
-    <string name="firewall_network_label_roaming">Роуминг</string>
-    <string name="firewall_network_label_lan">Доступ к LAN</string>
     <string name="firewall_lan_requires_root">Требуется root-доступ</string>
     <string name="firewall_backend_cannot_block_uid">Нельзя заблокировать</string>
     <string name="firewall_system_uid_info">⚠️ Это часть самого Android, а не обычное приложение. Shizuku не может его заблокировать — Android отклоняет правила брандмауэра для своих компонентов. С root это возможно, но если идентификатор пользователя общий с защищённым приложением, например с Настройками, потребуется также включить \'Разрешить блокировку критических пакетов\' в настройках, и блокировка затронет и эти приложения.</string>
@@ -538,152 +113,23 @@
     <string name="firewall_shared_uid_info">⚠️ Это приложение использует общий идентификатор пользователя с защищённым приложением, а текущий режим брандмауэра блокирует по идентификатору пользователя, а не по приложению. Его блокировка отключила бы и защищённое приложение, поэтому Background Check не трогает весь идентификатор. Чтобы всё же заблокировать, включите \'Разрешить блокировку критических пакетов\' в настройках, а затем включите переключатель этого приложения.</string>
     <string name="firewall_no_rule_protected_uid_info">⚠️ Background Check защищает идентификатор пользователя этого приложения, поэтому политика «Блокировать всё» по умолчанию к нему не применяется — иначе можно отключить защищённое системное приложение. При включённом параметре \'Разрешить блокировку критических пакетов\' его всё же можно заблокировать: включите переключатель этого приложения.</string>
     <string name="firewall_sibling_rule_info">⚠️ Другое приложение использует тот же идентификатор пользователя и имеет собственное правило брандмауэра. Текущий режим блокирует по идентификатору пользователя, поэтому это правило действует и на данное приложение, включая любую блокировку при выключенном экране. Переключатели в этом окне являются собственными настройками этого приложения.</string>
-    <string name="firewall_network_label_background_access">Разрешить при выключенном экране</string>
-    <string name="firewall_network_label_internet_access">Доступ в интернет</string>
-    <string name="firewall_internet_access_subtitle">WiFi, Мобильные, Роуминг</string>
     <string name="firewall_connectivity_manager_info">Ваше устройство использует системный файрволл, который не поддерживает блокировку по сетям. Для детального контроля требуется root-доступ.</string>
     <string name="firewall_system_critical_info">⚠️ Критически важный системный пакет - Сетевой доступ нельзя изменить для предотвращения нестабильности системы.</string>
     <string name="firewall_vpn_app_info">🔒 VPN-приложение - Всегда разрешено для предотвращения проблем с переподключением VPN после блокировки/разблокировки устройства.</string>
     <string name="firewall_critical_allowed_info">⚠️ Защита критических пакетов отключена в настройках. Блокировка сетевого доступа может вызвать нестабильность системы или проблемы с VPN.</string>
-    <string name="firewall_badge_system_critical">Критически важный</string>
-    <string name="firewall_badge_vpn_app">VPN-приложение</string>
-    <string name="firewall_badge_no_internet">Нет интернет-разрешения</string>
     <string name="firewall_no_internet_info">ℹ️ У этого приложения сейчас нет разрешения на интернет в манифесте.\n\nБлокировка сейчас вступит в силу, если приложение получит интернет-разрешение в будущем обновлении, обеспечивая превентивную защиту.</string>
-
-    <!-- Protection Warning Banner -->
-    <string name="protection_banner_title">🛡️ Защищённый пакет</string>
     <string name="protection_banner_message_firewall_system">Этот критически важный системный пакет защищён по умолчанию для предотвращения нестабильности. Включите \'Разрешить блокировку критических пакетов\' в настройках для изменения сетевого доступа.</string>
     <string name="protection_banner_message_firewall_vpn">Это VPN-приложение защищено по умолчанию для предотвращения проблем с переподключением. Включите \'Разрешить блокировку критических пакетов\' в настройках для изменения сетевого доступа.</string>
-    <string name="protection_banner_message_firewall">Этот пакет защищён по умолчанию. Включите \'Разрешить блокировку критических пакетов\' в настройках для изменения сетевого доступа.</string>
-    <string name="protection_banner_message_uninstall">Этот критический пакет защищён по умолчанию для предотвращения нестабильности. Включите \'Разрешить удаление критических пакетов\' в настройках для удаления.</string>
-    <string name="protection_banner_button">Настройки</string>
-
-    <!-- Snackbar Messages -->
-    <string name="snackbar_firewall_protected">Этот пакет защищён. Включите настройку в Настройках для изменения сетевого доступа.</string>
-    <string name="snackbar_uninstall_protected">Этот пакет защищён. Включите настройку в Настройках для удаления.</string>
-    <string name="snackbar_action_settings">НАСТРОЙКИ</string>
-
-    <!-- Package Categories -->
-    <string name="category_system_core">Ядро системы</string>
-    <string name="category_system_ui">Системный интерфейс</string>
-    <string name="category_google_services">Сервисы Google</string>
-    <string name="category_connectivity">Подключения</string>
-    <string name="category_telephony">Телефония</string>
-    <string name="category_media">Медиа</string>
-    <string name="category_social">Социальные</string>
-    <string name="category_assistant">Ассистенты</string>
-    <string name="category_vendor">Производитель</string>
-    <string name="category_unknown">Неизвестно</string>
-
-    <!-- Package Action Sheet -->
-    <string name="action_sheet_placeholder_app_name">Название приложения</string>
-    <string name="action_sheet_placeholder_package_name">com.example.app</string>
-    <string name="action_sheet_safety_badge_essential">Необходимый</string>
-    <string name="action_sheet_safety_badge_important">Важный</string>
-    <string name="action_sheet_safety_badge_optional">Опциональный</string>
-    <string name="action_sheet_safety_badge_bloatware">Мусор</string>
-    <string name="action_sheet_type_badge_user">Пользовательский</string>
-    <string name="action_sheet_type_badge_system">Системный</string>
-    <string name="action_sheet_action_force_stop">Принудительная остановка</string>
-    <string name="action_sheet_action_force_stop_desc">Немедленно остановить все процессы</string>
-    <string name="action_sheet_action_disable">Отключить</string>
-    <string name="action_sheet_action_disable_desc">Запретить запуск этого приложения</string>
-    <string name="action_sheet_action_uninstall">Удалить</string>
-    <string name="action_sheet_action_uninstall_desc">Удалить приложение с устройства</string>
-    <string name="action_sheet_action_firewall">Правила файрволла</string>
-    <string name="action_sheet_action_firewall_desc">Управление сетевым доступом</string>
-    <string name="action_sheet_section_network_access">Управление сетевым доступом</string>
-    <string name="action_sheet_section_package_control">Управление пакетами</string>
-    <string name="action_sheet_section_package_control_desc">Принудительная остановка, отключение или удаление</string>
-    <string name="action_sheet_status_updating">Обновление...</string>
-
-    <!-- Clipboard -->
-    <string name="clipboard_label_package_name">Имя пакета</string>
-
-    <!-- Uninstall Dialogs -->
-    <string name="uninstall_dialog_title_critical">🚨 КРИТИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ</string>
     <string name="uninstall_dialog_message_essential">⚠️ НЕОБХОДИМЫЙ СИСТЕМНЫЙ ПАКЕТ ⚠️\n\nУдаление %1$s СДЕЛАЕТ УСТРОЙСТВО НЕРАБОТОСПОСОБНЫМ!\n\nЭтот пакет критически важен для работы системы. Его удаление сделает устройство непригодным и может потребовать сброса настроек или перепрошивки.\n\n%2$sВведите \"УДАЛИТЬ\" для подтверждения этого опасного действия:</string>
     <string name="uninstall_dialog_affects_prefix">Затрагивает:\n%s\n\n</string>
     <string name="uninstall_dialog_confirm_word">УДАЛИТЬ</string>
-    <string name="uninstall_dialog_button_uninstall">Удалить</string>
-
-    <string name="uninstall_dialog_title_important">⚠️ Предупреждение: Важный пакет</string>
     <string name="uninstall_dialog_message_important">Удаление %1$s приведёт к прекращению работы важных системных функций.\n\n%2$sМожет потребоваться сброс настроек для восстановления функциональности.\n\nВы уверены?</string>
-
-    <string name="uninstall_dialog_title_optional">Удалить %s?</string>
     <string name="uninstall_dialog_message_optional_with_affects">Это может затронуть:\n%s\n\nВы уверены?</string>
     <string name="uninstall_dialog_message_optional">Это удалит %s с вашего устройства.\n\nВы уверены?</string>
-
-    <string name="uninstall_dialog_title_bloatware">Удалить %s?</string>
     <string name="uninstall_dialog_message_bloatware">✓ Безопасно для удаления\n\nЭтот пакет считается мусорным и может быть безопасно удалён.\n\nВы уверены?</string>
-
-    <string name="uninstall_dialog_title_unknown">Удалить %s?</string>
     <string name="uninstall_dialog_message_unknown_system">⚠️ ОПАСНО: Это системный пакет. Его удаление может сделать устройство неработоспособным или вызвать серьёзную нестабильность системы.\n\nЭто действие нельзя легко отменить.\n\nВы абсолютно уверены?</string>
     <string name="uninstall_dialog_message_unknown_user">Это удалит %s с вашего устройства.\n\nВы уверены?</string>
-
-    <!-- Reinstall Dialog -->
-    <string name="reinstall_dialog_title">Переустановить %s?</string>
     <string name="reinstall_dialog_message">Это восстановит системное приложение на вашем устройстве.\n\nВы уверены?</string>
-    <string name="reinstall_dialog_button_reinstall">Переустановить</string>
-
-    <!-- Batch Reinstall Dialog -->
-    <string name="batch_reinstall_dialog_title">Переустановить %d выбранных приложений?</string>
-    <plurals name="batch_reinstall_dialog_message_prefix">
-        <item quantity="one">Переустановить %d выбранное системное приложение?\n\nСледующие приложения будут переустановлены:\n\n</item>
-        <item quantity="few">Переустановить %d выбранных системных приложения?\n\nСледующие приложения будут переустановлены:\n\n</item>
-        <item quantity="many">Переустановить %d выбранных системных приложений?\n\nСледующие приложения будут переустановлены:\n\n</item>
-        <item quantity="other">Переустановить %d выбранных системных приложений?\n\nСледующие приложения будут переустановлены:\n\n</item>
-    </plurals>
-    <string name="batch_reinstall_dialog_message_item">• %s\n</string>
-    <string name="batch_reinstall_dialog_message_more">\n…и ещё %d</string>
-    <string name="batch_reinstall_dialog_button_reinstall_all">Переустановить все</string>
-
-    <!-- Batch Uninstall Dialog -->
-    <string name="batch_uninstall_dialog_message_question">Вы уверены, что хотите удалить эти %d приложений?</string>
-    <string name="batch_uninstall_dialog_category_user_apps">📱 Пользовательские приложения (%d):</string>
-    <string name="batch_uninstall_dialog_category_bloatware">✓ Мусорные приложения (%d):</string>
-    <string name="batch_uninstall_dialog_category_optional">⚠️ Опциональные системные приложения (%d):</string>
-    <string name="batch_uninstall_dialog_and_more">... и ещё %d</string>
-    <string name="batch_uninstall_results_and_more">... и ещё %d</string>
-    <string name="batch_uninstall_results_error_prefix">  Ошибка: %s</string>
-    <string name="batch_uninstall_progress_title">Удаление приложений</string>
-    <string name="batch_uninstall_progress_message">Удаление %1$d из %2$d приложений…</string>
-    <string name="batch_uninstall_results_title">Результаты удаления</string>
-    <string name="batch_uninstall_results_success">✅ Успешно удалено %d приложений:</string>
-    <string name="batch_uninstall_results_failed">❌ Не удалось удалить %d приложений:</string>
-
-    <!-- Common Dialog Strings -->
-    <string name="dialog_ok">OK</string>
-    <string name="dialog_cancel">Отмена</string>
-    <string name="dialog_continue">Продолжить</string>
-    <string name="dialog_error_title">Ошибка</string>
-    <string name="dialog_no_access_message">❌ Привилегированный доступ недоступен\n\nВаше устройство, похоже, не имеет root-прав. Для включения расширенных функций управления пакетами:\n• Установите и настройте Shizuku (рекомендуется - root не требуется)\n• Или получите root с помощью Magisk, KernelSU или APatch</string>
-    <string name="dialog_root_denied_message">❌ Root-доступ отклонён\n\nВаше устройство имеет root, но Background Check было отказано в правах суперпользователя.\n\nДля предоставления доступа:\n• Откройте приложение суперпользователя (Magisk, KernelSU, APatch и т.д.) и предоставьте разрешение Background Check\n• Если запрос не появляется, удалите и переустановите приложение, затем предоставьте разрешение при первом запуске\n• Или вручную добавьте Background Check в приложение суперпользователя</string>
-    <string name="dialog_type_to_confirm_hint">Введите \"%s\" для подтверждения</string>
-    <string name="dialog_vpn_conflict_title">Активен другой VPN</string>
-    <string name="dialog_vpn_conflict_message">Переключение на VPN-бэкенд отключит текущее VPN-соединение (например, Proton VPN, NordVPN и т.д.).\n\nПродолжить?</string>
-    <string name="dialog_vpn_conflict_confirm">Отключить и переключить</string>
-    <string name="vpn_permission_denied">VPN-разрешение отклонено. Возврат к режиму АВТО.</string>
-
-    <!-- Toast Messages -->
-    <string name="toast_copied_to_clipboard">Скопировано в буфер обмена</string>
-
-    <!-- VPN Fallback -->
-    <string name="vpn_fallback_failed_title">Сбой резервного VPN</string>
-    <string name="vpn_fallback_failed_message">Не удалось запустить резервный VPN: %s</string>
-
-    <!-- Privileged Access Banner -->
-    <string name="privileged_access_banner_no_access">Привилегированный доступ недоступен. Установите Shizuku или получите root для управления пакетами.</string>
-    <string name="privileged_access_banner_shizuku_not_running">Shizuku установлен, но не запущен. Запустите Shizuku или получите root для управления пакетами.</string>
-    <string name="privileged_access_banner_permission_required">Требуется Shizuku или root-доступ для управления пакетами</string>
-    <string name="privileged_access_banner_button_settings">Перейти в настройки</string>
-    <string name="privileged_access_banner_button_grant">Предоставить</string>
-    <string name="privileged_access_dialog_title">Привилегированный доступ</string>
-    <string name="privileged_access_tier_title">Управление пакетами</string>
-    <string name="privileged_access_status_setup_required">Требуется настройка</string>
-    <string name="privileged_access_status_permission_required">Требуется разрешение</string>
-
-    <!-- Firewall Service Notifications -->
     <string name="privileged_firewall_notification_title">Файрволл Background Check активен</string>
     <string name="privileged_firewall_notification_text">Используется бэкенд %s</string>
     <string name="vpn_firewall_notification_title">Файрволл Background Check активен</string>
@@ -694,8 +140,6 @@
     <string name="new_app_notification_text">%s установлено. Нажмите для настройки правил файрволла.</string>
     <string name="new_app_notification_action_block">Заблокировать сеть</string>
     <string name="new_app_notification_action_allow">Разрешить сеть</string>
-
-    <!-- Backup/Restore Error Messages -->
     <string name="error_firewall_restart_failed">Не удалось перезапустить файрволл с новым бэкендом: %s</string>
     <string name="error_no_rules_to_backup">Нет правил файрволла для резервного копирования</string>
     <string name="error_backup_failed">Ошибка резервного копирования: %s</string>
@@ -704,8 +148,6 @@
     <string name="error_backup_file_unreadable">Не удалось открыть этот файл. Если вы выбрали его в результатах поиска, откройте папку с ним и выберите файл там.</string>
     <string name="error_invalid_backup_format">Неверный формат файла резервной копии</string>
     <string name="error_restore_failed">Ошибка восстановления: %s</string>
-
-    <!-- Package Management Error Messages -->
     <string name="error_unable_to_enable_package">Не удалось включить пакет. Требуется Shizuku или root-доступ для управления пакетами.</string>
     <string name="error_unable_to_disable_package">Не удалось отключить пакет. Требуется Shizuku или root-доступ для управления пакетами.</string>
     <string name="error_unable_to_uninstall_package">Не удалось удалить пакет. Требуется Shizuku или root-доступ для управления пакетами.</string>
@@ -717,61 +159,23 @@
     <string name="error_package_reinstall_failed">Не удалось переустановить пакет.</string>
     <string name="error_package_force_stop_failed">Не удалось принудительно остановить пакет.</string>
     <string name="error_unknown">Неизвестная ошибка</string>
-
-    <!-- Firewall Error Messages -->
     <string name="error_unable_to_allow_network">Не удалось разрешить сетевой доступ. Требуется root-доступ для операций файрволла.</string>
     <string name="error_unable_to_block_network">Не удалось заблокировать сетевой доступ. Требуется root-доступ для операций файрволла.</string>
     <string name="error_failed_to_block_mobile">Не удалось заблокировать мобильные данные: %s</string>
     <string name="error_failed_to_block_roaming">Не удалось заблокировать роуминг: %s</string>
     <string name="error_failed_to_unblock_roaming">Не удалось разблокировать роуминг: %s</string>
-
-    <!-- Captive Portal Error Messages -->
     <string name="error_failed_to_load_settings">Не удалось загрузить настройки</string>
     <string name="error_failed_to_apply_preset">Не удалось применить пресет</string>
     <string name="error_failed_to_set_detection_mode">Не удалось установить режим обнаружения</string>
     <string name="error_failed_to_set_custom_urls">Не удалось установить пользовательские URL</string>
     <string name="error_failed_to_restore_original_settings">Не удалось восстановить оригинальные настройки</string>
     <string name="error_failed_to_reset_to_google_defaults">Не удалось сбросить на настройки Google по умолчанию</string>
-
-    <!-- Captive Portal Success Messages -->
     <string name="success_custom_urls_applied">Пользовательские URL успешно применены</string>
     <string name="success_original_settings_restored">Оригинальные настройки успешно восстановлены</string>
     <string name="success_reset_to_google_defaults">Успешно сброшено на настройки Google по умолчанию</string>
-
-    <!-- Boot Protection Dialogs -->
-    <string name="boot_protection_enable_warning_title">Включить защиту при загрузке?</string>
-    <string name="boot_protection_enable_warning_message">⚠️ Ваше устройство немедленно перезагрузится при продолжении.\n\nЭто заблокирует ВЕСЬ сетевой трафик при загрузке устройства до запуска Background Check.\n\n⚠️ Если Background Check не запустится, устройство будет без сети.\n\nВарианты восстановления:\n1. Откройте Background Check → Настройки → Отключить защиту при загрузке\n2. Если не работает, используйте ADB:\n   adb shell\n   su\n   rm %1$s\n   reboot</string>
-    <string name="boot_protection_disable_warning_title">Отключить защиту при загрузке?</string>
-    <string name="boot_protection_disable_warning_message">⚠️ Ваше устройство немедленно перезагрузится при продолжении.\n\nСетевой трафик больше не будет блокироваться при загрузке. Приложения могут передавать данные до запуска файрволла.</string>
     <string name="boot_protection_reboot_failed">Защита при загрузке изменена, но устройство не удалось перезагрузить автоматически. Пожалуйста, перезагрузите устройство вручную.</string>
     <string name="boot_protection_enable_failed">Не удалось включить защиту при загрузке: %s</string>
     <string name="boot_protection_disable_failed">Не удалось отключить защиту при загрузке: %s</string>
-
-    <!-- App Logs -->
-    <string name="logs_title">Журналы приложения</string>
-    <string name="logs_menu_item">Журналы</string>
-    <string name="logs_menu_description">Просмотр журналов для устранения неполадок</string>
-    <string name="logs_enable_title">Включить журналирование</string>
-    <string name="logs_enable_description">Сохранять журналы в файл для отладки. Журналы никуда не отправляются.</string>
-    <string name="logs_debug_mode_note">ℹ️ Отладочная сборка - журналирование включено по умолчанию</string>
-    <string name="logs_clear">Очистить</string>
-    <string name="logs_clear_confirm_title">Очистить журналы?</string>
-    <string name="logs_clear_confirm_message">Существующие записи журнала будут удалены.</string>
-    <string name="logs_share">Поделиться журналами</string>
-    <string name="logs_count">%d записей в журнале</string>
-    <string name="logs_file_info">%1$d строк • %2$s</string>
-    <string name="logs_empty">Журналов пока нет. Включите журналирование и используйте приложение для создания записей.</string>
-    <string name="logs_cleared">Журналы очищены</string>
-    <string name="logs_share_title">Поделиться журналами Background Check</string>
-    <string name="logs_disabled_message">Журналирование отключено. Новые записи не будут сохраняться.</string>
-
-    <!-- Input Hints -->
-    <string name="hint_detection_mode">Режим обнаружения</string>
-    <string name="hint_server_preset">Пресет сервера</string>
-    <string name="hint_custom_http_url">Пользовательский HTTP URL</string>
-    <string name="hint_custom_https_url">Пользовательский HTTPS URL</string>
-
-    <!-- Quick Settings Tile -->
     <string name="tile_label_firewall">Background Check</string>
     <string name="tile_label_firewall_loading">Запуск брандмауэра</string>
     <string name="tile_label_firewall_on">Файрволл ВКЛ</string>
@@ -784,21 +188,10 @@
     <string name="tile_description_firewall_off">Файрволл Background Check остановлен</string>
     <string name="tile_description_firewall_starting">Файрволл Background Check запускается</string>
     <string name="tile_description_firewall_error">Файрволл Background Check столкнулся с ошибкой</string>
-
-    <!-- Home Screen Widget -->
     <string name="widget_description">Быстрое переключение файрволла Background Check</string>
-
-    <!-- Notification Actions -->
-
-    <string name="backend_not_supported_on_device">Не поддерживается на этом устройстве</string>
     <string name="backend_fell_back_to_auto">%1$s не удалось запустить на этом устройстве. Брандмауэр работает в режиме «Авто».</string>
     <string name="backend_changed_title">Бэкенд изменён</string>
-    <string name="settings_confirm_firewall_stop_title">Подтверждать остановку брандмауэра</string>
-    <string name="settings_confirm_firewall_stop_description">Спрашивать перед остановкой брандмауэра с плитки или виджета</string>
     <string name="firewall_stopped_notification_title">Брандмауэр остановлен</string>
     <string name="firewall_stopped_notification_text">Теперь все приложения имеют доступ в интернет. Нажмите, чтобы снова запустить.</string>
-    <string name="error_package_scan_failed_title">Не удалось прочитать список приложений</string>
-    <string name="error_package_scan_failed_hint">Если это повторится, закройте и снова откройте Background Check.</string>
     <string name="error_package_scan_failed">Не удалось прочитать список приложений на этом устройстве. Если это повторяется, закройте и снова откройте Background Check.</string>
-    <string name="support_upstream">Поддержать De1984</string>
 </resources>

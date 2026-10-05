@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import dev.bgcheck.network.De1984Application
 import dev.bgcheck.network.domain.firewall.FirewallBackendType
-import dev.bgcheck.network.ui.MainActivity
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.ui.widget.FirewallWidget
 import dev.bgcheck.network.utils.AppLogger
 import dev.bgcheck.network.utils.Constants
@@ -49,7 +49,7 @@ class FirewallToggleReceiver : BroadcastReceiver() {
                 if (isCurrentlyActive) {
                     if (firewallManager.shouldConfirmStop()) {
                         AppLogger.d(TAG, "🔴 Firewall is active, opening app for stop confirmation...")
-                        val activityIntent = Intent(context, MainActivity::class.java).apply {
+                        val activityIntent = NetworkEntryIntents.create(context).apply {
                             action = Constants.Firewall.ACTION_TOGGLE_FIREWALL
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                         }

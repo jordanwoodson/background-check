@@ -72,7 +72,7 @@ internal fun AppDetailPackage(app: AppEntry, profileAvailable: Boolean, unavaila
         onDispose { lifecycle.removeObserver(observer) }
     }
     Column(Modifier.testTag("app-detail-package"), verticalArrangement = Arrangement.spacedBy(11.dp)) {
-        Text("Package", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+        Text("Package", style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("app-detail-package-heading").semantics { heading() })
         DetailValue("Protection level", if (data.loading) "Reading…" else protectionLevelLabel(data.criticality))
         Text("Protection level controls whether uninstalling is allowed. The Cana debloat recommendation is separate advice.",
             style = MaterialTheme.typography.bodySmall, color = Muted)

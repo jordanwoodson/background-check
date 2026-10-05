@@ -2,35 +2,38 @@ package dev.bgcheck.app
 
 import android.content.Context
 import android.content.Intent
-import android.view.ContextThemeWrapper
-import android.view.LayoutInflater
-import androidx.test.core.app.ActivityScenario
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.key
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import dev.bgcheck.network.databinding.BottomSheetPackageActionGranularBinding
-import dev.bgcheck.network.databinding.BottomSheetPackageActionSimpleBinding
-import dev.bgcheck.network.databinding.BottomSheetPackageActionsBinding
+import dev.bgcheck.app.ui.BackgroundCheckTheme
+import dev.bgcheck.app.ui.network.InternetAdviceCard
+import dev.bgcheck.app.ui.network.NetworkAccessControls
+import dev.bgcheck.app.ui.network.internetRecommendation
+import dev.bgcheck.network.De1984Application
+import dev.bgcheck.network.domain.firewall.BlockingContext
+import dev.bgcheck.network.domain.model.InternetRecommendation
+import dev.bgcheck.network.domain.model.InternetRecommendations
 import dev.bgcheck.network.domain.model.NetworkPackage
 import dev.bgcheck.network.domain.model.Package
 import dev.bgcheck.network.domain.model.PackageType
-import dev.bgcheck.network.ui.common.InternetRecommendationView
-import dev.bgcheck.network.utils.Constants
-import dev.bgcheck.network.De1984Application
 import kotlinx.coroutines.runBlocking
-import org.hamcrest.Matchers.allOf
-import org.hamcrest.Matchers.containsString
 import org.junit.Assert.*
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
-import dev.bgcheck.network.R as NetworkR
 
 @RunWith(AndroidJUnit4::class)
 class NetworkRecommendationsUiTest {
+    private val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(NetworkTestPreferences()).around(compose)
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
     @Test fun successfulAndroidMetadataSurvivesBothRepositoryMappings() = runBlocking {
@@ -45,102 +48,75 @@ class NetworkRecommendationsUiTest {
     }
 
     @Test fun realFirewallEntryShowsRecommendationAlongsideItsControls() {
-        val prefs = context.getSharedPreferences(Constants.Settings.PREFS_NAME, Context.MODE_PRIVATE)
-        val startPrompt = prefs.getBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, true)
-        prefs.edit().putBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, false).commit()
-        try {
-            ActivityScenario.launch<android.app.Activity>(Intent(context, dev.bgcheck.network.ui.MainActivity::class.java)
-                .putExtra("dev.bgcheck.network.PACKAGE", "com.google.android.gms")).use { scenario ->
-                // The package shortcut opens its sheet automatically. Verify its recommendation
-                // before closing the sheet to inspect the same advice on the inventory row.
-                val sheetDeadline = android.os.SystemClock.uptimeMillis() + 20_000
-                while (true) {
-                    try {
-                        onView(allOf(withId(NetworkR.id.action_sheet_package_name), withText(containsString("com.google.android.gms")), isDisplayed()))
-                            .check(matches(isDisplayed()))
-                        break
-                    } catch (failure: androidx.test.espresso.NoMatchingViewException) {
-                        if (android.os.SystemClock.uptimeMillis() >= sheetDeadline) throw failure
-                        Thread.sleep(100)
-                    }
-                }
-                onView(withId(NetworkR.id.internet_recommendation))
-                    .check(matches(withText(containsString("Keep internet allowed"))))
-                    .perform(click())
-                    .check(matches(withText(containsString("not the current firewall status"))))
-                    .perform(click())
-                val image = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
-                context.filesDir.resolve("network-recommendation.png").outputStream().use { output ->
-                    image.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output)
-                }
-                image.recycle()
-                scenario.closeNetworkAppSheet()
-                val deadline = android.os.SystemClock.uptimeMillis() + 20_000
-                while (true) {
-                    try {
-                        onView(allOf(withId(NetworkR.id.package_name), withText("com.google.android.gms"), isDisplayed()))
-                            .check(matches(isDisplayed()))
-                        onView(allOf(withId(NetworkR.id.internet_recommendation_summary), isDisplayed()))
-                            .check(matches(withText("Internet advice: Keep internet allowed")))
-                        break
-                    } catch (failure: androidx.test.espresso.NoMatchingViewException) {
-                        if (android.os.SystemClock.uptimeMillis() >= deadline) throw failure
-                        Thread.sleep(100)
-                    }
-                }
-            }
-        } finally {
-            prefs.edit().putBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, startPrompt).commit()
-        }
+        compose.activityRule.scenario.onActivity { it.deliverNetworkIntent(Intent(context, MainActivity::class.java)
+            .putExtra("dev.bgcheck.network.PACKAGE", "com.google.android.gms")) }
+        compose.awaitNetworkNode("network-sheet")
+        compose.onNode(hasText("com.google.android.gms") and hasAnyAncestor(hasTestTag("network-sheet"))).assertExists()
+        compose.onNodeWithText("Keep internet allowed", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Internet advice").performScrollTo().performClick()
+        compose.onNodeWithText("not the current firewall status", substring = true).performScrollTo().assertIsDisplayed()
+        compose.closeNetworkAppSheet()
+        val row = "network-row-${android.os.Process.myUid() / 100000}:com.google.android.gms"
+        compose.onNodeWithTag("network-list").performScrollToNode(hasTestTag(row))
+        compose.onNode(hasText("Internet advice: Keep internet allowed") and hasAnyAncestor(hasTestTag(row)), useUnmergedTree = true).assertExists()
     }
 
-    @Test fun allSheetLayoutsHandleMissingPermissionMetadataAndRetainedRecords() {
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            val inflater = LayoutInflater.from(ContextThemeWrapper(context, NetworkR.style.Theme_De1984_Views))
-            val unknown = NetworkPackage("example.unknown", uid = -1, name = "Unknown", icon = "",
-                isEnabled = true, type = PackageType.USER)
-            listOf(BottomSheetPackageActionSimpleBinding.inflate(inflater).internetRecommendation,
-                BottomSheetPackageActionGranularBinding.inflate(inflater).internetRecommendation).forEach { view ->
-                InternetRecommendationView.bind(view, unknown)
-                view.performClick()
-                assertTrue(view.text.contains("Review before blocking"))
-                assertTrue(view.text.contains("could not be verified"))
-                assertFalse(view.text.contains("No direct internet permission"))
-            }
-            val view = BottomSheetPackageActionsBinding.inflate(inflater).internetRecommendation
-            val retained = Package("com.google.android.calculator", uid = 1000, name = "Calculator", icon = "",
-                isEnabled = false, type = PackageType.SYSTEM, isInstalled = false)
-            InternetRecommendationView.bind(view, retained)
-            view.performClick()
-            assertTrue(view.text.contains("No rule needed while uninstalled"))
-            assertTrue(view.text.contains("If reinstalled: Consider blocking internet"))
-            InternetRecommendationView.bind(view, retained.copy(uid = -1, isEnabled = true, isInstalled = true, permissionsKnown = true, versionCode = 1L,
-                permissions = listOf("android.permission.ACCESS_NETWORK_STATE"), hasNetworkAccess = true))
-            assertTrue(view.text.contains("No direct internet permission"))
+    @Test fun allSheetControlsHandleMissingPermissionMetadataAndRetainedRecords() {
+        val unknown = NetworkPackage("example.unknown", uid = -1, name = "Unknown", icon = "",
+            isEnabled = true, type = PackageType.USER)
+        listOf(false, true).forEach { granular ->
+            showAdvice(unknown.internetRecommendation(), unknown, granular)
+            expandAdvice()
+            compose.onNodeWithText("Review before blocking", substring = true).assertExists()
+            compose.onNodeWithText("could not be verified", substring = true).assertExists()
+            compose.onNodeWithText("No direct internet permission", substring = true).assertDoesNotExist()
         }
+        val retained = Package("com.google.android.calculator", uid = 1000, name = "Calculator", icon = "",
+            isEnabled = false, type = PackageType.SYSTEM, isInstalled = false)
+        showAdvice(packageAdvice(retained))
+        expandAdvice()
+        compose.onNodeWithText("No rule needed while uninstalled", substring = true).assertExists()
+        compose.onNodeWithText("If reinstalled: Consider blocking internet", substring = true).assertExists()
+        showAdvice(packageAdvice(retained.copy(uid = -1, isEnabled = true, isInstalled = true, permissionsKnown = true, versionCode = 1L,
+            permissions = listOf("android.permission.ACCESS_NETWORK_STATE"), hasNetworkAccess = true)))
+        compose.onNodeWithText("No direct internet permission", substring = true).assertExists()
     }
 
     @Test fun disabledInstalledPackageWithoutVersionNameStillGetsLiveAdvice() {
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            val inflater = LayoutInflater.from(ContextThemeWrapper(context, NetworkR.style.Theme_De1984_Views))
-            val view = BottomSheetPackageActionsBinding.inflate(inflater).internetRecommendation
-            InternetRecommendationView.bind(view, Package("org.mozilla.firefox", uid = -1,
-                name = "Browser", icon = "", isEnabled = false, type = PackageType.SYSTEM, versionCode = 1,
-                permissions = listOf("android.permission.INTERNET"), permissionsKnown = true))
-            assertFalse(view.text.contains("No rule needed while uninstalled"))
-            assertTrue(view.text.contains("Allow if you use online features"))
-        }
+        showAdvice(packageAdvice(Package("org.mozilla.firefox", uid = -1, name = "Browser", icon = "",
+            isEnabled = false, type = PackageType.SYSTEM, versionCode = 1,
+            permissions = listOf("android.permission.INTERNET"), permissionsKnown = true)))
+        compose.onNodeWithText("No rule needed while uninstalled", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Allow if you use online features", substring = true).assertExists()
     }
 
     @Test fun versionMetadataDoesNotProvePermissionReadSucceeded() {
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            val inflater = LayoutInflater.from(ContextThemeWrapper(context, NetworkR.style.Theme_De1984_Views))
-            val view = BottomSheetPackageActionSimpleBinding.inflate(inflater).internetRecommendation
-            InternetRecommendationView.bind(view, NetworkPackage("example.unknown", uid = -1,
-                name = "Unknown", icon = "", isEnabled = true, type = PackageType.USER, versionCode = 1))
-            view.performClick()
-            assertTrue(view.text.contains("could not be verified"))
-            assertFalse(view.text.contains("No direct internet permission"))
-        }
+        val unknown = NetworkPackage("example.unknown", uid = -1, name = "Unknown", icon = "",
+            isEnabled = true, type = PackageType.USER, versionCode = 1)
+        showAdvice(unknown.internetRecommendation(), unknown)
+        expandAdvice()
+        compose.onNodeWithText("could not be verified", substring = true).assertExists()
+        compose.onNodeWithText("No direct internet permission", substring = true).assertDoesNotExist()
     }
+
+    private fun packageAdvice(pkg: Package) = InternetRecommendations.forPackage(pkg.packageName, pkg.type == PackageType.SYSTEM,
+        installed = pkg.isInstalled, uid = pkg.uid, hasInternetPermission = pkg.permissions.contains("android.permission.INTERNET").takeIf { pkg.permissionsKnown },
+        enabled = pkg.isEnabled)
+
+    private fun showAdvice(advice: InternetRecommendation, pkg: NetworkPackage? = null, granular: Boolean = false) {
+        compose.activityRule.scenario.onActivity { activity ->
+            activity.setContent {
+                BackgroundCheckTheme {
+                    key(advice, granular) {
+                        Column(Modifier.verticalScroll(rememberScrollState())) {
+                            InternetAdviceCard(advice)
+                            if (pkg != null) NetworkAccessControls(pkg, null, BlockingContext(), granular, false, true, { _, _ -> }, {})
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+    private fun expandAdvice() = compose.onNodeWithText("Internet advice").performClick()
 }

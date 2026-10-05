@@ -11,7 +11,7 @@ import androidx.annotation.RequiresApi
 import dev.bgcheck.network.De1984Application
 import dev.bgcheck.network.R
 import dev.bgcheck.network.data.firewall.FirewallManager
-import dev.bgcheck.network.ui.MainActivity
+import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.utils.AppLogger
 import dev.bgcheck.network.utils.Constants
 import kotlinx.coroutines.CoroutineScope
@@ -96,7 +96,7 @@ class FirewallTileService : TileService() {
             sendBroadcast(toggleIntent)
         } else if (shouldTreatAsActive) {
             AppLogger.d(TAG, "Firewall is ON, opening app for stop confirmation")
-            val intent = Intent(this, MainActivity::class.java).apply {
+            val intent = NetworkEntryIntents.create(this).apply {
                 action = Constants.Firewall.ACTION_TOGGLE_FIREWALL
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }

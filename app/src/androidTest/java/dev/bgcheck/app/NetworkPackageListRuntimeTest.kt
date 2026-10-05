@@ -1,16 +1,12 @@
 package dev.bgcheck.app
 
-import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
-import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.bgcheck.network.De1984Application
@@ -18,18 +14,19 @@ import dev.bgcheck.network.domain.model.Package
 import dev.bgcheck.network.domain.model.PackageListCodec
 import dev.bgcheck.network.presentation.viewmodel.PackagesViewModel
 import dev.bgcheck.network.presentation.viewmodel.SettingsViewModel
-import dev.bgcheck.network.utils.Constants
 import kotlinx.coroutines.runBlocking
-import org.hamcrest.Matchers.containsString
 import org.junit.Assert.*
+import org.junit.Rule
+import org.junit.rules.RuleChain
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import dev.bgcheck.network.R as NetworkR
 
 /** Preview-only tests: exporting and importing lists never confirms an uninstall. */
 @RunWith(AndroidJUnit4::class)
 class NetworkPackageListRuntimeTest {
+    private val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(NetworkTestPreferences()).around(compose)
     private val app = ApplicationProvider.getApplicationContext<De1984Application>()
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
 
@@ -65,7 +62,7 @@ class NetworkPackageListRuntimeTest {
                     assertEquals(rows.map { it.uid }.toSet(), preview.expectedIdentities.values.map { it.uid }.toSet())
                     awaitText("Work (User 10)")
                     if (rows.size == 2) awaitText("Personal (User 0)")
-                    onView(withText(NetworkR.string.dialog_cancel)).perform(click())
+                    compose.onNodeWithText("Cancel").performClick()
                     await { settings.uiState.value.importUninstalledPreview == null }
                     file.delete()
                 }
@@ -113,46 +110,26 @@ class NetworkPackageListRuntimeTest {
                 assertNull(settings.uiState.value.error)
                 assertNull(settings.uiState.value.importUninstalledPreview)
                 awaitText("Name-only list: choose target profile")
-                onView(withText("Work (User 10) · 1 package names")).perform(click())
+                compose.onNodeWithText("Work (User 10) · 1 package names").performClick()
                 await { settings.uiState.value.importUninstalledPreview != null || settings.uiState.value.error != null }
                 val preview = requireNotNull(settings.uiState.value.importUninstalledPreview)
                 assertEquals(listOf(FIXTURE to 10), preview.packagesToUninstall)
                 awaitText("This name-only list will remove apps only from Work (User 10)")
-                onView(withText(NetworkR.string.dialog_cancel)).perform(click())
+                compose.onNodeWithText("Cancel").performClick()
             }
         } finally { file.delete() }
     }
 
     private fun withSettings(block: (SettingsViewModel) -> Unit) {
-        val prefs = app.getSharedPreferences(Constants.Settings.PREFS_NAME, android.content.Context.MODE_PRIVATE)
-        val oldPrompt = prefs.getBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, true)
-        prefs.edit().putBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, false).commit()
-        try {
-            ActivityScenario.launch<android.app.Activity>(Intent(app, dev.bgcheck.network.ui.MainActivity::class.java)).use { scenario ->
-                onView(withId(NetworkR.id.settingsFragment)).perform(click())
-                lateinit var settings: SettingsViewModel
-                scenario.onActivity { settings = ViewModelProvider(it as androidx.lifecycle.ViewModelStoreOwner)[SettingsViewModel::class.java] }
-                block(settings)
-            }
-        } finally { prefs.edit().putBoolean(Constants.Settings.KEY_SHOW_FIREWALL_START_PROMPT, oldPrompt).commit() }
+        compose.openFirewallSettings()
+        lateinit var settings: SettingsViewModel
+        compose.activityRule.scenario.onActivity { settings = ViewModelProvider(it)[SettingsViewModel::class.java] }
+        block(settings)
     }
 
     private fun awaitText(text: String) {
-        val deadline = SystemClock.uptimeMillis() + 10000
-        while (true) {
-            try {
-                onView(withText(containsString(text))).check(matches(isDisplayed()))
-                return
-            } catch (failure: androidx.test.espresso.NoMatchingViewException) {
-                if (SystemClock.uptimeMillis() >= deadline) {
-                    val bitmap = instrumentation.uiAutomation.takeScreenshot()
-                    app.filesDir.resolve("package-import-failure.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
-                    bitmap.recycle()
-                    throw failure
-                }
-                Thread.sleep(100)
-            }
-        }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(text, substring = true).performScrollTo().assertIsDisplayed()
     }
 
     private fun await(condition: () -> Boolean) {
