@@ -416,38 +416,44 @@ class PackagesViewModel(
     }
 
     fun uninstallMultiplePackages(packages: List<Pair<String, Int>>, expected: Map<PackageId, PackageIdentity> = emptyMap()): Job {
+        _uiState.value = _uiState.value.copy(isBatchRunning = true, batchOperationError = null)
         return viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoadingData = true,
-                isRenderingUI = false
-            )
+            try {
+                _uiState.value = _uiState.value.copy(
+                    isLoadingData = true,
+                    isRenderingUI = false
+                )
 
-            managePackageUseCase.uninstallMultiplePackages(packages, expected)
-                .onSuccess { result ->
-                    loadPackages(forceRefresh = true)
+                managePackageUseCase.uninstallMultiplePackages(packages, expected)
+                    .onSuccess { result ->
+                        loadPackages(forceRefresh = true)
 
-                    _uiState.value = _uiState.value.copy(
-                        batchUninstallResult = result,
-                        isLoadingData = uninstalledReadRunning(),
-                        isRenderingUI = false
-                    )
-                }
-                .onFailure { error ->
-                    if (superuserBannerState.shouldShowBannerForError(error)) {
-                        superuserBannerState.showSuperuserRequiredBanner()
+                        _uiState.value = _uiState.value.copy(
+                            batchUninstallResult = result,
+                            isLoadingData = uninstalledReadRunning(),
+                            isRenderingUI = false
+                        )
                     }
+                    .onFailure { error ->
+                        if (superuserBannerState.shouldShowBannerForError(error)) {
+                            superuserBannerState.showSuperuserRequiredBanner()
+                        }
 
-                    _uiState.value = _uiState.value.copy(
-                        isLoadingData = uninstalledReadRunning(),
-                        isRenderingUI = false,
-                        error = error.message
-                    )
-                }
+                        _uiState.value = _uiState.value.copy(
+                            isLoadingData = uninstalledReadRunning(),
+                            isRenderingUI = false,
+                            batchOperationError = error.message ?: "Couldn't complete the batch uninstall.",
+                            error = error.message
+                        )
+                    }
+            } finally {
+                _uiState.value = _uiState.value.copy(isBatchRunning = false)
+            }
         }
     }
 
     fun clearBatchUninstallResult() {
-        _uiState.value = _uiState.value.copy(batchUninstallResult = null)
+        _uiState.value = _uiState.value.copy(batchUninstallResult = null, batchOperationError = null)
     }
 
     fun reinstallPackage(packageName: String, userId: Int, appName: String, expected: PackageIdentity? = null): Job {
@@ -479,35 +485,41 @@ class PackagesViewModel(
     }
 
     fun reinstallMultiplePackages(packages: List<Pair<String, Int>>, expected: Map<PackageId, PackageIdentity> = emptyMap()): Job {
+        _uiState.value = _uiState.value.copy(isBatchRunning = true, batchOperationError = null)
         return viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoadingData = true,
-                isRenderingUI = false
-            )
+            try {
+                _uiState.value = _uiState.value.copy(
+                    isLoadingData = true,
+                    isRenderingUI = false
+                )
 
-            managePackageUseCase.reinstallMultiplePackages(packages, expected)
-                .onSuccess { result ->
-                    _uiState.value = _uiState.value.copy(
-                        batchReinstallResult = result
-                    )
-                    loadPackages(forceRefresh = true)
-                }
-                .onFailure { error ->
-                    if (superuserBannerState.shouldShowBannerForError(error)) {
-                        superuserBannerState.showSuperuserRequiredBanner()
+                managePackageUseCase.reinstallMultiplePackages(packages, expected)
+                    .onSuccess { result ->
+                        _uiState.value = _uiState.value.copy(
+                            batchReinstallResult = result
+                        )
+                        loadPackages(forceRefresh = true)
                     }
+                    .onFailure { error ->
+                        if (superuserBannerState.shouldShowBannerForError(error)) {
+                            superuserBannerState.showSuperuserRequiredBanner()
+                        }
 
-                    _uiState.value = _uiState.value.copy(
-                        isLoadingData = uninstalledReadRunning(),
-                        isRenderingUI = false,
-                        error = error.message
-                    )
-                }
+                        _uiState.value = _uiState.value.copy(
+                            isLoadingData = uninstalledReadRunning(),
+                            isRenderingUI = false,
+                            batchOperationError = error.message ?: "Couldn't complete the batch reinstall.",
+                            error = error.message
+                        )
+                    }
+            } finally {
+                _uiState.value = _uiState.value.copy(isBatchRunning = false)
+            }
         }
     }
 
     fun clearBatchReinstallResult() {
-        _uiState.value = _uiState.value.copy(batchReinstallResult = null)
+        _uiState.value = _uiState.value.copy(batchReinstallResult = null, batchOperationError = null)
     }
 
     fun clearUninstallSuccess() {
@@ -637,6 +649,8 @@ data class PackagesUiState(
     val error: String? = null,
     /** See FirewallUiState.scanFailed - the last scan failed and left us with nothing. */
     val scanFailed: Boolean = false,
+    val isBatchRunning: Boolean = false,
+    val batchOperationError: String? = null,
     val batchUninstallResult: UninstallBatchResult? = null,
     val batchReinstallResult: ReinstallBatchResult? = null,
     val uninstallSuccess: String? = null,

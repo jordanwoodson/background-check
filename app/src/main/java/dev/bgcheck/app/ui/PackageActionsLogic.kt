@@ -5,8 +5,11 @@ import dev.bgcheck.network.data.common.ShizukuStatus
 import dev.bgcheck.network.data.common.hasPrivilegedAccess
 import dev.bgcheck.network.domain.model.PackageCriticality
 import dev.bgcheck.network.domain.model.PackageType
+import dev.bgcheck.network.domain.model.Package
+import dev.bgcheck.network.utils.Constants
+import dev.bgcheck.app.data.AppEntry
 
-internal enum class PackageAction { ENABLE, DISABLE, UNINSTALL, REINSTALL }
+internal enum class PackageAction { ENABLE, DISABLE, UNINSTALL, REINSTALL, FORCE_STOP }
 
 internal enum class PackageConfirmation {
     ENABLE, DISABLE_USER, DISABLE_SYSTEM, UNINSTALL_ESSENTIAL, UNINSTALL_IMPORTANT,
@@ -37,6 +40,22 @@ internal fun packageConfirmation(action: PackageAction, policy: PackageActionPol
     PackageAction.DISABLE -> if (type == PackageType.SYSTEM) PackageConfirmation.DISABLE_SYSTEM else PackageConfirmation.DISABLE_USER
     PackageAction.UNINSTALL -> requireNotNull(policy.uninstallConfirmation)
     PackageAction.REINSTALL -> PackageConfirmation.REINSTALL
+    PackageAction.FORCE_STOP -> error("Force stop uses its own confirmation")
+}
+
+internal fun usePackageForceStop(mainAccessReady: Boolean, system: Boolean): Boolean = !mainAccessReady || system
+
+internal fun packageForceStopRefusal(app: AppEntry, pkg: Package?, loading: Boolean, accessReason: String?): String? = when {
+    Constants.App.isOwnApp(app.packageName) -> "Background Check cannot force-stop itself."
+    !app.installed -> "This app is uninstalled for the selected profile."
+    !app.profile.available -> app.profile.unavailableReason ?: "Resume or unlock this profile before managing its packages."
+    accessReason != null -> accessReason
+    loading -> "Reading package state…"
+    pkg == null || !pkg.isInstalled || pkg.id.packageName != app.packageName || pkg.userId != app.userId ||
+        pkg.uid < 0 || pkg.uid != app.uid || (pkg.userSerial ?: -1) < 0 || pkg.userSerial != app.profile.serialNumber ||
+        app.profile.userId != app.userId || (app.firstInstallTime != null && pkg.installTime != app.firstInstallTime) ->
+        "This app's installation could not be verified. Refresh the app list."
+    else -> null
 }
 
 internal fun protectionLevelLabel(criticality: PackageCriticality?): String = when (criticality) {
@@ -52,6 +71,7 @@ internal fun packageActionProgress(action: PackageAction, name: String): String 
     PackageAction.DISABLE -> "Disabling $name…"
     PackageAction.UNINSTALL -> "Uninstalling $name for this profile…"
     PackageAction.REINSTALL -> "Reinstalling $name for this profile…"
+    PackageAction.FORCE_STOP -> "Force-stopping $name for this profile…"
 }
 
 internal fun packageActionResultMessage(action: PackageAction, name: String, cancelled: Boolean,
@@ -61,6 +81,7 @@ internal fun packageActionResultMessage(action: PackageAction, name: String, can
     return when (action) {
         PackageAction.ENABLE -> "$name enabled for this profile."
         PackageAction.DISABLE -> "$name disabled for this profile."
+        PackageAction.FORCE_STOP -> "Force stop sent for $name in this profile. Opening the app can start it again."
         PackageAction.UNINSTALL, PackageAction.REINSTALL -> successEvent
             ?: "The package action could not be confirmed. Refresh to check $name’s current state."
     }

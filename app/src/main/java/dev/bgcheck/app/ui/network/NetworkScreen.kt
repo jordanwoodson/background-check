@@ -178,14 +178,15 @@ internal fun NetworkScreen(mainState: UiState, snackbar: SnackbarHostState, requ
             onRequestHandled()
         }
     }
-    LaunchedEffect(pendingPackage, pendingUser, state.isLoading, state.packages) {
+    LaunchedEffect(pendingPackage, pendingUser, state.hasCompletedPackageScan, state.isLoading, state.packages) {
         val name = pendingPackage ?: return@LaunchedEffect
-        if (!state.isLoading) {
-            val pkg = model.enforcedPackage(PackageId(name, pendingUser))
-            if (pkg != null) selectedSheet = NetworkSelection(pkg.id, pkg.identity).encode()
-            else message("This app is unavailable in User $pendingUser. Refresh the list or check the profile.")
-            pendingPackage = null
+        when (val decision = pendingNetworkPackageDecision(state.hasCompletedPackageScan, state.isLoading,
+            model.enforcedPackage(PackageId(name, pendingUser)))) {
+            PendingNetworkPackageDecision.Wait -> return@LaunchedEffect
+            PendingNetworkPackageDecision.Unavailable -> message("This app is unavailable in User $pendingUser. Refresh the list or check the profile.")
+            is PendingNetworkPackageDecision.Open -> selectedSheet = NetworkSelection(decision.pkg.id, decision.pkg.identity).encode()
         }
+        pendingPackage = null
     }
     LaunchedEffect(state.packages, state.isLoadingData, backend, profiles) {
         if (!state.isLoadingData && profiles.isNotEmpty()) {

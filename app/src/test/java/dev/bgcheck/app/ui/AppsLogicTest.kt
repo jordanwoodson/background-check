@@ -54,15 +54,22 @@ class AppsLogicTest {
         }
     }
 
-    @Test fun systemPackagesRequireKnownSafeLevelOrMatchingCriticalOverride() {
+    @Test fun systemPackagesRequireKnownSafeLevelRegardlessOfCriticalOverride() {
         val system = app(system = true)
         listOf(PackageCriticality.OPTIONAL, PackageCriticality.BLOATWARE).forEach {
             assertNull(appsSelectionRefusal(system, it, false))
             assertNull(appsSelectionRefusal(system.copy(installed = false), it, false))
         }
         listOf(PackageCriticality.ESSENTIAL, PackageCriticality.IMPORTANT).forEach {
-            assertTrue(appsSelectionRefusal(system, it, false)!!.contains("protected"))
-            assertNull(appsSelectionRefusal(system, it, true))
+            listOf(false, true).forEach { override ->
+                listOf(system, system.copy(installed = false), system.copy(enabled = false)).forEach { app ->
+                    val refusal = appsSelectionRefusal(app, it, override)!!
+                    assertTrue(refusal.contains("protected from batch actions"))
+                    assertTrue(refusal.contains("app's details"))
+                    assertTrue(refusal.contains("confirmation"))
+                    if (it == PackageCriticality.ESSENTIAL) assertTrue(refusal.contains("typed confirmation"))
+                }
+            }
         }
         assertNotNull(appsSelectionRefusal(system, null, true))
         assertNotNull(appsSelectionRefusal(system, PackageCriticality.UNKNOWN, true))
@@ -117,13 +124,27 @@ class AppsLogicTest {
             mapOf(retained.packageName to PackageCriticality.BLOATWARE), false))
     }
 
-    @Test fun batchRechecksCriticalOverrideBeforeSubmission() {
+    @Test fun batchRejectsProtectedSystemPackagesEvenWithCriticalOverride() {
         val system = app(system = true)
         val selection = listOf(AppsSelection.from(system))
-        val protection = mapOf(system.packageName to PackageCriticality.ESSENTIAL)
-        assertTrue(appsBatchPackages(listOf(system), selection, PackageType.SYSTEM, protection, false).isEmpty())
-        assertEquals(listOf(pkg(system, PackageCriticality.ESSENTIAL)),
-            appsBatchPackages(listOf(system), selection, PackageType.SYSTEM, protection, true))
+        listOf(PackageCriticality.ESSENTIAL, PackageCriticality.IMPORTANT).forEach { level ->
+            listOf(false, true).forEach { override ->
+                assertTrue(appsBatchPackages(listOf(system), selection, PackageType.SYSTEM,
+                    mapOf(system.packageName to level), override).isEmpty())
+            }
+        }
+    }
+
+    @Test fun restoredBatchIsInterruptedOnlyWithoutLiveOperationOrOutcome() {
+        assertTrue(appsBatchWasInterrupted(true, false, false, null))
+        assertFalse(appsBatchWasInterrupted(false, false, false, null))
+        assertFalse(appsBatchWasInterrupted(true, true, false, null))
+        assertFalse(appsBatchWasInterrupted(true, false, true, null))
+        assertFalse(appsBatchWasInterrupted(true, false, false, "Access lost"))
+        assertFalse(dev.bgcheck.network.presentation.viewmodel.PackagesUiState().isBatchRunning)
+        val restored = dev.bgcheck.network.presentation.viewmodel.PackagesUiState(error = "Package scan failed")
+        assertTrue(appsBatchWasInterrupted(true, restored.isBatchRunning,
+            restored.batchUninstallResult != null || restored.batchReinstallResult != null, restored.batchOperationError))
     }
 
     @Test fun uninstallPreviewGroupsNamesWithoutCountingUserBloatwareTwice() {

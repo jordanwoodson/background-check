@@ -29,7 +29,6 @@ import dev.bgcheck.app.ui.network.rememberInternetRecommendation
 import dev.bgcheck.app.ui.network.settingsViewModelFactory
 import dev.bgcheck.network.De1984Application
 import dev.bgcheck.network.domain.firewall.FirewallBackendType
-import dev.bgcheck.network.domain.firewall.FirewallHealth
 import dev.bgcheck.network.domain.firewall.NetworkPolicySupport
 import dev.bgcheck.network.domain.model.InternetRecommendations
 import dev.bgcheck.network.domain.model.PackageId
@@ -68,10 +67,15 @@ internal fun AppDetailNetwork(app: AppEntry, onNetwork: () -> Unit, onSeeInNetwo
     }
     Column(Modifier.testTag("app-detail-network"), verticalArrangement = Arrangement.spacedBy(11.dp)) {
         Text("Network access", style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("app-detail-network-heading").semantics { heading() })
-        Text(appDetailNetworkStatus(pkg, app.installed, limited), style = MaterialTheme.typography.bodyMedium, color = Muted)
+        Text(appDetailNetworkStatus(pkg, app.installed, limited, state.isFirewallEnabled, health), style = MaterialTheme.typography.bodyMedium, color = Muted)
+        val warning = appDetailNetworkProtectionWarning(health)
+        if (app.installed && warning != null) {
+            Text(warning, style = MaterialTheme.typography.bodySmall, color = Orange)
+            TextButton(onClick = onNetwork) { Text("Go to Network") }
+        }
         InternetAdviceCard(recommendation)
         if (pkg != null && (!pkg.permissionsKnown || pkg.hasInternetPermission)) {
-            if (!state.isFirewallEnabled && health is FirewallHealth.Healthy) {
+            if (!state.isFirewallEnabled && warning == null) {
                 Text("The firewall is off. These rules apply when you turn it on.", style = MaterialTheme.typography.bodySmall, color = Muted)
                 TextButton(onClick = onNetwork) { Text("Go to Network") }
             }

@@ -77,23 +77,27 @@ internal fun NetworkAccessControls(
             else R.string.firewall_backend_cannot_block_uid) else null
         if (granular) {
             listOf(NetworkControl.WIFI, NetworkControl.MOBILE).plus(if (hasCellular) listOf(NetworkControl.ROAMING) else emptyList()).forEach { control ->
-                NetworkAccessSwitch(control.label, !saved.blockedOn(control), enabled, subtitle) { onChange(control, !it) }
+                NetworkAccessSwitch(control.label, !saved.blockedOn(control), enabled, subtitle,
+                    appDescription = networkAppDescription(pkg)) { onChange(control, !it) }
             }
         } else {
             NetworkAccessSwitch(if (limited) "Background data" else "Internet access", !saved.blockedOn(NetworkControl.ALL), enabled,
-                subtitle ?: if (limited) stringResource(R.string.network_policy_limited) else "Wi-Fi, mobile data and roaming") {
+                subtitle ?: if (limited) stringResource(R.string.network_policy_limited) else "Wi-Fi, mobile data and roaming",
+                appDescription = networkAppDescription(pkg)) {
                 onChange(NetworkControl.ALL, !it)
             }
         }
         val lanEnabled = granular && backend == FirewallBackendType.IPTABLES && enabled
         NetworkAccessSwitch("Local network", !saved.lanBlocked, lanEnabled,
-            if (backend != FirewallBackendType.IPTABLES || !granular) stringResource(R.string.firewall_lan_requires_root) else subtitle) {
+            if (backend != FirewallBackendType.IPTABLES || !granular) stringResource(R.string.firewall_lan_requires_root) else subtitle,
+            appDescription = networkAppDescription(pkg)) {
             onChange(NetworkControl.LAN, !it)
         }
         val fullyBlocked = if (granular) saved.isFullyBlocked else saved.blockedOn(NetworkControl.ALL)
         if (enabled && !fullyBlocked) {
             NetworkAccessSwitch("Screen-off access", !saved.backgroundBlocked, true,
-                "Allow network access while the screen is off. This is separate from background-work and Doze settings.") {
+                "Allow network access while the screen is off. This is separate from background-work and Doze settings.",
+                appDescription = networkAppDescription(pkg)) {
                 onChange(NetworkControl.BACKGROUND, !it)
             }
         }
@@ -112,7 +116,7 @@ private fun reasonMessage(reason: UnblockableReason): Int = when (reason) {
 
 @Composable
 internal fun NetworkAccessSwitch(label: String, allowed: Boolean, enabled: Boolean, description: String? = null,
-    onAllowed: (Boolean) -> Unit) {
+    appDescription: String? = null, onAllowed: (Boolean) -> Unit) {
     Surface(color = Panel, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth().testTag("network-control-${label.lowercase().replace(' ', '-')}")) {
         val large = LocalDensity.current.fontScale > 1.3f
         @Composable fun Title(modifier: Modifier) {
@@ -124,7 +128,10 @@ internal fun NetworkAccessSwitch(label: String, allowed: Boolean, enabled: Boole
         }
         @Composable fun Toggle() {
             Switch(checked = allowed, onCheckedChange = onAllowed, enabled = enabled,
-                modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "$label ${if (allowed) "allowed" else "blocked"}" },
+                modifier = Modifier.heightIn(min = 48.dp).semantics {
+                    contentDescription = appDescription?.let { networkToggleDescription(label, allowed, enabled, it) }
+                        ?: "$label ${if (allowed) "allowed" else "blocked"}"
+                },
                 colors = SwitchDefaults.colors(checkedThumbColor = Green, checkedTrackColor = Green.copy(alpha = 0.2f),
                     uncheckedThumbColor = Red, uncheckedTrackColor = Red.copy(alpha = 0.1f)))
         }

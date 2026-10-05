@@ -33,6 +33,7 @@ internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean,
     val large = LocalDensity.current.fontScale > 1.3f
     Surface(color = Panel, shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()
         .testTag("network-row-${pkg.userId}:${pkg.packageName}")
+        .semantics { contentDescription = networkAppDescription(pkg) }
         .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = "Select app")
         .alpha(if (enabled) 1f else 0.6f)) {
         @Composable fun Toggles() {
@@ -43,7 +44,7 @@ internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean,
                     val presentation = togglePresentation(pkg, control, backend, blockingContext)
                     IconToggleButton(checked = presentation.allowed, onCheckedChange = { onToggle(control) },
                         enabled = presentation.enabled, modifier = Modifier.size(48.dp)
-                            .semantics { contentDescription = if (limited) "Background data ${if (presentation.allowed) "allowed" else "restricted"} for ${pkg.name}. Double-tap for details" else presentation.description },
+                            .semantics { contentDescription = if (limited) "Background data ${if (presentation.allowed) "allowed" else "restricted"} for ${networkAppDescription(pkg)}. Double-tap for details" else presentation.description },
                         colors = IconButtonDefaults.iconToggleButtonColors(
                             containerColor = Red.copy(alpha = 0.08f), contentColor = Red,
                             checkedContainerColor = androidx.compose.ui.graphics.Color.Transparent, checkedContentColor = Green)) {
@@ -61,10 +62,13 @@ internal fun NetworkRow(pkg: NetworkPackage, compact: Boolean,
         Column(Modifier.padding(if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (selecting) Checkbox(checked = selected, onCheckedChange = { onClick() }, enabled = enabled,
-                    modifier = Modifier.size(48.dp), colors = CheckboxDefaults.colors(checkedColor = Purple))
+                    modifier = Modifier.size(48.dp).semantics { contentDescription = "Select ${networkAppDescription(pkg)}" }, colors = CheckboxDefaults.colors(checkedColor = Purple))
                 AppIcon(pkg.packageName, if (compact) 36.dp else 46.dp, pkg.userId, pkg.userSerial)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(pkg.name, style = MaterialTheme.typography.titleMedium)
+                    if (compact && (pkg.isWorkProfile || pkg.isCloneProfile)) {
+                        Text(networkProfileLabel(pkg), style = MaterialTheme.typography.bodySmall, color = Muted)
+                    }
                     if (!compact) {
                         Text(pkg.packageName, style = MaterialTheme.typography.bodySmall, color = Muted,
                             maxLines = 1, overflow = TextOverflow.Ellipsis)

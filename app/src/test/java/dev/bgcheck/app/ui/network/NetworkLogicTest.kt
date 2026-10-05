@@ -30,6 +30,20 @@ class NetworkLogicTest {
             Constants.Notifications.ACTION_OPEN_FIREWALL, null, null, null, null, 12))
     }
 
+    @Test fun pendingDeepLinkWaitsForRealScanCompletionEvenAfterFilterReset() {
+        val initial = dev.bgcheck.network.presentation.viewmodel.FirewallUiState()
+        val reset = initial.copy(isLoadingData = false, isRenderingUI = false)
+        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(reset.hasCompletedPackageScan, reset.isLoading, null))
+        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(false, false, pkg(user = 10)))
+        val failed = reset.copy(scanFailed = true)
+        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(failed.hasCompletedPackageScan, failed.isLoading, null))
+        assertEquals(PendingNetworkPackageDecision.Wait, pendingNetworkPackageDecision(true, true, pkg(user = 10)))
+        val completed = reset.copy(hasCompletedPackageScan = true)
+        val work = pkg(user = 10)
+        assertEquals(PendingNetworkPackageDecision.Open(work), pendingNetworkPackageDecision(completed.hasCompletedPackageScan, completed.isLoading, work))
+        assertEquals(PendingNetworkPackageDecision.Unavailable, pendingNetworkPackageDecision(completed.hasCompletedPackageScan, completed.isLoading, null))
+    }
+
     @Test fun operationalActionsDoNotOpenAnInjectedPackage() {
         mapOf(Constants.Firewall.ACTION_REQUEST_VPN_PERMISSION to NetworkDestination.START,
             Constants.Firewall.ACTION_TOGGLE_FIREWALL to NetworkDestination.TOGGLE,
@@ -107,6 +121,25 @@ class NetworkLogicTest {
         val protectedUid = pkg().copy(paintedAllowCritical = true)
         assertNull(selectionRefusal(protectedUid, FirewallBackendType.IPTABLES,
             BlockingContext(criticalOrVpnUids = setOf(protectedUid.uid), allowCritical = true, blockAllDefault = true)))
+    }
+
+    @Test fun rowAndEveryToggleDescribeTheProfileAndAndroidUser() {
+        val personal = pkg().copy(name = "Chrome")
+        val work = pkg(user = 10).copy(name = "Chrome", isWorkProfile = true)
+        val clone = pkg(user = 11).copy(name = "Chrome", isCloneProfile = true)
+        mapOf(personal to "Chrome, Personal profile (user 0)", work to "Chrome, Work profile (user 10)",
+            clone to "Chrome, Clone profile (user 11)").forEach { (pkg, description) ->
+            assertEquals(description, networkAppDescription(pkg))
+            NetworkControl.entries.forEach { control ->
+                val toggle = togglePresentation(pkg, control, null, BlockingContext())
+                assertEquals("${control.label} allowed for $description. Double-tap to block", toggle.description)
+            }
+            assertEquals("Wi-Fi blocked for $description. Double-tap to allow",
+                togglePresentation(pkg.copy(wifiBlocked = true), NetworkControl.WIFI, null, BlockingContext()).description)
+            assertEquals("Screen-off access blocked for $description. Controls unavailable",
+                networkToggleDescription("Screen-off access", false, false, description))
+        }
+        assertEquals("User profile (user 12)", networkProfileLabel(pkg(user = 12)))
     }
 
     @Test fun selectionTogglesAndHonoursLimitWithoutDroppingExistingApps() {

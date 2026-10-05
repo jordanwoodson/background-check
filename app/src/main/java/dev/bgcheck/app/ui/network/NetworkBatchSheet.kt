@@ -24,13 +24,15 @@ internal fun NetworkBatchSheet(packages: List<NetworkPackage>, granular: Boolean
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Rules for ${packages.size} selected apps", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             Text(networkBatchStatus(packages), color = Muted)
+            val appDescription = "${packages.size} selected apps, ${packages.map(::networkProfileLabel).distinct().joinToString()}"
             val controls = if (granular) listOf(NetworkControl.WIFI, NetworkControl.MOBILE) +
                 (if (hasCellular) listOf(NetworkControl.ROAMING) else emptyList()) +
                 (if (iptables) listOf(NetworkControl.LAN) else emptyList()) else listOf(NetworkControl.ALL)
             controls.forEach { control ->
                 val blocked = packages.map { it.asSaved().blockedOn(control) }
                 NetworkAccessSwitch(if (limited) "Background data" else control.label,
-                    allowed = blocked.none { it }, enabled = packages.isNotEmpty(), description = batchStatus(blocked)) {
+                    allowed = blocked.none { it }, enabled = packages.isNotEmpty(), description = batchStatus(blocked),
+                    appDescription = appDescription) {
                     onChange(control, !it)
                 }
             }

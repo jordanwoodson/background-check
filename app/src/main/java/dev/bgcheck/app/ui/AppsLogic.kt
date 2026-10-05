@@ -35,6 +35,10 @@ internal fun matchesAppsProtection(level: PackageCriticality?, filter: AppsProte
 internal fun appsBatchAction(type: PackageType): String =
     if (type == PackageType.UNINSTALLED) "Reinstall" else "Uninstall"
 
+internal fun appsBatchWasInterrupted(pending: Boolean, running: Boolean, hasResult: Boolean, error: String?): Boolean =
+    pending && !running && !hasResult && error == null
+
+@Suppress("UNUSED_PARAMETER")
 internal fun appsSelectionRefusal(app: AppEntry, level: PackageCriticality?, allowCritical: Boolean): String? = when {
     Constants.App.isOwnApp(app.packageName) -> "Background Check cannot manage its own installation."
     !app.profile.available -> app.profile.unavailableReason ?: "This profile is paused, locked or unavailable."
@@ -43,7 +47,7 @@ internal fun appsSelectionRefusal(app: AppEntry, level: PackageCriticality?, all
     !app.system -> null
     level == PackageCriticality.BLOATWARE || level == PackageCriticality.OPTIONAL -> null
     level == PackageCriticality.ESSENTIAL || level == PackageCriticality.IMPORTANT ->
-        if (allowCritical) null else "${level.name.lowercase().replaceFirstChar { it.titlecase() }} packages are protected. Enable critical package uninstall in Firewall settings to select them."
+        "${level.name.lowercase().replaceFirstChar { it.titlecase() }} packages are protected from batch actions. Uninstall from the app's details, where the critical package override and ${if (level == PackageCriticality.ESSENTIAL) "typed" else "individual"} confirmation apply."
     else -> "This system package has no verified protection level. Only Optional or Bloatware system packages can be selected."
 }
 

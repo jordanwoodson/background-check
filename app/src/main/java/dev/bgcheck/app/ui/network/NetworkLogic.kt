@@ -42,6 +42,19 @@ internal fun parseNetworkRequest(action: String?, legacyPackage: String?, legacy
     return legacyPackage?.takeIf { it.isNotBlank() }?.let { NetworkRequest(NetworkDestination.OPEN, it, legacyUser ?: ownUser) }
 }
 
+internal sealed interface PendingNetworkPackageDecision {
+    data object Wait : PendingNetworkPackageDecision
+    data object Unavailable : PendingNetworkPackageDecision
+    data class Open(val pkg: NetworkPackage) : PendingNetworkPackageDecision
+}
+
+internal fun pendingNetworkPackageDecision(hasCompletedScan: Boolean, loading: Boolean,
+    pkg: NetworkPackage?): PendingNetworkPackageDecision = when {
+    !hasCompletedScan || loading -> PendingNetworkPackageDecision.Wait
+    pkg == null -> PendingNetworkPackageDecision.Unavailable
+    else -> PendingNetworkPackageDecision.Open(pkg)
+}
+
 internal fun firewallStatus(enabled: Boolean, health: FirewallHealth): String = when (health) {
     is FirewallHealth.StopFailed -> "Stuck"
     is FirewallHealth.Down -> "Down"
@@ -97,12 +110,23 @@ internal fun NetworkPackage.blockedOn(control: NetworkControl): Boolean = when (
 
 internal data class TogglePresentation(val allowed: Boolean, val enabled: Boolean, val description: String)
 
+internal fun networkProfileLabel(pkg: NetworkPackage): String = when {
+    pkg.isWorkProfile -> "Work profile"
+    pkg.isCloneProfile -> "Clone profile"
+    pkg.userId == 0 -> "Personal profile"
+    else -> "User profile"
+} + " (user ${pkg.userId})"
+
+internal fun networkAppDescription(pkg: NetworkPackage): String = "${pkg.name}, ${networkProfileLabel(pkg)}"
+
+internal fun networkToggleDescription(label: String, allowed: Boolean, enabled: Boolean, appDescription: String): String =
+    "$label ${if (allowed) "allowed" else "blocked"} for $appDescription. " +
+        if (enabled) "Double-tap to ${if (allowed) "block" else "allow"}" else "Controls unavailable"
+
 internal fun togglePresentation(pkg: NetworkPackage, control: NetworkControl, backend: FirewallBackendType?, context: BlockingContext): TogglePresentation {
     val allowed = !pkg.blockedOn(control)
     val enabled = selectionRefusal(pkg, backend, context) == null
-    return TogglePresentation(allowed, enabled,
-        "${control.label} ${if (allowed) "allowed" else "blocked"} for ${pkg.name}. " +
-            if (enabled) "Double-tap to ${if (allowed) "block" else "allow"}" else "Controls unavailable")
+    return TogglePresentation(allowed, enabled, networkToggleDescription(control.label, allowed, enabled, networkAppDescription(pkg)))
 }
 
 internal fun selectionRefusal(pkg: NetworkPackage, backend: FirewallBackendType?, context: BlockingContext): String? = when {

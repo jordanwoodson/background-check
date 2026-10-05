@@ -83,7 +83,9 @@ internal fun rememberAppsPackageActions(mainState: UiState, visible: List<AppEnt
     var confirmation by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var preview by rememberSaveable { mutableStateOf("") }
     var reinstall by rememberSaveable { mutableStateOf(false) }
-    var running by rememberSaveable { mutableStateOf(false) }
+    // Only the marker survives process death; progress belongs to the live ViewModel operation.
+    var batchPending by rememberSaveable { mutableStateOf(false) }
+    val running = state.isBatchRunning
     var batchError by rememberSaveable { mutableStateOf<String?>(null) }
     var batchNames by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var needsAccess by rememberSaveable { mutableStateOf(false) }
@@ -103,7 +105,7 @@ internal fun rememberAppsPackageActions(mainState: UiState, visible: List<AppEnt
         model.clearBatchUninstallResult()
         model.clearBatchReinstallResult()
         batchError = null
-        running = false
+        batchPending = false
         exitSelection()
         onRefresh()
     }
@@ -140,15 +142,26 @@ internal fun rememberAppsPackageActions(mainState: UiState, visible: List<AppEnt
     LaunchedEffect(state.error) {
         state.error?.let {
             model.clearError()
-            if (running) { running = false; batchError = it }
-            else snackbar.showSnackbar(it, withDismissAction = true)
+            if (it != state.batchOperationError) snackbar.showSnackbar(it, withDismissAction = true)
         }
+    }
+    LaunchedEffect(state.batchOperationError) {
+        state.batchOperationError?.let { batchError = it; batchPending = false }
     }
     LaunchedEffect(rootBanner) {
         if (rootBanner) { needsAccess = true; model.dismissRootBanner() }
     }
-    LaunchedEffect(state.batchUninstallResult, state.batchReinstallResult) {
-        if (state.batchUninstallResult != null || state.batchReinstallResult != null) running = false
+    LaunchedEffect(batchPending, running, state.batchUninstallResult, state.batchReinstallResult, state.batchOperationError) {
+        if (batchPending && !running) {
+            if (appsBatchWasInterrupted(batchPending, running,
+                state.batchUninstallResult != null || state.batchReinstallResult != null, state.batchOperationError)) {
+                batchError = "The last batch was interrupted. Check the list for its current state."
+                exitSelection()
+                model.loadPackages(forceRefresh = true)
+                onRefresh()
+            }
+            batchPending = false
+        }
     }
     BackHandler(selectionMode && confirmation.isEmpty() && !running && state.batchUninstallResult == null && state.batchReinstallResult == null && batchError == null) { exitSelection() }
 
@@ -168,7 +181,7 @@ internal fun rememberAppsPackageActions(mainState: UiState, visible: List<AppEnt
                     message("The selection changed or is unavailable. Review the visible apps before trying again.")
                 } else {
                     batchNames = packages.map { "${it.packageName}|${it.name}" }
-                    running = true
+                    batchPending = true
                     val identities = packages.associate { it.id to it.identity }
                     val targets = packages.map { it.packageName to it.userId }
                     if (reinstall) model.reinstallMultiplePackages(targets, identities)

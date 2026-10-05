@@ -45,6 +45,7 @@ internal class PackageActionsViewModel(
                         pkg.packageName, pkg.userId, action == PackageAction.ENABLE, expected = pkg.identity)
                     PackageAction.UNINSTALL -> packagesModel.uninstallPackage(pkg.packageName, pkg.userId, pkg.name, expected = pkg.identity)
                     PackageAction.REINSTALL -> packagesModel.reinstallPackage(pkg.packageName, pkg.userId, pkg.name, expected = pkg.identity)
+                    PackageAction.FORCE_STOP -> packagesModel.forceStopPackage(pkg.packageName, pkg.userId, expected = pkg.identity)
                 }
                 job.join()
                 val events = packagesModel.uiState.value

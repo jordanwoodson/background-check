@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import dev.bgcheck.app.ui.network.*
 import dev.bgcheck.network.ui.NetworkEntryIntents
 import dev.bgcheck.network.De1984Application
@@ -38,6 +39,7 @@ import dev.bgcheck.app.ui.BackgroundCheckTheme
 class MainActivity : ComponentActivity() {
     private val dependencies get() = (application as De1984Application).dependencies
     private val firewallModel: FirewallViewModel by viewModels { firewallViewModelFactory(application) }
+    private val vpnFallbackModel: VpnFallbackViewModel by viewModels { VpnFallbackViewModel.Factory(application) }
     private var networkRequest by mutableStateOf<NetworkRequest?>(null)
     private var networkVisible = false
     private var vpnFallback = false
@@ -72,11 +74,22 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) consumeNetworkIntent(intent)
         PackageMonitoringService.startMonitoring(this)
         lifecycleScope.launch {
-            firewallModel.uiState.collect { state ->
-                if (state.shouldRequestBatteryOptimization) {
-                    firewallModel.clearBatteryOptimizationRequest()
-                    dependencies.permissionManager.createBatteryOptimizationIntent()?.let {
-                        runCatching { batteryOptimization.launch(it) }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    firewallModel.uiState.collect { state ->
+                        if (state.shouldRequestBatteryOptimization) {
+                            firewallModel.clearBatteryOptimizationRequest()
+                            launchBatteryOptimizationPrompt()
+                        }
+                    }
+                }
+                launch {
+                    vpnFallbackModel.state.collect { state ->
+                        if (state.requestBatteryOptimization || state.error != null) {
+                            vpnFallbackModel.clearResult()
+                            if (state.requestBatteryOptimization) launchBatteryOptimizationPrompt()
+                            state.error?.let { Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show() }
+                        }
                     }
                 }
             }
@@ -190,12 +203,11 @@ class MainActivity : ComponentActivity() {
         }.onFailure { Toast.makeText(this, it.message ?: "Couldn't request VPN permission", Toast.LENGTH_LONG).show() }
     }
     private fun startVpnFallback() {
-        lifecycleScope.launch {
-            runCatching { dependencies.firewallManager.startVpnFallbackManually() }.onSuccess {
-                if (dependencies.firewallManager.isActive()) {
-                    dependencies.permissionManager.createBatteryOptimizationIntent()?.let { batteryOptimization.launch(it) }
-                }
-            }.onFailure { Toast.makeText(this@MainActivity, it.message ?: "Couldn't start VPN", Toast.LENGTH_LONG).show() }
+        vpnFallbackModel.start()
+    }
+    private fun launchBatteryOptimizationPrompt() {
+        dependencies.permissionManager.createBatteryOptimizationIntent()?.let {
+            runCatching { batteryOptimization.launch(it) }
         }
     }
     private fun checkNetworkOnResume() {

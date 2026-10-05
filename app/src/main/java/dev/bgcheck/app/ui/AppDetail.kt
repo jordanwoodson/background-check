@@ -143,18 +143,22 @@ internal fun AppDetailSheet(
     var serviceSort by rememberEnumPreference("$preferenceKey.serviceSort", ServiceSort.NAME)
     var serviceDirection by rememberEnumPreference("$preferenceKey.serviceDirection", SortDirection.ASCENDING)
     val sharedApps = state.apps.filter { it.uid == app.uid }
+    val ready = state.access == AccessState.READY
+    val packageForceStop = usePackageForceStop(ready, app.system)
+    val forceStopData = if (packageForceStop) rememberAppDetailPackage(app, packagesModel, packageActions.revision) else AppDetailPackageData(loading = false)
+    val root by packagesModel.rootManager.rootStatus.collectAsStateWithLifecycle()
+    val shizuku by packagesModel.shizukuManager.shizukuStatus.collectAsStateWithLifecycle()
     val forceStopRestriction = when {
         !profileAvailable -> profile.unavailableReason ?: "This profile is unavailable. Resume or unlock it before changing app settings."
         !app.installed -> "This app is uninstalled for the selected profile."
+        packageForceStop -> packageForceStopRefusal(app, forceStopData.pkg, forceStopData.loading, packageActionsDisabledReason(root, shizuku))
         app.protectedReason != null -> app.protectedReason
-        app.system -> "System apps cannot be force-stopped here."
         app.uid % 100_000 < 10_000 -> "Core Android UIDs cannot be force-stopped here."
         sharedApps.size > 1 -> "This UID is shared by several apps. Force stop is unavailable because it may affect other packages."
         sharedApps.none { it.packageName == app.packageName && it.userId == app.userId } -> "App identity is unavailable. Refresh the installed app list."
         else -> null
     }
-    val ready = state.access == AccessState.READY
-    val canForceStop = ready && !state.busy && !packageBusy && !state.detailLoading && forceStopRestriction == null
+    val canForceStop = !state.busy && !packageBusy && (packageForceStop || !state.detailLoading) && forceStopRestriction == null
     val writableModes = setOf("allow", "ignore", "deny", "default")
     val canChange = profileAvailable && ready && !state.busy && !packageBusy && !state.detailLoading && policy != null && policy.error == null && app.protectedReason == null &&
         policy.uidOverride == false && policy.backgroundMode in writableModes && policy.userExempt != null &&
@@ -362,12 +366,18 @@ internal fun AppDetailSheet(
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Profile: ${profile.displayLabel()}")
+                    if (app.system) Text("This is a system package. Force stopping it may cause system instability.", color = Orange)
                     Text("This ends the app’s activity now. Unsaved work may be lost, and notifications, syncing and scheduled work may stop until you open the app again.")
                     Text("Force stop has no Undo. Your background and battery optimization settings remain in place.")
                     if (!canForceStop) Text("App identity or access changed. Close this dialog and refresh before continuing.", color = Orange)
                 }
             },
-            confirmButton = { TextButton(onClick = { confirmForceStop = false; sheetMessage = null; onForceStop() }, enabled = canForceStop) { Text("Force stop now") } },
+            confirmButton = { TextButton(onClick = {
+                confirmForceStop = false
+                sheetMessage = null
+                if (packageForceStop) forceStopData.pkg?.let { packageActionsModel.run(it, PackageAction.FORCE_STOP) }
+                else onForceStop()
+            }, enabled = canForceStop) { Text("Force stop now") } },
             dismissButton = { TextButton(onClick = { confirmForceStop = false }) { Text("Cancel") } },
             containerColor = Panel,
         )

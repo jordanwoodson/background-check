@@ -368,7 +368,7 @@ class FirewallViewModel(
 
         pendingFilterState = null
 
-        if (cachedPackages.isNotEmpty() && !forceRefresh) {
+        if (cachedPackages.isNotEmpty() && _uiState.value.hasCompletedPackageScan && !forceRefresh) {
             applyFilters(filterState)
             return
         }
@@ -477,6 +477,7 @@ class FirewallViewModel(
                     isRenderingUI = true,
                     error = null,
                     scanFailed = false,
+                    hasCompletedPackageScan = true,
                     hasWorkProfile = hasWorkProfile,
                     hasCloneProfile = hasCloneProfile
                 )
@@ -1487,6 +1488,8 @@ data class FirewallUiState(
      * successful scan.
      */
     val scanFailed: Boolean = false,
+    /** Set only by a successful package emission, never by filtering or UI readiness. */
+    val hasCompletedPackageScan: Boolean = false,
     val isFirewallEnabled: Boolean = false,
     val defaultFirewallPolicy: String = Constants.Settings.DEFAULT_FIREWALL_POLICY,
     val shouldRequestBatteryOptimization: Boolean = false,
