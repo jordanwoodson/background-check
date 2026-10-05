@@ -25,7 +25,7 @@ fun ProtectionCard(access: AccessState, protection: ProtectionSummary, onNetwork
             ResourceValue("Active backend", protection.backend)
             ResourceValue("Profiles in scope", protection.profileScope)
             Text(protection.detail, style = MaterialTheme.typography.bodySmall, color = if (protection.active) Muted else Orange)
-            TextButton(onClick = onNetwork) { Text("Open Network") }
+            TextButton(onClick = onNetwork) { Text("Manage firewall") }
         }
     }
 }

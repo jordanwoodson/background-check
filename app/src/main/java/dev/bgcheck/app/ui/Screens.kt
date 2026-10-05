@@ -130,10 +130,15 @@ import dev.bgcheck.app.data.ProcessState
 import dev.bgcheck.app.data.SortDirection
 import dev.bgcheck.app.data.UiState
 import java.util.Locale
+import dev.bgcheck.app.ui.network.NetworkRequest
+import dev.bgcheck.app.ui.network.NetworkDestination
+import dev.bgcheck.app.ui.network.NetworkScreen
+import dev.bgcheck.app.ui.network.networkRequestSaver
 
 private enum class Page(val label: String, val icon: ImageVector) {
     OVERVIEW("Overview", Icons.Rounded.Insights),
     APPS("Apps", Icons.Rounded.Apps),
+    NETWORK("Network", Icons.Rounded.Shield),
     MONITOR("Monitor", Icons.Rounded.Memory),
     ACCESS("Access", Icons.Rounded.Key),
 }
@@ -164,8 +169,25 @@ fun BackgroundCheckApp(
     onStartComparison: () -> Unit = {},
     onCompareBattery: () -> Unit = {},
     onClearComparison: () -> Unit = {},
+    networkRequest: NetworkRequest? = null,
+    onNetworkRequestHandled: () -> Unit = {},
+    onStartFirewall: () -> Unit = {},
+    onEnableVpn: () -> Unit = {},
+    onNetworkVisible: (Boolean) -> Unit = {},
 ) {
     var page by rememberEnumPreference("overview.page", Page.OVERVIEW)
+    var localNetworkRequest by rememberSaveable(stateSaver = networkRequestSaver) { mutableStateOf<NetworkRequest?>(null) }
+    fun openNetwork(app: AppEntry?) {
+        onOpenNetwork(app)
+        onDismissDetail()
+        localNetworkRequest = NetworkRequest(NetworkDestination.OPEN, app?.packageName, app?.userId ?: android.os.Process.myUid() / 100000)
+        page = Page.NETWORK
+    }
+    LaunchedEffect(networkRequest) { if (networkRequest != null) { onDismissDetail(); page = Page.NETWORK } }
+    DisposableEffect(page == Page.NETWORK) {
+        onNetworkVisible(page == Page.NETWORK)
+        onDispose { onNetworkVisible(false) }
+    }
     val pageState = rememberSaveableStateHolder()
     val detailState = rememberSaveableStateHolder()
     val snackbar = remember { SnackbarHostState() }
@@ -232,7 +254,7 @@ fun BackgroundCheckApp(
                 }
             }
             Column(Modifier.weight(1f).fillMaxSize()) {
-                AppHeader(state, onRefresh, onOpenNetwork = { onOpenNetwork(null) })
+                AppHeader(state, onRefresh)
                 AnimatedContent(
                     targetState = page, modifier = Modifier.weight(1f), label = "Page transition",
                     transitionSpec = { (fadeIn(tween(200, 40)) + slideInVertically(tween(220)) { it / 40 }) togetherWith fadeOut(tween(100)) },
@@ -240,8 +262,12 @@ fun BackgroundCheckApp(
                     pageState.SaveableStateProvider(currentPage.name) {
                         when (currentPage) {
                             Page.OVERVIEW -> OverviewScreen(state, onAccess = { page = Page.ACCESS }, onApps = { page = Page.APPS }, onSelect = onSelect, onUndo = onUndo,
-                                onOpenNetwork = { onOpenNetwork(null) }, onUndoNetwork = onUndoNetwork, onExportChanges = onExportChanges)
+                                onOpenNetwork = { openNetwork(null) }, onUndoNetwork = onUndoNetwork, onExportChanges = onExportChanges)
                             Page.APPS -> AppsScreen(state, onSelect, onAccess = { page = Page.ACCESS })
+                            Page.NETWORK -> NetworkScreen(state, snackbar, networkRequest ?: localNetworkRequest,
+                                onRequestHandled = { localNetworkRequest = null; onNetworkRequestHandled() },
+                                onStartFirewall = onStartFirewall, onEnableVpn = onEnableVpn,
+                                onOpenAppSettings = onOpenAppSettings, onAppDetails = onSelect)
                             Page.MONITOR -> MonitorScreen(state, onRefreshResources, onRefreshEnergy, onSetMonitorPaused, onSetMonitorInterval, onSelect, onAccess = { page = Page.ACCESS },
                                 onStartComparison = onStartComparison, onCompareBattery = onCompareBattery, onClearComparison = onClearComparison)
                             Page.ACCESS -> AccessScreen(state, onConnect, onOpenShizuku, onOpenWirelessSettings)
@@ -256,13 +282,13 @@ fun BackgroundCheckApp(
             AppDetailSheet(state, app, onDismissDetail, onAction, onOpenAppSettings,
                 onConnect = { onDismissDetail(); page = Page.ACCESS }, onForceStop = onForceStop,
                 onRetry = { onClearMessage(); onRefresh() }, onSelectPackage = onSelect,
-                onOpenNetwork = { onOpenNetwork(app) }, onTogglePin = onTogglePin)
+                onOpenNetwork = { openNetwork(app) }, onTogglePin = onTogglePin)
         }
     }
 }
 
 @Composable
-private fun AppHeader(state: UiState, onRefresh: () -> Unit, onOpenNetwork: () -> Unit) {
+private fun AppHeader(state: UiState, onRefresh: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Image(painterResource(R.drawable.brand_mark), null, Modifier.size(34.dp))
         Spacer(Modifier.width(10.dp))
@@ -272,7 +298,6 @@ private fun AppHeader(state: UiState, onRefresh: () -> Unit, onOpenNetwork: () -
                 Text("Battery · apps · privacy", style = MaterialTheme.typography.labelSmall, color = Muted)
             }
         }
-        IconButton(onClick = onOpenNetwork) { Icon(Icons.Rounded.Shield, "Open Network", tint = Purple) }
         if (state.loading || state.refreshing) {
             Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(Modifier.size(20.dp).semantics { contentDescription = "Refreshing app and battery information" }, strokeWidth = 2.dp)
@@ -614,4 +639,4 @@ private fun AppsScreen(state: UiState, onSelect: (AppEntry) -> Unit, onAccess: (
 }
 
 @Composable
-private fun appFilterColors() = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer, selectedLabelColor = Purple, containerColor = Ink, labelColor = Muted)
+internal fun appFilterColors() = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer, selectedLabelColor = Purple, containerColor = Ink, labelColor = Muted)
