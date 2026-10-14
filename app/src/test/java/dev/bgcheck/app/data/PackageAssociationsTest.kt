@@ -53,23 +53,22 @@ class PackageAssociationsTest {
         assertFalse(entries[0].associations.any { it.kind == AssociationKind.SHARED_UID })
     }
 
-    @Test fun actualMotoOverlayAndPatchedAppCompanionsHaveExactPackageLinks() {
-        assertTrue(PackageDescriptions.associations("com.motorola.setup.overlay.tmo")
-            .contains(PackageAssociation("com.motorola.setup", AssociationKind.OVERLAY_TARGET)))
-        assertTrue(PackageDescriptions.associations("app.morphe.android.youtube")
-            .contains(PackageAssociation("app.revanced.android.gms", AssociationKind.COMPANION)))
-        assertTrue(PackageDescriptions.associations("com.motorola.setup.overlay.tmo.fake").isEmpty())
+    @Test fun curatedOverlayHasItsExactTargetLink() {
+        assertTrue(PackageDescriptions.associations("com.android.cellbroadcast.overlay")
+            .contains(PackageAssociation("com.google.android.cellbroadcastreceiver", AssociationKind.OVERLAY_TARGET)))
+        assertTrue(PackageDescriptions.associations("com.android.cellbroadcast.overlay.fake").isEmpty())
     }
 
-    @Test fun retainedTaskerAddonKeepsItsDocumentedHostsWithoutLiveUidPeers() {
-        val addon = AppEntry("com.termux.tasker", "Termux:Tasker", 11111, false, installed = false)
-        val hosts = listOf(AppEntry("com.termux", "Termux", 11111, false),
-            AppEntry("net.dinglisch.android.taskerm", "Tasker", 22222, false))
+    @Test fun retainedAddonKeepsItsDocumentedHostsWithoutLiveUidPeers() {
+        val addon = app("dev.addon", uid = 11111, installed = false, links = arrayOf(
+            PackageAssociation("dev.host", AssociationKind.COMPANION),
+            PackageAssociation("dev.other", AssociationKind.COMPANION)))
+        val hosts = listOf(app("dev.host", uid = 11111), app("dev.other", uid = 22222))
         val result = PackageAssociations.enrich(hosts + addon)
         val removed = result.last()
-        assertTrue(removed.associations.contains(PackageAssociation("com.termux", AssociationKind.COMPANION)))
-        assertTrue(removed.associations.contains(PackageAssociation("net.dinglisch.android.taskerm", AssociationKind.COMPANION)))
+        assertTrue(removed.associations.contains(PackageAssociation("dev.host", AssociationKind.COMPANION)))
+        assertTrue(removed.associations.contains(PackageAssociation("dev.other", AssociationKind.COMPANION)))
         assertFalse(removed.associations.any { it.kind == AssociationKind.SHARED_UID })
-        assertTrue(result[1].associations.contains(PackageAssociation("com.termux.tasker", AssociationKind.COMPANION)))
+        assertTrue(result[1].associations.contains(PackageAssociation("dev.addon", AssociationKind.COMPANION)))
     }
 }

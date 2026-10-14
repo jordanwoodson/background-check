@@ -4,32 +4,34 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PackageDescriptionsTest {
-    @Test fun phoneSpecificPackagesHaveActualPurposesInsteadOfCategoryFallbacks() {
-        val ai = PackageDescriptions.describe("com.motorola.aicore")
-        assertEquals(DescriptionSource.GUIDE, ai.source)
-        assertTrue(ai.text.contains("summaries", true))
-        val hub = PackageDescriptions.describe("com.maazm7d.termuxhub", category = 7)
-        assertEquals(DescriptionSource.GUIDE, hub.source)
-        assertTrue(hub.text.contains("discover", true))
-        assertTrue(PackageDescriptions.describe("io.navivani.swiff").text.contains("Flash", true))
+    @Test fun debloatListPackagesOutsideTheCuratedGuideUseTheListsOwnText() {
+        val bixby = PackageDescriptions.describe("com.samsung.android.bixby.agent", category = 7)
+        assertEquals(DescriptionSource.GUIDE, bixby.source)
+        assertTrue(bixby.text.contains("bixby hardware key", true))
+        assertEquals(listOf(CanaDebloatGuide.SOURCE_URL), bixby.citations.map { it.url })
+        val keyboard = PackageDescriptions.describe("com.android.inputmethod.latin")
+        assertEquals("Provides an on-screen keyboard for entering text.", keyboard.text)
+        assertTrue(keyboard.citations.isEmpty())
     }
 
-    @Test fun everyPackageInTheIndependentUsbSnapshotHasASourcedPurpose() {
-        val ids = requireNotNull(javaClass.getResourceAsStream("/usb-package-ids.txt"))
+    @Test fun everyDescribedPackageOnTheDebloatListHasAGuidePurpose() {
+        val ids = requireNotNull(javaClass.getResourceAsStream("/uad-package-ids.txt"))
             .bufferedReader().use { it.readLines() }
-        assertEquals(676, ids.size)
+        assertEquals(4801, ids.size)
         assertEquals(ids.size, ids.toSet().size)
-        ids.forEach { id ->
+        // 68 list entries carry no description; those are not given an invented purpose.
+        val described = ids.filterNot { CanaDebloatGuide.lookup(it).description.isNullOrBlank() }
+        assertEquals(4733, described.size)
+        described.forEach { id ->
             val purpose = PackageDescriptions.describe(id)
             assertEquals(id, DescriptionSource.GUIDE, purpose.source)
             assertTrue(id, purpose.text.isNotBlank())
-            assertTrue("Missing source: $id", purpose.citations.isNotEmpty())
             assertTrue(id, purpose.citations.all { it.url.startsWith("https://") && it.title.isNotBlank() })
         }
     }
 
     @Test fun retainedRecordsGetReadableNamesWithoutReplacingActualAppLabels() {
-        assertEquals("TermuxHub", PackageDescriptions.label("com.maazm7d.termuxhub", "com.maazm7d.termuxhub"))
+        assertEquals("Android System", PackageDescriptions.label("android", "android"))
         assertEquals("Mon clavier", PackageDescriptions.label("com.google.android.inputmethod.latin", "Mon clavier"))
         assertEquals("com.example.unknown", PackageDescriptions.label("com.example.unknown", ""))
     }

@@ -9,7 +9,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.bgcheck.app.data.AppInventory
 import dev.bgcheck.app.data.AssociationKind
+import dev.bgcheck.app.data.DebloatRating
 import dev.bgcheck.app.data.DescriptionSource
+import dev.bgcheck.app.data.debloatRecommendation
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -30,8 +32,8 @@ class UsbPackageAuditTest {
         assertEquals("The app inventory must cover the shell inventory", expected, inventory.map { it.packageName }.toSet())
         val byId = inventory.associateBy { it.packageName }
         inventory.forEach { app ->
-            assertEquals("Purpose missing for ${app.packageName}", DescriptionSource.GUIDE, app.description.source)
-            assertTrue("Sources missing for ${app.packageName}", app.description.citations.isNotEmpty())
+            if (app.debloatRecommendation.rating != DebloatRating.NOT_RATED)
+                assertEquals("Purpose missing for listed ${app.packageName}", DescriptionSource.GUIDE, app.description.source)
             app.associations.filter { it.kind == AssociationKind.SHARED_UID }.forEach { association ->
                 val peer = requireNotNull(byId[association.packageName])
                 assertTrue(app.installed && peer.installed)

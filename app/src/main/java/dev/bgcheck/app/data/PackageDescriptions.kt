@@ -101,11 +101,16 @@ object PackageDescriptions {
         7 to "productivity", 8 to "accessibility",
     )
     private val whitespace = Regex("\\s+")
+    private val debloatListCitation = DescriptionCitation("Android debloat list (bundled with Cana)", CanaDebloatGuide.SOURCE_URL)
 
     fun describe(packageName: String, appDescription: String? = null, category: Int = -1): PackageDescription {
-        val audited = AuditedPackageGuide.packages[packageName]
-        (audited?.description ?: guide[packageName])?.let {
-            return PackageDescription(it, DescriptionSource.GUIDE, audited?.sources.orEmpty(), audited?.note)
+        AuditedPackageGuide.packages[packageName]?.let {
+            return PackageDescription(it.description, DescriptionSource.GUIDE, it.sources, it.note)
+        }
+        guide[packageName]?.let { return PackageDescription(it, DescriptionSource.GUIDE) }
+        // Anything else on the bundled debloat list falls back to that list's own text.
+        CanaDebloatGuide.lookup(packageName).description?.replace(whitespace, " ")?.trim()?.takeIf { it.isNotEmpty() }?.let {
+            return PackageDescription(it, DescriptionSource.GUIDE, listOf(debloatListCitation))
         }
         appDescription?.replace(whitespace, " ")?.trim()?.takeIf { it.isNotEmpty() }?.let {
             return PackageDescription(it, DescriptionSource.APP)

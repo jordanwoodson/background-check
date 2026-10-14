@@ -73,11 +73,11 @@ class PackageDescriptionsUiTest {
         compose.onNodeWithText("Resource diagnostics").assertDoesNotExist()
     }
 
-    @Test fun companionsShowRetainedStateAndOpenTheirOwnDetailsWithoutShizuku() {
-        val video = AppEntry("app.morphe.android.youtube", "YouTube Morphe", 11001, false)
-        val microg = AppEntry("app.revanced.android.gms", "MicroG RE", 11002, false, installed = false)
+    @Test fun associationsShowRetainedStateAndOpenTheirOwnDetailsWithoutShizuku() {
+        val overlay = AppEntry("com.android.cellbroadcast.overlay", "Alerts overlay", 11001, true)
+        val alerts = AppEntry("com.google.android.cellbroadcastreceiver", "Wireless emergency alerts", 11002, true, installed = false)
         val state = mutableStateOf(UiState(access = AccessState.NOT_RUNNING, loading = false,
-            apps = listOf(video), uninstalledApps = listOf(microg), selected = video))
+            apps = listOf(overlay), uninstalledApps = listOf(alerts), selected = overlay))
         compose.setContent {
             BackgroundCheckTheme {
                 BackgroundCheckApp(state.value,
@@ -88,11 +88,11 @@ class PackageDescriptionsUiTest {
                     onMonitorVisible = {}, onForceStop = {})
             }
         }
-        compose.onNodeWithText("Description sources (2)").performScrollTo().performClick()
-        compose.onNodeWithText("Morphe GmsCore setup and troubleshooting").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("association-COMPANION-app.revanced.android.gms").performScrollTo().assertIsDisplayed().performClick()
-        compose.onNodeWithText("MicroG RE", substring = false).assertExists()
-        compose.onNodeWithText("Provides a separate implementation of Google service APIs, account sign-in and notifications for compatible patched apps.")
+        compose.onNodeWithText("Description sources (1)").performScrollTo().performClick()
+        compose.onNodeWithText("Android runtime resource overlays (mechanism)").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("association-OVERLAY_TARGET-com.google.android.cellbroadcastreceiver").performScrollTo().assertIsDisplayed().performClick()
+        compose.onNodeWithText("Wireless emergency alerts", substring = false).assertExists()
+        compose.onNodeWithText("Displays emergency alerts broadcast by mobile networks.")
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Force stop app").assertDoesNotExist()
         compose.onNodeWithText("Allow background work").assertDoesNotExist()

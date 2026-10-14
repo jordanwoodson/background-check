@@ -39,13 +39,11 @@ class CanaDebloatGuideTest {
         assertEquals(listOf("com.android.cellbroadcastreceiver"), overlay.dependencies)
     }
 
-    @Test fun everyAuditedPhonePackageGetsEitherItsSourceRatingOrAnExplicitUnratedEntry() {
-        val ids = requireNotNull(javaClass.getResourceAsStream("/usb-package-ids.txt"))
+    @Test fun everyListedPackageGetsItsSourceRating() {
+        val ids = requireNotNull(javaClass.getResourceAsStream("/uad-package-ids.txt"))
             .bufferedReader().use { it.readLines() }
-        assertEquals(676, ids.size)
-        val ratings = ids.map { CanaDebloatGuide.lookup(it).rating }
-        assertEquals(392, ratings.count { it != DebloatRating.NOT_RATED })
-        assertEquals(284, ratings.count { it == DebloatRating.NOT_RATED })
+        assertEquals(4801, ids.size)
+        assertTrue(ids.none { CanaDebloatGuide.lookup(it).rating == DebloatRating.NOT_RATED })
     }
 
     @Test fun bundledArchiveContainsAll4801SourceRecords() {
